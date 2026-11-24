@@ -1,0 +1,24 @@
+﻿# Ambientes e caches Python
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Variáveis locais e segredos
+.env
+.env.*
+!.env.example
+
+# IDEs e configurações locais
+.vscode/
+.idea/
+*.iml
+*.swp
+*.swo
+
+# Sistema operacional
+.DS_Store
+Thumbs.db
