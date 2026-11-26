@@ -11,6 +11,7 @@ import javax.sql.DataSource;
 
 import org.flywaydb.core.Flyway;
 import org.flywaydb.core.api.Location;
+import org.flywaydb.core.api.MigrationState;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.flyway.autoconfigure.FlywayMigrationInitializer;
@@ -75,6 +76,10 @@ class AfdevopsApplicationTests {
             assertThat(connection.getMetaData().getURL()).isEqualTo(postgres.getJdbcUrl());
         }
         assertThat(flyway.info().pending()).isEmpty();
+        assertThat(flyway.info().applied()).anySatisfy(migration -> {
+            assertThat(migration.getVersion().getVersion()).isEqualTo("1");
+            assertThat(migration.getState()).isEqualTo(MigrationState.SUCCESS);
+        });
     }
 
     @Test

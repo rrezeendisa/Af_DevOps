@@ -78,3 +78,37 @@ O Flyway usa o mesmo datasource da aplicação e procura por scripts versionados
 em `src/main/resources/db/migration`. Os primeiros scripts serão adicionados
 com as tabelas de domínio. O Hibernate valida o esquema e a sessão JPA não
 permanece aberta durante a renderização da resposta HTTP.
+
+## Colaboradores
+
+Os exemplos usam dados fictícios. Os endpoints desta etapa estão disponíveis
+sem autenticação ou autorização. A listagem retorna todos os registros, sem
+paginação, ordenados por ID crescente.
+
+| Método e rota | Resposta |
+| --- | --- |
+| `POST /api/colaboradores` | `201 Created`, com o colaborador e o cabeçalho `Location` para a consulta por ID |
+| `GET /api/colaboradores` | `200 OK`, com a lista ou `[]` quando vazia |
+| `GET /api/colaboradores/{id}` | `200 OK` para um ID existente ou `404 Not Found` |
+
+O cadastro recebe `nome`, `email`, `cargo` e `departamento`. A resposta inclui
+também `id` e `criadoEm` em ISO 8601. O e-mail é armazenado em minúsculas,
+sem espaços nas extremidades, e deve ser único.
+
+```sh
+curl -i http://localhost:8080/api/colaboradores \
+  -H 'Content-Type: application/json' \
+  -d '{"nome":"Pessoa Fictícia","email":"pessoa@example.com","cargo":"Analista","departamento":"Educação"}'
+
+curl http://localhost:8080/api/colaboradores
+curl http://localhost:8080/api/colaboradores/1
+```
+
+Substitua `1` pelo ID retornado no cadastro. Os erros do módulo usam
+`application/problem+json` e incluem o campo `codigo`.
+
+| HTTP | Código |
+| --- | --- |
+| `400 Bad Request` | `DADOS_INVALIDOS` |
+| `409 Conflict` | `EMAIL_DUPLICADO` |
+| `404 Not Found` | `COLABORADOR_NAO_ENCONTRADO` |
