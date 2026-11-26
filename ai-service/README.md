@@ -1,4 +1,4 @@
-﻿# AI Service
+# AI Service
 
 Serviço Python da Plataforma Inteligente de Educação Corporativa. A entrega B1 prepara a base executável da API: aplicação FastAPI, verificação de saúde, documentação interativa, teste automatizado e instruções para configurar o ambiente local. Nesta etapa, o único endpoint implementado é `GET /health`; classificação, recomendações, agente e worker ficam para as próximas etapas.
 
@@ -112,6 +112,31 @@ A resposta esperada para `/health` é:
   "service": "ai-service"
 }
 ```
+
+## Classificar competências
+
+`POST /classificacoes` recebe as três pontuações obrigatórias (`logica`, `comunicacao` e `tecnologia`). Cada valor deve ser um número inteiro de 1 a 5. Decimais, strings, booleanos e valores fora desse intervalo são rejeitados com HTTP 422. A documentação interativa em `/docs` apresenta o modelo de entrada e de saída.
+
+Exemplo de requisição:
+
+```json
+{
+  "logica": 4,
+  "comunicacao": 3,
+  "tecnologia": 5
+}
+```
+
+Até a etapa B3, o modelo de Machine Learning ainda não foi treinado. Portanto, a rota valida a entrada e retorna uma resposta provisória que não simula uma classificação:
+
+```json
+{
+  "nivel": null,
+  "versao_modelo": "pendente"
+}
+```
+
+Na B3, `nivel` será produzido pelo modelo e pertencerá a `INICIANTE`, `INTERMEDIARIO` ou `AVANCADO`.
 
 ## Executar e validar os testes
 
