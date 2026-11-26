@@ -79,6 +79,10 @@ em `src/main/resources/db/migration`. Os primeiros scripts serão adicionados
 com as tabelas de domínio. O Hibernate valida o esquema e a sessão JPA não
 permanece aberta durante a renderização da resposta HTTP.
 
+O driver PostgreSQL está configurado para omitir detalhes de erro do servidor
+das mensagens de exceção. As validações dos cadastros rejeitam o caractere NUL
+nos campos textuais.
+
 ## Colaboradores
 
 Os exemplos usam dados fictícios. Os endpoints desta etapa estão disponíveis

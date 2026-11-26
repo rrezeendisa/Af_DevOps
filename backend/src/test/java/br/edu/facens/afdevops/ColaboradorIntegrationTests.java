@@ -14,11 +14,14 @@ import java.util.concurrent.TimeUnit;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.postgresql.util.PSQLException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.system.CapturedOutput;
+import org.springframework.boot.test.system.OutputCaptureExtension;
 import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.context.annotation.Import;
 import org.springframework.dao.DuplicateKeyException;
@@ -75,6 +78,33 @@ class ColaboradorIntegrationTests {
             """})
     void rejeitaDadosInvalidos(String payload) throws Exception {
         assertProblem(post(payload), 400, "DADOS_INVALIDOS");
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"nome", "email", "cargo", "departamento"})
+    void rejeitaNulNosCamposTextuais(String campo) throws Exception {
+        var dados = JSON.readTree(dados("pessoa@example.com"));
+        var objeto = (tools.jackson.databind.node.ObjectNode) dados;
+        objeto.put(campo, dados.get(campo).asString() + "\0");
+        assertProblem(post(JSON.writeValueAsString(objeto)), 400, "DADOS_INVALIDOS");
+        assertThat(jdbc.queryForObject("SELECT count(*) FROM colaboradores", Long.class)).isZero();
+    }
+
+    @Test
+    @ExtendWith(OutputCaptureExtension.class)
+    void duplicidadeNaoRegistraEmailEConservaMetadados(CapturedOutput output) throws Exception {
+        String email = "log-teste-ficticio@example.com";
+        assertThat(post(dados(email)).statusCode()).isEqualTo(201);
+        assertProblem(post(dados(email)), 409, "EMAIL_DUPLICADO");
+        assertThatThrownBy(() -> inserirDiretamente(email))
+                .isInstanceOfSatisfying(DuplicateKeyException.class, exception ->
+                        assertThat(exception.getMostSpecificCause()).isInstanceOfSatisfying(PSQLException.class, postgres -> {
+                            assertThat(postgres.getSQLState()).isEqualTo("23505");
+                            assertThat(postgres.getServerErrorMessage().getConstraint())
+                                    .isEqualTo("ux_colaboradores_email_lower");
+                            assertThat(postgres.getMessage()).doesNotContain(email);
+                        }));
+        assertThat(output.getAll()).doesNotContain(email);
     }
 
     @Test

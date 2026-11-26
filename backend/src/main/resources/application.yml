@@ -5,6 +5,9 @@ spring:
     url: "jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:afdevops}"
     username: "${DB_USERNAME:afdevops}"
     password: "${DB_PASSWORD}"
+    hikari:
+      data-source-properties:
+        logServerErrorDetail: false
   jpa:
     hibernate:
       ddl-auto: validate

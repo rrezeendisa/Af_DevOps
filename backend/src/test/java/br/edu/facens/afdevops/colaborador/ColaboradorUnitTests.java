@@ -41,6 +41,10 @@ class ColaboradorUnitTests {
 
     static Stream<Arguments> dadosInvalidos() {
         return Stream.of(
+                Arguments.of(new ColaboradorRequest("Pessoa\0Fictícia", "pessoa@example.com", "Analista", "Educação"), "nome"),
+                Arguments.of(new ColaboradorRequest("Pessoa", "pessoa\0@example.com", "Analista", "Educação"), "email"),
+                Arguments.of(new ColaboradorRequest("Pessoa", "pessoa@example.com", "Ana\0lista", "Educação"), "cargo"),
+                Arguments.of(new ColaboradorRequest("Pessoa", "pessoa@example.com", "Analista", "Edu\0cação"), "departamento"),
                 Arguments.of(new ColaboradorRequest(null, "pessoa@example.com", "Analista", "Educação"), "nome"),
                 Arguments.of(new ColaboradorRequest("Pessoa Fictícia", " ", "Analista", "Educação"), "email"),
                 Arguments.of(new ColaboradorRequest("Pessoa Fictícia", "invalido", "Analista", "Educação"), "email"),
@@ -79,6 +83,22 @@ class ColaboradorUnitTests {
         var service = serviceComFalha(violacao);
 
         assertThatThrownBy(() -> service.cadastrar(requestValido())).isSameAs(violacao);
+    }
+
+    @Test
+    void driverPreservaMetadadosAoOmitirDetalhesDaMensagem() {
+        String email = "endereco-ficticio@example.com";
+        var erro = new ServerErrorMessage("SERRO\0C23505\0Mux_colaboradores_email_lower\0D" + email
+                + "\0nux_colaboradores_email_lower\0\0");
+        var postgres = new PSQLException(erro, false);
+        var violacao = new DataIntegrityViolationException("Erro sintético", postgres);
+
+        assertThat(postgres.getMessage()).doesNotContain(email);
+        assertThat(postgres.getSQLState()).isEqualTo("23505");
+        assertThat(postgres.getServerErrorMessage().getConstraint()).isEqualTo("ux_colaboradores_email_lower");
+        var service = serviceComFalha(violacao);
+        assertThatThrownBy(() -> service.cadastrar(requestValido()))
+                .isInstanceOf(ColaboradorService.EmailDuplicadoException.class);
     }
 
     private static ColaboradorRequest requestValido() {

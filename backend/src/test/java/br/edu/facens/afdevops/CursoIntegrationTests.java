@@ -79,6 +79,16 @@ class CursoIntegrationTests {
         assertProblem(post(body), 400, "DADOS_INVALIDOS");
     }
 
+    @ParameterizedTest
+    @ValueSource(strings = {"nome", "descricao", "categoria"})
+    void rejeitaNulNosCamposTextuais(String campo) throws Exception {
+        var dados = JSON.readTree(dados("Curso fictício", "8", "\"BASICO\""));
+        var objeto = (tools.jackson.databind.node.ObjectNode) dados;
+        objeto.put(campo, dados.get(campo).asString() + "\0");
+        assertProblem(post(JSON.writeValueAsString(objeto)), 400, "DADOS_INVALIDOS");
+        assertThat(jdbc.queryForObject("SELECT count(*) FROM cursos", Long.class)).isZero();
+    }
+
     @Test
     void consultaInexistenteEIdentificadorInvalido() throws Exception {
         assertProblem(get(ROTA + "/999999"), 404, "CURSO_NAO_ENCONTRADO");

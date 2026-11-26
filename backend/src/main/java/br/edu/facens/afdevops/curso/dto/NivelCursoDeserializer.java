@@ -13,7 +13,7 @@ public class NivelCursoDeserializer extends ValueDeserializer<NivelCurso> {
         if (parser.currentToken() != JsonToken.VALUE_STRING) {
             return (NivelCurso) context.handleUnexpectedToken(NivelCurso.class, parser);
         }
-        String valor = parser.getText();
+        String valor = parser.getString();
         try {
             return NivelCurso.valueOf(valor);
         }

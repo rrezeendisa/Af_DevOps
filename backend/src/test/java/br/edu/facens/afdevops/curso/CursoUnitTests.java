@@ -30,6 +30,9 @@ class CursoUnitTests {
 
     static Stream<Arguments> dadosInvalidos() {
         return Stream.of(
+                Arguments.of(new CursoRequest("Cur\0so", "Descrição", 1, "Categoria", NivelCurso.BASICO), "nome"),
+                Arguments.of(new CursoRequest("Curso", "Descri\0ção", 1, "Categoria", NivelCurso.BASICO), "descricao"),
+                Arguments.of(new CursoRequest("Curso", "Descrição", 1, "Cate\0goria", NivelCurso.BASICO), "categoria"),
                 Arguments.of(new CursoRequest(null, "Descrição", 1, "Categoria", NivelCurso.BASICO), "nome"),
                 Arguments.of(new CursoRequest(" ", "Descrição", 1, "Categoria", NivelCurso.BASICO), "nome"),
                 Arguments.of(new CursoRequest("n".repeat(151), "Descrição", 1, "Categoria", NivelCurso.BASICO), "nome"),
