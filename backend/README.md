@@ -112,3 +112,32 @@ Substitua `1` pelo ID retornado no cadastro. Os erros do módulo usam
 | `400 Bad Request` | `DADOS_INVALIDOS` |
 | `409 Conflict` | `EMAIL_DUPLICADO` |
 | `404 Not Found` | `COLABORADOR_NAO_ENCONTRADO` |
+
+## Cursos
+
+Os campos de cursos são uma proposta inicial de modelagem. Os exemplos usam
+dados fictícios. Os endpoints estão disponíveis sem autenticação ou autorização,
+e a listagem retorna todos os registros sem paginação, ordenados por ID crescente.
+
+| Método e rota | Resposta |
+| --- | --- |
+| `POST /api/cursos` | `201 Created`, com o curso e o cabeçalho `Location` |
+| `GET /api/cursos` | `200 OK`, com a lista ou `[]` quando vazia |
+| `GET /api/cursos/{id}` | `200 OK` para um ID existente ou `404 Not Found` |
+
+O cadastro recebe `nome`, `descricao`, `cargaHoraria` em horas inteiras
+positivas, `categoria` e `nivel`. Os níveis são `BASICO`, `INTERMEDIARIO`
+e `AVANCADO`. A resposta inclui `id` e `criadoEm` em ISO 8601.
+
+```sh
+curl -i http://localhost:8080/api/cursos \
+  -H 'Content-Type: application/json' \
+  -d '{"nome":"Curso fictício","descricao":"Introdução fictícia","cargaHoraria":8,"categoria":"Educação","nivel":"BASICO"}'
+
+curl http://localhost:8080/api/cursos
+curl http://localhost:8080/api/cursos/1
+```
+
+Substitua `1` pelo ID retornado no cadastro. Erros retornam
+`application/problem+json`, com o código `DADOS_INVALIDOS` para HTTP 400 ou
+`CURSO_NAO_ENCONTRADO` para HTTP 404.
