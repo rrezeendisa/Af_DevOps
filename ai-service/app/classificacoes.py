@@ -1,4 +1,4 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Request
 
 from app.schemas import ClassificacaoResponse, CompetenciasRequest
 
@@ -9,14 +9,17 @@ router = APIRouter(tags=["Classificações"])
     "/classificacoes",
     response_model=ClassificacaoResponse,
     summary="Classificar competências de um colaborador",
-    description=(
-        "Valida as pontuações de competências. A classificação ficará indisponível "
-        "até a integração do modelo de Machine Learning na etapa B3; nesse período, "
-        "`nivel` será `null` e `versao_modelo` será `pendente`."
-    ),
+    description="Classifica as competências usando o modelo treinado carregado pela aplicação.",
 )
 def classificar_competencias(
     competencias: CompetenciasRequest,
+    request: Request,
 ) -> ClassificacaoResponse:
-    """Valida a entrada e devolve o contrato provisório até a B3."""
-    return ClassificacaoResponse(nivel=None, versao_modelo="pendente")
+    """Valida a entrada e delega a predição ao modelo carregado."""
+    classifier = request.app.state.classification_service
+    nivel, versao_modelo = classifier.predict(
+        logica=competencias.logica,
+        comunicacao=competencias.comunicacao,
+        tecnologia=competencias.tecnologia,
+    )
+    return ClassificacaoResponse(nivel=nivel, versao_modelo=versao_modelo)

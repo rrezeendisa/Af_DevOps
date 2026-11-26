@@ -16,6 +16,5 @@ class CompetenciasRequest(BaseModel):
 
 
 class ClassificacaoResponse(BaseModel):
-    # Será preenchido pelo modelo treinado implementado na B3.
-    nivel: NivelCompetencia | None
+    nivel: NivelCompetencia
     versao_modelo: str
