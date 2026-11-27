@@ -54,6 +54,9 @@ desenvolvimento. A senha deve ser fornecida pelo ambiente.
 | `DB_USERNAME` | `afdevops` |
 | `DB_PASSWORD` | Obrigatória, sem padrão |
 | `SERVER_ADDRESS` | `127.0.0.1` |
+| `RABBITMQ_URL` | `amqp://localhost:5672` |
+| `RABBITMQ_HEALTH_ENABLED` | `false` |
+| `INTERNAL_API_TOKEN` | Sem padrão; sem ele a rota interna responde 503 |
 
 ### Contas de demonstração
 
@@ -214,6 +217,8 @@ backend não mantém sessão de autenticação.
 | `GET /api/colaboradores`, `GET /api/colaboradores/{id}`, `POST /api/colaboradores` | `ADMIN` |
 | `POST /api/cursos` e `GET /api/csrf` | `ADMIN` |
 | `GET /api/cursos` e `GET /api/cursos/{id}` | `ADMIN` e `COLABORADOR` |
+| `POST /api/treinamentos`, `GET /api/treinamentos`, `GET /api/treinamentos/{id}` | `ADMIN` |
+| `PATCH /internal/treinamentos/{id}/status` | Serviço interno, com `Authorization: Bearer <INTERNAL_API_TOKEN>` |
 
 Os demais caminhos e métodos são negados. Nos exemplos, `curl --user` recebe
 apenas o nome de usuário e pede a senha de forma interativa. Use os nomes
@@ -364,6 +369,39 @@ curl --user "$AFDEVOPS_COLABORADOR_USERNAME" http://127.0.0.1:8080/api/cursos/1
 Troque `1` pelo ID retornado no cadastro. Os erros usam
 `application/problem+json`, com `DADOS_INVALIDOS` para HTTP 400 e
 `CURSO_NAO_ENCONTRADO` para HTTP 404.
+
+## Solicitações de treinamento
+
+O módulo `treinamento` registra pedidos de retreinamento do modelo de IA e
+acompanha o resultado informado pelo worker do ai-service. A mensageria e o
+ambiente integrado estão descritos em [infra/README.md](../infra/README.md).
+
+| Método e rota | Resposta |
+| --- | --- |
+| `POST /api/treinamentos` | HTTP 202 Accepted com a solicitação `PENDENTE` e `Location`; HTTP 503 `FILA_INDISPONIVEL` se o RabbitMQ não confirmar a mensagem (a solicitação fica `FALHOU`) |
+| `GET /api/treinamentos` | HTTP 200 OK, com a lista ordenada por ID |
+| `GET /api/treinamentos/{id}` | HTTP 200 OK ou HTTP 404 `SOLICITACAO_NAO_ENCONTRADA` |
+| `PATCH /internal/treinamentos/{id}/status` | HTTP 204; 400 `DADOS_INVALIDOS`, 401 `AUTENTICACAO_INTERNA_NECESSARIA`, 404, 409 `STATUS_CONFLITANTE` |
+
+Ao criar a solicitação, o backend publica `{"solicitacao_id":"<id>"}` na
+exchange `ml.training` com a routing key `training.requested`. O worker
+treina o modelo e chama a rota interna com
+`{"status":"CONCLUIDO","versaoModelo":"1.0.0","mensagem":"..."}` ou
+`{"status":"FALHOU","mensagem":"..."}`. Repetir o mesmo status final é
+aceito sem alterações; trocar um status final responde 409.
+
+O `POST` não tem corpo e segue o fluxo CSRF descrito acima:
+
+```sh
+curl -i --user "$AFDEVOPS_ADMIN_USERNAME" --cookie "$csrf_cookie" \
+  -H "X-XSRF-TOKEN: $csrf_token" -X POST http://127.0.0.1:8080/api/treinamentos
+
+curl --user "$AFDEVOPS_ADMIN_USERNAME" http://127.0.0.1:8080/api/treinamentos/1
+```
+
+A rota `/internal/**` tem cadeia de segurança própria, sem cookies nem
+CSRF, e compara o token em tempo constante. Os testes de integração do
+módulo usam RabbitMQ real via Testcontainers.
 
 ## Última validação
 

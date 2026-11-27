@@ -1,0 +1,116 @@
+# Pipeline de integração contínua do AF-DevOps (Frente C — DevOps e QA).
+#
+# 1. backend     -> compila e roda os testes Java (unitários + Testcontainers)
+# 2. ai-service  -> roda os testes Python da Frente B
+# 3. docker      -> valida o Compose e constrói as imagens
+# 4. integracao  -> sobe o ambiente completo e executa os testes ponta a ponta
+#
+# Nenhum segredo é necessário: o job de integração gera um .env descartável.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  backend:
+    name: Backend (Java 17)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+          cache: maven
+
+      - name: Compilar e testar
+        run: ./mvnw -B verify
+
+      - name: Publicar relatórios de teste
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-surefire-reports
+          path: backend/target/surefire-reports/
+          if-no-files-found: ignore
+          retention-days: 7
+
+  ai-service:
+    name: AI Service (Python 3.13)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: ai-service
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+          cache-dependency-path: ai-service/requirements.txt
+
+      - name: Instalar dependências
+        run: python -m pip install -r requirements.txt
+
+      - name: Testar
+        run: python -m pytest -v -p no:cacheprovider --basetemp "$RUNNER_TEMP/pytest"
+
+  docker:
+    name: Docker (Compose e imagens)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      # Valores fictícios só para a validação; variáveis do shell têm
+      # precedência sobre o --env-file.
+      - name: Validar docker-compose.yml
+        env:
+          DB_PASSWORD: validacao
+          RABBITMQ_PASSWORD: validacao
+          INTERNAL_API_TOKEN: validacao
+          AFDEVOPS_ADMIN_USERNAME: admin
+          AFDEVOPS_ADMIN_PASSWORD_HASH: validacao
+          AFDEVOPS_COLABORADOR_USERNAME: colaborador
+          AFDEVOPS_COLABORADOR_PASSWORD_HASH: validacao
+        run: docker compose --env-file .env.example config --quiet
+
+      - name: Construir imagens
+        run: |
+          docker build -t afdevops-backend:ci backend
+          docker build -t afdevops-ai-service:ci ai-service
+
+  integracao:
+    name: Testes integrados (Docker Compose)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    needs: [backend, ai-service, docker]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Gerar .env descartável
+        run: ./scripts/gerar-env.sh
+
+      - name: Subir ambiente e executar testes ponta a ponta
+        run: ./scripts/testes-integrados.sh --down

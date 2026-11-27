@@ -1,0 +1,14 @@
+.venv/
+venv/
+.pytest-tmp/
+.pytest_cache/
+**/__pycache__/
+*.py[cod]
+tests/
+ml/artifacts/
+.env
+.env.*
+.idea/
+.vscode/
+Dockerfile
+.dockerignore

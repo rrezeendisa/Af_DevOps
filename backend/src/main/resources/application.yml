@@ -12,6 +12,12 @@ spring:
     hibernate:
       ddl-auto: validate
     open-in-view: false
+  rabbitmq:
+    # URL AMQP completa, no mesmo formato usado pelo worker Python.
+    # No Compose: amqp://<usuario>:<senha>@rabbitmq:5672/%2F
+    addresses: "${RABBITMQ_URL:amqp://localhost:5672}"
+    connection-timeout: 5s
+    publisher-confirm-type: simple
   flyway:
     enabled: true
     locations: classpath:db/migration
@@ -22,6 +28,11 @@ server:
   port: 8080
 
 management:
+  health:
+    rabbit:
+      # Desligado por padrão para o backend subir sem broker no desenvolvimento
+      # local; o Docker Compose habilita para refletir a saúde do RabbitMQ.
+      enabled: ${RABBITMQ_HEALTH_ENABLED:false}
   endpoints:
     web:
       exposure:

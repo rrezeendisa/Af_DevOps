@@ -1,0 +1,68 @@
+{
+  "rabbit_version": "4.1",
+  "vhosts": [
+    { "name": "/" }
+  ],
+  "exchanges": [
+    {
+      "name": "ml.training",
+      "vhost": "/",
+      "type": "direct",
+      "durable": true,
+      "auto_delete": false,
+      "internal": false,
+      "arguments": {}
+    }
+  ],
+  "queues": [
+    {
+      "name": "ml.training.requests",
+      "vhost": "/",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {}
+    },
+    {
+      "name": "ml.training.requests.dead-letter",
+      "vhost": "/",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {}
+    }
+  ],
+  "bindings": [
+    {
+      "source": "ml.training",
+      "vhost": "/",
+      "destination": "ml.training.requests",
+      "destination_type": "queue",
+      "routing_key": "training.requested",
+      "arguments": {}
+    }
+  ],
+  "policies": [
+    {
+      "vhost": "/",
+      "name": "ml-training-requests-dlx",
+      "pattern": "^ml[.]training[.]requests$",
+      "apply-to": "queues",
+      "priority": 10,
+      "definition": {
+        "dead-letter-exchange": "",
+        "dead-letter-routing-key": "ml.training.requests.dead-letter"
+      }
+    },
+    {
+      "vhost": "/",
+      "name": "ml-training-dead-letter-retencao",
+      "pattern": "^ml[.]training[.]requests[.]dead-letter$",
+      "apply-to": "queues",
+      "priority": 10,
+      "definition": {
+        "message-ttl": 604800000,
+        "max-length": 10000,
+        "overflow": "drop-head"
+      }
+    }
+  ]
+}
