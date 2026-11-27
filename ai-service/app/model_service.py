@@ -1,4 +1,5 @@
 from pathlib import Path
+import os
 from typing import Any
 
 import joblib
@@ -6,7 +7,8 @@ import joblib
 from app.schemas import NivelCompetencia
 from ml.constants import MODEL_VERSION
 
-MODEL_PATH = Path(__file__).resolve().parents[1] / "ml" / "artifacts" / "classifier.joblib"
+DEFAULT_MODEL_PATH = Path(__file__).resolve().parents[1] / "ml" / "artifacts" / "classifier.joblib"
+MODEL_PATH = Path(os.getenv("MODEL_PATH", str(DEFAULT_MODEL_PATH))).expanduser()
 
 
 class ClassificationService:

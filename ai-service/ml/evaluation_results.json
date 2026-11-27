@@ -1,0 +1,69 @@
+{
+  "algorithm": "DecisionTreeClassifier",
+  "random_state": 42,
+  "test_size": 0.2,
+  "dataset_records": 125,
+  "train_records": 100,
+  "test_records": 25,
+  "train_test_combination_overlap": 0,
+  "labels": [
+    "INICIANTE",
+    "INTERMEDIARIO",
+    "AVANCADO"
+  ],
+  "accuracy": 0.72,
+  "precision_macro": 0.7380952380952381,
+  "recall_macro": 0.7186147186147186,
+  "f1_macro": 0.726389552476509,
+  "classification_report": {
+    "INICIANTE": {
+      "precision": 0.8333333333333334,
+      "recall": 0.7142857142857143,
+      "f1-score": 0.7692307692307693,
+      "support": 7.0
+    },
+    "INTERMEDIARIO": {
+      "precision": 0.6666666666666666,
+      "recall": 0.7272727272727273,
+      "f1-score": 0.6956521739130435,
+      "support": 11.0
+    },
+    "AVANCADO": {
+      "precision": 0.7142857142857143,
+      "recall": 0.7142857142857143,
+      "f1-score": 0.7142857142857143,
+      "support": 7.0
+    },
+    "accuracy": 0.72,
+    "macro avg": {
+      "precision": 0.7380952380952381,
+      "recall": 0.7186147186147186,
+      "f1-score": 0.726389552476509,
+      "support": 25.0
+    },
+    "weighted avg": {
+      "precision": 0.7266666666666667,
+      "recall": 0.72,
+      "f1-score": 0.7214715719063546,
+      "support": 25.0
+    }
+  },
+  "confusion_matrix": [
+    [
+      5,
+      2,
+      0
+    ],
+    [
+      1,
+      8,
+      2
+    ],
+    [
+      0,
+      2,
+      5
+    ]
+  ],
+  "data_limitations": "Resultados medem somente a reprodução dos rótulos artificiais; não demonstram desempenho em colaboradores reais."
+}
