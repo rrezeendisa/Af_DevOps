@@ -21,6 +21,7 @@ import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
+import org.springframework.test.context.DynamicPropertyRegistrar;
 import org.testcontainers.postgresql.PostgreSQLContainer;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -97,7 +98,7 @@ class AfdevopsApplicationTests {
 
     private HttpResponse<String> get(String path) throws Exception {
         HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create("http://localhost:" + port + path))
+                .uri(URI.create("http://127.0.0.1:" + port + path))
                 .GET()
                 .build();
         return client.send(request, HttpResponse.BodyHandlers.ofString());
@@ -105,6 +106,11 @@ class AfdevopsApplicationTests {
 
     @TestConfiguration(proxyBeanMethods = false)
     static class PostgresConfiguration {
+
+        @Bean
+        DynamicPropertyRegistrar credenciaisDeTeste() {
+            return SegurancaHttpTeste::propriedades;
+        }
 
         @Bean
         @ServiceConnection

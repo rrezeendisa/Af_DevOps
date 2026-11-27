@@ -1,10 +1,6 @@
 package br.edu.facens.afdevops;
 
-import java.net.URI;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.concurrent.Callable;
@@ -44,7 +40,7 @@ class ColaboradorIntegrationTests {
     @Autowired
     private JdbcTemplate jdbc;
 
-    private final HttpClient http = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(5)).build();
+    private final SegurancaHttpTeste http = new SegurancaHttpTeste();
 
     @BeforeEach
     void limparTabela() {
@@ -198,17 +194,10 @@ class ColaboradorIntegrationTests {
     }
 
     private HttpResponse<String> post(String body) throws Exception {
-        var request = request(ROTA).header("Content-Type", "application/json")
-                .POST(HttpRequest.BodyPublishers.ofString(body)).build();
-        return http.send(request, HttpResponse.BodyHandlers.ofString());
+        return http.post(port, ROTA, body, SegurancaHttpTeste.admin(), http.obterCsrf(port));
     }
 
     private HttpResponse<String> get(String path) throws Exception {
-        return http.send(request(path).GET().build(), HttpResponse.BodyHandlers.ofString());
-    }
-
-    private HttpRequest.Builder request(String path) {
-        return HttpRequest.newBuilder(URI.create("http://localhost:" + port + path))
-                .timeout(Duration.ofSeconds(12));
+        return http.get(port, path, SegurancaHttpTeste.admin());
     }
 }
