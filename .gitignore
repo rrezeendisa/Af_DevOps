@@ -18,3 +18,7 @@ __pycache__/
 !.env.example
 *.pem
 *.key
+
+# Ambientes virtuais Python
+.venv/
+venv/
