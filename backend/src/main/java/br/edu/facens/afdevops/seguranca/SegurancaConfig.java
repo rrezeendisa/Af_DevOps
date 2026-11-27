@@ -71,7 +71,10 @@ class SegurancaConfig {
                         .requestMatchers(HttpMethod.GET, "/api/cursos", "/api/cursos/{id}", "/api/me", "/api/csrf")
                                 .hasAnyRole("ADMIN", "COLABORADOR")
                         .requestMatchers(rotas.matcher(HttpMethod.GET, "/api/me/consentimento"),
-                                rotas.matcher(HttpMethod.PUT, "/api/me/consentimento"))
+                                rotas.matcher(HttpMethod.PUT, "/api/me/consentimento"),
+                                rotas.matcher(HttpMethod.POST, "/api/ia/classificacoes"),
+                                rotas.matcher(HttpMethod.POST, "/api/ia/recomendacoes"),
+                                rotas.matcher(HttpMethod.POST, "/api/ia/orientacoes"))
                                 .access((autenticacao, contexto) -> new AuthorizationDecision(
                                         autenticacao.get().getPrincipal() instanceof ContaAutenticada))
                         .anyRequest().denyAll())
