@@ -1,6 +1,8 @@
 import csv
 from collections import Counter
 
+import pytest
+
 from ml.constants import ALLOWED_LEVELS, FEATURES
 from ml.generate_dataset import generate_dataset
 from ml.train_model import train_model
@@ -35,3 +37,20 @@ def test_train_model_saves_artifact(tmp_path) -> None:
 
     assert result == artifact_path
     assert artifact_path.is_file()
+
+
+def test_failed_training_does_not_replace_existing_model(tmp_path, monkeypatch) -> None:
+    dataset_path = generate_dataset(tmp_path / "synthetic.csv")
+    artifact_path = tmp_path / "artifacts" / "classifier.joblib"
+    artifact_path.parent.mkdir(parents=True)
+    artifact_path.write_bytes(b"previous-valid-artifact")
+
+    def fail_dump(_artifact, _path):
+        raise OSError("simulated persistence failure")
+
+    monkeypatch.setattr("ml.train_model.joblib.dump", fail_dump)
+    with pytest.raises(OSError, match="simulated persistence failure"):
+        train_model(dataset_path=dataset_path, model_path=artifact_path)
+
+    assert artifact_path.read_bytes() == b"previous-valid-artifact"
+    assert not list(artifact_path.parent.glob("*.tmp"))

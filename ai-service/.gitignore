@@ -1,4 +1,4 @@
-﻿# Ambientes e caches Python
+# Ambientes e caches Python
 .venv/
 venv/
 __pycache__/
@@ -25,3 +25,8 @@ ml/artifacts/*.joblib
 # Sistema operacional
 .DS_Store
 Thumbs.db
+
+# Temporários gerados pelos testes e pelo worker
+.pytest-tmp/
+*.tmp
+ml/artifacts/*.json

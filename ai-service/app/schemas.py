@@ -18,3 +18,30 @@ class CompetenciasRequest(BaseModel):
 class ClassificacaoResponse(BaseModel):
     nivel: NivelCompetencia
     versao_modelo: str
+
+
+class RecomendacaoRequest(CompetenciasRequest):
+    nivel: NivelCompetencia
+
+
+class RecomendacaoItem(BaseModel):
+    curso_id: str
+    nome: str
+    justificativa: str
+
+
+class RecomendacaoResponse(BaseModel):
+    recomendacoes: list[RecomendacaoItem]
+    fontes: list[str]
+
+
+class OrientacaoRequest(BaseModel):
+    colaborador_id: str = Field(min_length=1, max_length=100, strict=True)
+    pergunta: str = Field(min_length=1, max_length=1000, strict=True)
+    competencias: CompetenciasRequest
+
+
+class OrientacaoResponse(BaseModel):
+    orientacao: str
+    cursos_recomendados: list[str]
+    fontes: list[str]

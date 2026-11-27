@@ -3,7 +3,11 @@
 from fastapi import FastAPI
 
 from app.classificacoes import router as classificacoes_router
+from app.guidance_agent import GuidanceAgent
 from app.model_service import ClassificationService
+from app.recomendacoes import router as recomendacoes_router
+from app.recommendation_service import RecommendationService
+from app.orientacoes import router as orientacoes_router
 
 
 @asynccontextmanager
@@ -12,6 +16,11 @@ async def lifespan(app: FastAPI):
         app.state.classification_service = ClassificationService.load()
     except FileNotFoundError as error:
         raise RuntimeError(str(error)) from error
+    app.state.recommendation_service = RecommendationService()
+    app.state.guidance_agent = GuidanceAgent(
+        classifier=app.state.classification_service,
+        recommender=app.state.recommendation_service,
+    )
     yield
 
 
@@ -23,6 +32,8 @@ app = FastAPI(
 )
 
 app.include_router(classificacoes_router)
+app.include_router(recomendacoes_router)
+app.include_router(orientacoes_router)
 
 
 @app.get("/health", tags=["Health"])

@@ -1,5 +1,7 @@
 import csv
+import os
 from pathlib import Path
+import tempfile
 
 import joblib
 from sklearn.tree import DecisionTreeClassifier
@@ -7,7 +9,8 @@ from sklearn.tree import DecisionTreeClassifier
 from ml.constants import FEATURES, MODEL_VERSION
 from ml.generate_dataset import DATASET_PATH
 
-MODEL_PATH = Path(__file__).resolve().parent / "artifacts" / "classifier.joblib"
+DEFAULT_MODEL_PATH = Path(__file__).resolve().parent / "artifacts" / "classifier.joblib"
+MODEL_PATH = Path(os.getenv("MODEL_PATH", str(DEFAULT_MODEL_PATH))).expanduser()
 
 
 def train_model(
@@ -32,15 +35,26 @@ def train_model(
     estimator.fit(features, labels)
 
     model_path.parent.mkdir(parents=True, exist_ok=True)
-    joblib.dump(
-        {
-            "model": estimator,
-            "version": MODEL_VERSION,
-            "algorithm": "DecisionTreeClassifier",
-            "features": FEATURES,
-        },
-        model_path,
-    )
+    artifact = {
+        "model": estimator,
+        "version": MODEL_VERSION,
+        "algorithm": "DecisionTreeClassifier",
+        "features": FEATURES,
+    }
+    temporary_path: Path | None = None
+    try:
+        with tempfile.NamedTemporaryFile(
+            prefix=f"{model_path.stem}-",
+            suffix=".tmp",
+            dir=model_path.parent,
+            delete=False,
+        ) as temporary_file:
+            temporary_path = Path(temporary_file.name)
+        joblib.dump(artifact, temporary_path)
+        os.replace(temporary_path, model_path)
+    finally:
+        if temporary_path is not None and temporary_path.exists():
+            temporary_path.unlink()
     return model_path
 
 
