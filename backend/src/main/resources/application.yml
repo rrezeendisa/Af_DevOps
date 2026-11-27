@@ -1,4 +1,32 @@
+logging:
+  level:
+    # O agregador do Spring AI registra a exceção bruta. O adaptador registra somente o resultado da operação.
+    org.springframework.ai.chat.model.MessageAggregator: "OFF"
+
 spring:
+  ai:
+    model:
+      embedding: none
+    chat:
+      client:
+        tool-calling:
+          enabled: false
+        observations:
+          log-prompt: false
+          log-completion: false
+      observations:
+        log-prompt: false
+        log-completion: false
+    ollama:
+      base-url: "${OLLAMA_BASE_URL:http://127.0.0.1:11434}"
+      init:
+        pull-model-strategy: never
+      chat:
+        model: "${OLLAMA_MODEL:qwen2.5:1.5b}"
+        format: json
+        temperature: ${OLLAMA_TEMPERATURE:0.2}
+        num-predict: ${OLLAMA_NUM_PREDICT:128}
+        num-ctx: ${OLLAMA_NUM_CTX:1024}
   application:
     name: afdevops
   datasource:
@@ -22,6 +50,16 @@ spring:
     enabled: true
     locations: classpath:db/migration
     fail-on-missing-locations: false
+
+afdevops:
+  ia:
+    url: "${AI_SERVICE_URL:http://127.0.0.1:8000}"
+    token: "${INTERNAL_API_TOKEN:}"
+    timeout-conexao: "${AI_SERVICE_CONNECT_TIMEOUT:PT2S}"
+    timeout-leitura: "${AI_SERVICE_READ_TIMEOUT:PT5S}"
+    generativa:
+      habilitada: ${IA_GENERATIVA_HABILITADA:false}
+      timeout: "${OLLAMA_TIMEOUT:PT60S}"
 
 server:
   address: "${SERVER_ADDRESS:127.0.0.1}"

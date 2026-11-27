@@ -1,9 +1,11 @@
 # Backend AF-DevOps
 
 Este backend faz parte do AF-DevOps, uma plataforma de educação corporativa
-desenvolvida como atividade acadêmica de Engenharia de Computação. Seu objetivo
-é oferecer os serviços REST de cadastro e consulta de colaboradores e cursos,
-atendendo ao escopo atual do RF01.
+desenvolvida como atividade acadêmica de Engenharia de Computação. O backend
+oferece cadastro e consulta de colaboradores e cursos para o RF01 e integra
+os serviços de classificação, recomendação e orientação dos RF02, RF03 e RF04.
+Também controla o consentimento para uso da IA, complementa a orientação com
+Spring AI e acompanha solicitações de treinamento do RF05.
 
 A aplicação usa a arquitetura de monólito modular. Isso significa que os módulos
 compartilham a mesma aplicação Spring Boot e o mesmo banco de dados, mas cada
@@ -12,7 +14,7 @@ domínio mantém suas próprias entidades, regras e rotas.
 ## Organização do backend
 
 O código-fonte principal fica em `src/main/java/br/edu/facens/afdevops`. Os
-pacotes `colaborador`, `curso`, `identidade`, `consentimento` e `treinamento`
+pacotes `colaborador`, `curso`, `identidade`, `consentimento`, `ia` e `treinamento`
 agrupam as classes de cada domínio. O pacote `seguranca` define a
 autenticação, as permissões e a proteção CSRF. Dentro de
 cada módulo, os controllers recebem as requisições HTTP, os services aplicam as
@@ -28,8 +30,12 @@ integração.
 
 - Java 17 como versão de compilação, executado localmente com JDK 21.
 - Spring Boot 4.1.3.
+- Spring AI 2.0.3 para a geração complementar de próximos passos.
+- Ollama com o modelo Qwen 2.5 1.5B para geração de texto local.
 - Maven Wrapper 3.10.2.
 - PostgreSQL 17 para desenvolvimento.
+- RabbitMQ para mensageria das solicitações de treinamento.
+- Docker Compose para executar o ambiente integrado.
 - Flyway para aplicar as migrações do banco.
 - Testcontainers para iniciar um banco de dados temporário nos testes de integração.
 
@@ -188,9 +194,9 @@ curl http://127.0.0.1:8080/actuator/health
 Quando a aplicação está saudável, a resposta é HTTP 200 e contém o estado
 `UP`. Outros caminhos e métodos do Actuator retornam HTTP 404.
 
-Em uma futura configuração com Docker Compose, a equipe de infraestrutura
-deverá definir `SERVER_ADDRESS=0.0.0.0` dentro do container Java para permitir
-acesso pela rede do Compose. Antes de publicar a porta fora da máquina local,
+No ambiente integrado com Docker Compose, já validado, o backend usa
+`SERVER_ADDRESS=0.0.0.0` dentro do container Java para permitir o acesso pela
+rede do Compose. Antes de publicar a porta fora da máquina local,
 configure HTTPS e controle o acesso à rede. Mantenha as variáveis com hashes
 fora dos arquivos versionados.
 
@@ -221,6 +227,7 @@ backend não mantém sessão de autenticação.
 | `POST /api/cursos` e `POST /api/colaboradores/{id}/conta` | `ADMIN` |
 | `GET /api/cursos`, `GET /api/cursos/{id}`, `GET /api/csrf` e `GET /api/me` | `ADMIN` e `COLABORADOR` |
 | `GET /api/me/consentimento` e `PUT /api/me/consentimento` | `COLABORADOR` com conta individual |
+| `POST /api/ia/classificacoes`, `POST /api/ia/recomendacoes` e `POST /api/ia/orientacoes` | `COLABORADOR` com conta individual e consentimento concedido |
 | `POST /api/treinamentos`, `GET /api/treinamentos`, `GET /api/treinamentos/{id}` | `ADMIN` |
 | `PATCH /internal/treinamentos/{id}/status` | Serviço interno, com `Authorization: Bearer <INTERNAL_API_TOKEN>` |
 
@@ -492,8 +499,124 @@ Para revogar, use `{"autorizado":false}`. Até a primeira decisão, o retorno é
 data e hora. As respostas não são armazenadas em cache.
 
 O registro representa a decisão atual. Ele não constitui um histórico completo
-de auditoria nem garante conformidade legal. A verificação do consentimento
-antes de enviar dados à IA será implementada na próxima etapa.
+de auditoria nem garante conformidade legal. O backend verifica a decisão
+antes de cada chamada à IA. A revogação bloqueia novas chamadas, mas não
+interrompe aquelas que já começaram.
+
+## Integração com o serviço de IA
+
+As três rotas aceitam JSON e exigem HTTP Basic, cookie e token CSRF. As notas
+`logica`, `comunicacao` e `tecnologia` devem ser inteiros de 1 a 5. O backend
+rejeita campos extras, campos repetidos e parâmetros na URL. Ele obtém o ID
+do colaborador pela autenticação e só o envia ao Python na orientação.
+
+| Rota Java | Corpo JSON | Resposta `200` |
+| --- | --- | --- |
+| `POST /api/ia/classificacoes` | As três notas | `nivel` e `versaoModelo` |
+| `POST /api/ia/recomendacoes` | As três notas e `nivel` | `recomendacoes` com `cursoId`, `nome` e `justificativa`, além de `fontes` |
+| `POST /api/ia/orientacoes` | `pergunta` de 1 a 1.000 caracteres e as três notas dentro de `competencias` | `orientacao`, `cursosRecomendados`, `fontes` e, quando disponível, `proximosPassos` |
+
+O nível de competência é `INICIANTE`, `INTERMEDIARIO` ou `AVANCADO`. Códigos como
+`CURSO-001` identificam documentos no Python e não correspondem aos IDs
+numéricos do catálogo Java.
+
+Depois de conceder o consentimento, obtenha o CSRF com a conta individual.
+Use a mesma conta para enviar as três requisições.
+
+```sh
+if obter_csrf "$usuario_individual"; then
+  enviar_ia() {
+    curl -i --user "$usuario_individual" --cookie "$csrf_cookie" \
+      -H "X-XSRF-TOKEN: $csrf_token" -H 'Content-Type: application/json' \
+      --data "$2" "http://127.0.0.1:8080/api/ia/$1"
+  }
+  enviar_ia classificacoes '{"logica":1,"comunicacao":3,"tecnologia":5}'
+  enviar_ia recomendacoes '{"logica":1,"comunicacao":3,"tecnologia":5,"nivel":"INICIANTE"}'
+  enviar_ia orientacoes '{"pergunta":"Por onde começo?","competencias":{"logica":1,"comunicacao":3,"tecnologia":5}}'
+fi
+```
+
+| Variável | Uso |
+| --- | --- |
+| `AI_SERVICE_URL` | Endereço do FastAPI. O padrão local é `http://127.0.0.1:8000`. No Compose, o Java usa `http://ai-service:8000`. |
+| `AI_SERVICE_CONNECT_TIMEOUT` | Prazo de conexão. O padrão é `PT2S`, ou 2 segundos. |
+| `AI_SERVICE_READ_TIMEOUT` | Prazo de leitura. O padrão é `PT5S`, ou 5 segundos. |
+| `INTERNAL_API_TOKEN` | Bearer compartilhado usado na chamada Java → Python apenas para orientação. O contrato do worker permanece separado. |
+
+O Java usa `RestClient`, valida o JSON de resposta do FastAPI e não repete
+chamadas automaticamente. As respostas não são armazenadas em cache.
+O Java não repassa a autenticação do usuário nem o corpo de erros do Python.
+
+| HTTP | Código |
+| --- | --- |
+| 400 | `DADOS_INVALIDOS` |
+| 403 | `CONSENTIMENTO_IA_NECESSARIO` quando a decisão é negativa ou inexistente |
+| 502 | `IA_RESPOSTA_INVALIDA` quando o Python rejeita a solicitação ou responde fora do contrato |
+| 503 | `IA_INDISPONIVEL` em falhas de conexão, indisponibilidade do serviço ou falta do token para orientação |
+| 504 | `IA_TEMPO_LIMITE` quando a conexão ou a leitura excede o tempo limite |
+
+### Próximos passos com Spring AI
+
+A orientação base continua vindo do FastAPI. Quando a geração complementar
+está habilitada, o Java identifica o nível no texto e consulta o consentimento
+novamente antes de chamar o Ollama pelo `ChatClient`. O modelo recebe apenas
+uma frase montada pelo Java com um dos três níveis conhecidos. A pergunta,
+as notas, os identificadores, os cursos e as fontes ficam fora dessa chamada.
+
+A geração depende do formato textual atual do Python. Ele começa por
+“A classificação estimada pelo modelo é”, seguido pelo nível, e termina
+com a lista de recomendações ou com a informação de que não há cursos
+compatíveis. Se o formato mudar, o Java ainda retorna a orientação original
+com os cursos e as fontes. O mesmo vale para consentimento revogado, Ollama
+indisponível, tempo limite atingido ou resposta inválida. Nesses casos o
+campo `proximosPassos` é omitido.
+
+Quando presente, `proximosPassos` tem de uma a três sugestões curtas em texto.
+O backend não executa o conteúdo gerado. O tempo limite vale para a geração
+inteira, incluindo a leitura dos fragmentos. A integração não baixa modelos
+automaticamente e não precisa do Ollama para iniciar.
+
+| Variável | Padrão |
+| --- | --- |
+| `IA_GENERATIVA_HABILITADA` | `false` |
+| `OLLAMA_BASE_URL` | `http://127.0.0.1:11434` no macOS e `http://host.docker.internal:11434` no Compose |
+| `OLLAMA_MODEL` | `qwen2.5:1.5b` |
+| `OLLAMA_TEMPERATURE` | `0.2` |
+| `OLLAMA_NUM_PREDICT` | `128` tokens de saída |
+| `OLLAMA_NUM_CTX` | `1024` tokens de contexto |
+| `OLLAMA_TIMEOUT` | `PT60S`, ou 60 segundos |
+
+Para validar localmente com o Ollama instalado no macOS, inicie o serviço
+em outro terminal com `ollama serve` caso ele ainda não esteja em execução.
+Confira se o modelo já está disponível.
+
+```sh
+ollama list
+curl --fail --silent --show-error http://127.0.0.1:11434/api/tags
+```
+
+Para iniciar o backend em Java diretamente no macOS, use a configuração
+local de banco, contas e FastAPI descrita neste README.
+
+```sh
+cd backend
+IA_GENERATIVA_HABILITADA=true OLLAMA_BASE_URL=http://127.0.0.1:11434 \
+  OLLAMA_MODEL=qwen2.5:1.5b ./mvnw spring-boot:run
+```
+
+Para validar com o backend no Docker e o Ollama nativo no macOS, execute
+na raiz do repositório.
+
+```sh
+IA_GENERATIVA_HABILITADA=true OLLAMA_BASE_URL=http://host.docker.internal:11434 \
+  OLLAMA_MODEL=qwen2.5:1.5b docker compose up -d --build --wait
+```
+
+Com uma conta individual que autorizou o uso da IA, chame a rota de orientação
+e confira `proximosPassos` junto aos campos originais. Com o Ollama
+indisponível, repita a chamada e confira o retorno da orientação base sem o
+campo complementar. A configuração reproduzível para a entrega será alinhada
+na etapa de infraestrutura.
 
 ## Cursos
 
@@ -559,6 +682,26 @@ módulo usam RabbitMQ real via Testcontainers.
 
 ## Última validação
 
+Em 27/11/2026, 255 testes automatizados foram aprovados antes do ajuste final
+do prompt. Após o ajuste para educação corporativa, 24 testes específicos
+foram aprovados. Os relatórios do Maven Surefire também registram uma execução
+completa posterior ao ajuste, com 255 testes aprovados, sem falhas, erros ou
+testes ignorados. A integração REST com o FastAPI real foi validada nas três
+rotas de IA.
+
+Na validação real da orientação, o Spring AI usou o `ChatClient`, o Ollama
+e o modelo `qwen2.5:1.5b`. A resposta preservou a orientação original,
+os cursos e as fontes e acrescentou três próximos passos. A requisição levou
+7,747145 segundos, dos quais 7.304 ms foram registrados para a geração.
+
+Também foram validados o fallback para saída inválida e o fallback com o Ollama
+indisponível. Neste último caso, a resposta foi HTTP 200 sem `proximosPassos`.
+A requisição levou 0,383098 segundo, e a operação generativa registrou 15 ms.
+
+Após a revogação do consentimento, as três rotas retornaram HTTP 403 com o
+código `CONSENTIMENTO_IA_NECESSARIO`. Nenhuma nova entrada de geração foi
+registrada depois dessas solicitações bloqueadas.
+
 Em 27/11/2026, 186 testes automatizados foram aprovados, sem falhas, erros ou
 testes ignorados. O ambiente integrado iniciou com Docker Compose. Também foram
 validados manualmente o cadastro de colaboradores, a criação e autenticação de
@@ -575,7 +718,14 @@ ou troca de senha pela API. HTTP Basic deve ser usado com dados
 fictícios em ambiente controlado. Fora da máquina local, use HTTPS, pois o
 cabeçalho de autenticação contém credenciais codificadas em Base64.
 
-As listagens não têm paginação. O backend Java ainda não tem integração
-funcional com o serviço de IA. A verificação efetiva do consentimento antes
-das chamadas ao serviço de IA será implementada na próxima etapa. O desempenho
-sob carga ainda não foi medido.
+As listagens não têm paginação e o desempenho sob carga ainda não foi medido.
+Os tempos registrados acima correspondem a requisições individuais. O RNF01
+ainda precisa ser validado.
+A verificação de consentimento se aplica às chamadas feitas pelo backend Java.
+O FastAPI mantém a porta de desenvolvimento publicada em `127.0.0.1`.
+Chamadas diretas a classificação e recomendações no FastAPI não passam pela
+autenticação nem pela verificação de consentimento do Java. O acesso direto
+ao FastAPI ainda precisa ser restringido.
+
+A orientação base usa o texto determinístico do Python. As sugestões do
+modelo local complementam esse texto e podem variar entre chamadas.
