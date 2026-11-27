@@ -38,11 +38,15 @@ final class SegurancaHttpTeste {
         return basic(COLABORADOR.nome(), COLABORADOR.senha());
     }
 
+    static String nomeColaboradorDemonstracao() {
+        return COLABORADOR.nome();
+    }
+
     static String senhaErrada() {
         return basic(ADMIN.nome(), UUID.randomUUID().toString());
     }
 
-    private static String basic(String nome, String senha) {
+    static String basic(String nome, String senha) {
         return "Basic " + Base64.getEncoder()
                 .encodeToString((nome + ":" + senha).getBytes(StandardCharsets.UTF_8));
     }
@@ -62,7 +66,11 @@ final class SegurancaHttpTeste {
     }
 
     TokenCsrf obterCsrf(int porta) throws Exception {
-        var resposta = get(porta, "/api/csrf", admin());
+        return obterCsrf(porta, admin());
+    }
+
+    TokenCsrf obterCsrf(int porta, String credencial) throws Exception {
+        var resposta = get(porta, "/api/csrf", credencial);
         if (resposta.statusCode() != 200) {
             throw new AssertionError("Esperado HTTP 200 em /api/csrf, recebido " + resposta.statusCode());
         }
@@ -76,11 +84,21 @@ final class SegurancaHttpTeste {
 
     HttpResponse<String> post(int porta, String rota, String corpo, String credencial, TokenCsrf csrf)
             throws Exception {
+        return escrever("POST", porta, rota, corpo, credencial, csrf);
+    }
+
+    HttpResponse<String> put(int porta, String rota, String corpo, String credencial, TokenCsrf csrf)
+            throws Exception {
+        return escrever("PUT", porta, rota, corpo, credencial, csrf);
+    }
+
+    private HttpResponse<String> escrever(String metodo, int porta, String rota, String corpo, String credencial,
+            TokenCsrf csrf) throws Exception {
         var pedido = request(porta, rota, credencial).header("Content-Type", "application/json");
         if (csrf != null) {
             pedido.header("Cookie", csrf.cookie()).header(csrf.cabecalho(), csrf.token());
         }
-        return enviar(pedido.POST(HttpRequest.BodyPublishers.ofString(corpo)).build());
+        return enviar(pedido.method(metodo, HttpRequest.BodyPublishers.ofString(corpo)).build());
     }
 
     record TokenCsrf(String cookie, String cabecalho, String token) {

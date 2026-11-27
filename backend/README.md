@@ -12,8 +12,9 @@ domínio mantém suas próprias entidades, regras e rotas.
 ## Organização do backend
 
 O código-fonte principal fica em `src/main/java/br/edu/facens/afdevops`. Os
-pacotes `colaborador` e `curso` agrupam as classes de cada domínio. O pacote
-`seguranca` define a autenticação, as permissões e a proteção CSRF. Dentro de
+pacotes `colaborador`, `curso`, `identidade`, `consentimento` e `treinamento`
+agrupam as classes de cada domínio. O pacote `seguranca` define a
+autenticação, as permissões e a proteção CSRF. Dentro de
 cada módulo, os controllers recebem as requisições HTTP, os services aplicam as
 regras, os repositories acessam o banco, as entidades representam os dados
 persistidos e os DTOs definem os dados recebidos e enviados pela API.
@@ -40,8 +41,8 @@ Spring Data JPA, Bean Validation e Spring Security. O projeto não utiliza Lombo
 Instale o JDK 21 e o Docker Desktop. Na primeira execução, será necessário
 acesso à internet para baixar o Maven, as dependências e a imagem PostgreSQL
 usada pelos testes. Para executar a aplicação localmente, também é preciso ter
-o PostgreSQL 17 disponível. Os exemplos de segurança também exigem `htpasswd`
-e `jq`.
+o PostgreSQL 17 disponível. Os exemplos de segurança usam `htpasswd` e `jq`.
+O exemplo de conta individual também pode usar Node.js no lugar de `jq`.
 
 A conexão local usa as variáveis abaixo. Os valores indicados são padrões para
 desenvolvimento. A senha deve ser fornecida pelo ambiente.
@@ -199,7 +200,9 @@ O Flyway aplica os scripts versionados em
 `src/main/resources/db/migration`. A migração V1 cria a tabela de
 colaboradores e um índice que mantém os e-mails únicos, sem diferenciar letras
 maiúsculas de minúsculas. A migração V2 cria a tabela de cursos e as restrições
-para carga horária e nível. Migrações já aplicadas não devem ser editadas.
+para carga horária e nível. A V3 cria as solicitações de treinamento. A V4
+cria as contas individuais e a tabela de decisões de consentimento para IA.
+Migrações já aplicadas não devem ser editadas.
 
 O Hibernate verifica se o esquema do banco corresponde às entidades, usando
 `ddl-auto: validate`. A opção open-in-view: false evita manter o contexto de persistência aberto durante toda a requisição HTTP. O driver PostgreSQL omite detalhes de erro do
@@ -215,8 +218,9 @@ backend não mantém sessão de autenticação.
 | --- | --- |
 | `GET /actuator/health` | Público |
 | `GET /api/colaboradores`, `GET /api/colaboradores/{id}`, `POST /api/colaboradores` | `ADMIN` |
-| `POST /api/cursos` e `GET /api/csrf` | `ADMIN` |
-| `GET /api/cursos` e `GET /api/cursos/{id}` | `ADMIN` e `COLABORADOR` |
+| `POST /api/cursos` e `POST /api/colaboradores/{id}/conta` | `ADMIN` |
+| `GET /api/cursos`, `GET /api/cursos/{id}`, `GET /api/csrf` e `GET /api/me` | `ADMIN` e `COLABORADOR` |
+| `GET /api/me/consentimento` e `PUT /api/me/consentimento` | `COLABORADOR` com conta individual |
 | `POST /api/treinamentos`, `GET /api/treinamentos`, `GET /api/treinamentos/{id}` | `ADMIN` |
 | `PATCH /internal/treinamentos/{id}/status` | Serviço interno, com `Authorization: Bearer <INTERNAL_API_TOKEN>` |
 
@@ -232,13 +236,14 @@ configurados para suas contas.
 
 As respostas acima usam `application/problem+json` e incluem o campo
 `codigo`. A resposta 401 também inclui `WWW-Authenticate: Basic realm="AF-DevOps"`.
-Nos cadastros, a proteção CSRF é verificada antes da autenticação. Se faltar o
+Nas operações de escrita, a proteção CSRF é verificada antes da autenticação. Se faltar o
 token ou o cookie correspondente, a resposta será 403 mesmo sem credenciais.
 
-### Token CSRF para cadastrar
+### Token CSRF para operações de escrita
 
-Antes de enviar um `POST`, obtenha o token com uma chamada autenticada de
-`ADMIN` a `GET /api/csrf`. A resposta fornece um cookie `XSRF-TOKEN` e um
+Antes de enviar um `POST` ou `PUT`, obtenha o token com uma chamada autenticada
+a `GET /api/csrf`. O acesso agora é permitido para `ADMIN` e `COLABORADOR`.
+A resposta fornece um cookie `XSRF-TOKEN` e um
 JSON com `headerName` e `token`. Envie o cookie e o valor de `token` no
 cabeçalho `X-XSRF-TOKEN`, além das credenciais HTTP Basic. Use o valor do
 JSON no cabeçalho, pois ele vem mascarado pelo Spring Security.
@@ -250,10 +255,13 @@ arquivo temporário até concluir os exemplos.
 
 ```sh
 obter_csrf() {
-  local arquivo resposta token
+  local usuario="${1:-$AFDEVOPS_ADMIN_USERNAME}" arquivo resposta token
+  if [[ -n "${csrf_cookie:-}" ]]; then
+    rm -f "$csrf_cookie"
+  fi
   unset csrf_cookie csrf_token
   arquivo="$(mktemp)" || { printf '%s\n' 'Não foi possível criar o arquivo temporário.' >&2; return 1; }
-  resposta="$(curl --fail --silent --show-error --user "$AFDEVOPS_ADMIN_USERNAME" \
+  resposta="$(curl --fail --silent --show-error --user "$usuario" \
     --cookie-jar "$arquivo" http://127.0.0.1:8080/api/csrf)" || {
       rm -f "$arquivo"
       printf '%s\n' 'Não foi possível obter o token CSRF.' >&2
@@ -341,6 +349,152 @@ Troque `1` pelo ID retornado no cadastro. Os erros usam
 | 409 Conflict | `EMAIL_DUPLICADO` |
 | 404 Not Found | `COLABORADOR_NAO_ENCONTRADO` |
 
+## Conta individual e identidade
+
+O administrador pode criar uma conta para um colaborador já cadastrado.
+Informe `nomeUsuario` e `senhaInicial` no corpo JSON. O nome aceita de 1 a 64
+letras ASCII, números, pontos, hífens ou sublinhados. O backend salva o nome
+em minúsculas e reserva os nomes das contas de demonstração. A senha deve
+ter pelo menos 12 caracteres, ocupar até 72 bytes em UTF-8 e conter ao menos
+um caractere que não seja espaço em branco. O backend guarda somente o hash
+BCrypt com custo 12.
+
+Antes dos exemplos, informe o usuário e a senha administrativa em variáveis
+locais do Bash. A senha é lida sem aparecer na tela, no histórico ou nos
+argumentos dos processos. Mantenha esse terminal aberto durante os comandos.
+
+```sh
+read -r -p 'Usuário ADMIN: ' AFDEVOPS_ADMIN_USERNAME
+read -rs -p 'Senha ADMIN: ' AFDEVOPS_ADMIN_PASSWORD
+printf '\n'
+export AFDEVOPS_ADMIN_USERNAME AFDEVOPS_ADMIN_PASSWORD
+```
+
+O curl receberá a senha pela entrada padrão usando uma configuração temporária
+com permissão restrita, removida ao final. Defina esta função uma vez no mesmo
+terminal. Ela também permite usar `jq` ou Node.js para conferir e extrair o
+token CSRF.
+
+```sh
+curl_seguro() {
+  local arquivo status
+  arquivo="$(mktemp)" || return 1
+  chmod 600 "$arquivo" || { rm -f "$arquivo"; return 1; }
+  printf 'user = "%s:%s"\n' "$AFDEVOPS_ADMIN_USERNAME" "$AFDEVOPS_ADMIN_PASSWORD" > "$arquivo"
+  curl --config "$arquivo" "$@"
+  status=$?
+  rm -f "$arquivo"
+  return "$status"
+}
+
+extrair_token_csrf() {
+  if command -v jq >/dev/null 2>&1; then
+    jq -er 'select(.headerName == "X-XSRF-TOKEN") | .token | select(type == "string" and test("^[A-Za-z0-9_-]+$"))'
+  else
+    node -e '
+      let texto = "";
+      process.stdin.setEncoding("utf8");
+      process.stdin.on("data", parte => texto += parte);
+      process.stdin.on("end", () => {
+        try {
+          const resposta = JSON.parse(texto);
+          if (resposta.headerName !== "X-XSRF-TOKEN" ||
+              typeof resposta.token !== "string" ||
+              !/^[A-Za-z0-9_-]+$/.test(resposta.token)) process.exitCode = 1;
+          else process.stdout.write(resposta.token);
+        } catch { process.exitCode = 1; }
+      });
+    '
+  fi
+}
+```
+
+Substitua `1` pelo ID do colaborador. O exemplo abaixo usa `jq` para montar
+o JSON. Para usar Node.js, troque a linha indicada pela alternativa logo
+depois do exemplo.
+
+```sh
+(
+  set -o pipefail
+  resposta="$(curl_seguro --fail --silent --show-error --cookie-jar "$csrf_cookie" \
+    http://127.0.0.1:8080/api/csrf)" || exit 1
+  csrf_token="$(printf '%s' "$resposta" | extrair_token_csrf)" || exit 1
+  read -r -p 'Nome do usuário: ' usuario || exit 1
+  read -rs -p 'Senha inicial: ' senha || exit 1
+  printf '\n'
+  printf '%s\n' "$usuario" "$senha" |
+    jq -Rn '{nomeUsuario: input, senhaInicial: input}' |
+    curl_seguro -i --cookie "$csrf_cookie" \
+      -H "X-XSRF-TOKEN: $csrf_token" -H 'Content-Type: application/json' \
+      --data-binary @- http://127.0.0.1:8080/api/colaboradores/1/conta
+)
+```
+
+Para extrair o token CSRF com Node.js, use esta linha no lugar da linha
+`csrf_token=...` do exemplo. O comando confirma o cabeçalho esperado e rejeita
+respostas JSON inválidas ou tokens fora do formato antes de continuar.
+
+```sh
+csrf_token="$(printf '%s' "$resposta" | node -e '
+let texto = "";
+process.stdin.setEncoding("utf8");
+process.stdin.on("data", parte => texto += parte);
+process.stdin.on("end", () => {
+  try {
+    const resposta = JSON.parse(texto);
+    if (resposta.headerName !== "X-XSRF-TOKEN" ||
+        typeof resposta.token !== "string" ||
+        !/^[A-Za-z0-9_-]+$/.test(resposta.token)) process.exitCode = 1;
+    else process.stdout.write(resposta.token);
+  } catch { process.exitCode = 1; }
+});
+')"
+```
+
+O cadastro retorna HTTP 201 com o ID da conta, o nome de usuário, o perfil
+`COLABORADOR`, o ID do colaborador e a data de criação.
+
+| HTTP | Código |
+| --- | --- |
+| 400 Bad Request | `DADOS_INVALIDOS` |
+| 404 Not Found | `COLABORADOR_NAO_ENCONTRADO` |
+| 409 Conflict | `CONTA_DUPLICADA` ou `NOME_USUARIO_INDISPONIVEL` |
+
+O endpoint `GET /api/me` mostra o nome e o perfil da conta autenticada. Para
+uma conta individual, também mostra `colaboradorId`. A resposta não tem
+senha, hash ou token interno e não é armazenada em cache.
+
+```sh
+read -r -p 'Nome da conta individual: ' usuario_individual
+curl --user "$usuario_individual" http://127.0.0.1:8080/api/me
+```
+
+## Consentimento para IA
+
+A conta individual pode consultar, conceder ou revogar o próprio
+consentimento. O backend identifica o colaborador pela autenticação. O corpo
+do `PUT` aceita apenas `autorizado` com valor `true` ou `false`. Campos extras,
+repetidos ou com outros tipos retornam HTTP 400. Contas de demonstração
+recebem HTTP 403.
+
+```sh
+curl --user "$usuario_individual" http://127.0.0.1:8080/api/me/consentimento
+
+if obter_csrf "$usuario_individual"; then
+  curl -i --user "$usuario_individual" --cookie "$csrf_cookie" \
+    -X PUT -H "X-XSRF-TOKEN: $csrf_token" -H 'Content-Type: application/json' \
+    --data '{"autorizado":true}' http://127.0.0.1:8080/api/me/consentimento
+fi
+```
+
+Para revogar, use `{"autorizado":false}`. Até a primeira decisão, o retorno é
+`{"autorizado":false,"decididoEm":null}`. Cada decisão grava o valor atual e a
+data e hora. As respostas não são armazenadas em cache.
+
+O registro representa a decisão atual. Ele não constitui um histórico completo
+de auditoria nem garante conformidade legal. A verificação do consentimento
+antes de enviar dados à IA será implementada na próxima etapa.
+
 ## Cursos
 
 Os campos dos cursos foram definidos para atender às necessidades iniciais do projeto. O cadastro recebe
@@ -405,21 +559,23 @@ módulo usam RabbitMQ real via Testcontainers.
 
 ## Última validação
 
-Em 26/11/2026, a compilação completa e 127 testes foram aprovados localmente,
-sem falhas, erros ou testes ignorados. A suíte levou 1 minuto e 1 segundo.
-Também foram validados manualmente os endpoints, a autenticação dos dois perfis,
-as permissões, as respostas 401, 403 e 404, o fluxo CSRF e a persistência dos
-cadastros autorizados no PostgreSQL. O token CSRF foi obtido e validado com
-Node.js v26.13.1, sem instalar Homebrew ou outras ferramentas. Esse resultado
-é anterior às alterações documentais desta revisão.
+Em 27/11/2026, 186 testes automatizados foram aprovados, sem falhas, erros ou
+testes ignorados. O ambiente integrado iniciou com Docker Compose. Também foram
+validados manualmente o cadastro de colaboradores, a criação e autenticação de
+contas individuais, a identificação por `GET /api/me`, o consentimento negado
+por padrão, sua concessão e revogação e a persistência da decisão e do horário
+no PostgreSQL. Contas administrativas não conseguiram acessar o consentimento.
 
 ## Limitações atuais
 
-As contas em memória servem para demonstração e não identificam pessoas. Elas
-não têm vínculo com o cadastro de colaboradores. Para trocar senhas ou contas,
-atualize o ambiente e reinicie o backend. HTTP Basic deve ser usado com dados
+As contas em memória servem para demonstração e não têm vínculo com o
+cadastro de colaboradores. Para trocar as contas de demonstração, atualize o
+ambiente e reinicie o backend. Contas individuais ainda não têm recuperação
+ou troca de senha pela API. HTTP Basic deve ser usado com dados
 fictícios em ambiente controlado. Fora da máquina local, use HTTPS, pois o
 cabeçalho de autenticação contém credenciais codificadas em Base64.
 
 As listagens não têm paginação. O backend Java ainda não tem integração
-funcional com o serviço de IA nem verifica consentimento individual.
+funcional com o serviço de IA. A verificação efetiva do consentimento antes
+das chamadas ao serviço de IA será implementada na próxima etapa. O desempenho
+sob carga ainda não foi medido.

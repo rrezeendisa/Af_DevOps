@@ -73,9 +73,14 @@ class SegurancaIntegrationTests {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {COLABORADORES, COLABORADORES + "/-1", "/api/csrf"})
+    @ValueSource(strings = {COLABORADORES, COLABORADORES + "/-1"})
     void colaboradorNaoPodeLerRotasAdministrativas(String rota) throws Exception {
         assertProblema(http.get(porta, rota, colaborador()), 403, "ACESSO_NEGADO");
+    }
+
+    @Test
+    void colaboradorTambemPodeObterCsrf() throws Exception {
+        http.obterCsrf(porta, colaborador());
     }
 
     @Test
