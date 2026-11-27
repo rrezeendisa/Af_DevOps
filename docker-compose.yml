@@ -92,6 +92,10 @@ services:
       AFDEVOPS_ADMIN_PASSWORD_HASH: ${AFDEVOPS_ADMIN_PASSWORD_HASH:?Defina AFDEVOPS_ADMIN_PASSWORD_HASH no .env}
       AFDEVOPS_COLABORADOR_USERNAME: ${AFDEVOPS_COLABORADOR_USERNAME:?Defina AFDEVOPS_COLABORADOR_USERNAME no .env}
       AFDEVOPS_COLABORADOR_PASSWORD_HASH: ${AFDEVOPS_COLABORADOR_PASSWORD_HASH:?Defina AFDEVOPS_COLABORADOR_PASSWORD_HASH no .env}
+      # Publicação das solicitações de treinamento e rota interna do worker.
+      RABBITMQ_URL: amqp://${RABBITMQ_USER:-afdevops}:${RABBITMQ_PASSWORD:?Defina RABBITMQ_PASSWORD no .env}@rabbitmq:5672/%2F
+      RABBITMQ_HEALTH_ENABLED: "true"
+      INTERNAL_API_TOKEN: ${INTERNAL_API_TOKEN:?Defina INTERNAL_API_TOKEN no .env}
     ports:
       - "127.0.0.1:${BACKEND_PORT:-8080}:8080"
     networks:
@@ -100,6 +104,8 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+      rabbitmq-setup:
+        condition: service_completed_successfully
     healthcheck:
       test: ["CMD", "curl", "-fsS", "-o", "/dev/null", "http://127.0.0.1:8080/actuator/health"]
       interval: 10s

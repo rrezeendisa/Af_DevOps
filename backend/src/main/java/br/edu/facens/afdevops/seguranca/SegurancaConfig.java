@@ -43,8 +43,10 @@ class SegurancaConfig {
                         .requestMatchers(actuatorBloqueado).denyAll()
                         .dispatcherTypeMatchers(DispatcherType.ERROR).permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/csrf",
-                                "/api/colaboradores", "/api/colaboradores/{id}").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.POST, "/api/colaboradores", "/api/cursos").hasRole("ADMIN")
+                                "/api/colaboradores", "/api/colaboradores/{id}",
+                                "/api/treinamentos", "/api/treinamentos/{id}").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.POST, "/api/colaboradores", "/api/cursos",
+                                "/api/treinamentos").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.GET, "/api/cursos", "/api/cursos/{id}")
                                 .hasAnyRole("ADMIN", "COLABORADOR")
                         .anyRequest().denyAll())
