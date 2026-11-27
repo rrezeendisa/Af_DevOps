@@ -1,0 +1,164 @@
+# Ambiente integrado do AF-DevOps (Frente C — DevOps e QA).
+#
+# Uso:
+#   1. Gere o arquivo .env local:   ./scripts/gerar-env.sh
+#   2. Suba o ambiente:             docker compose up -d --build --wait
+#   3. Derrube (mantendo dados):    docker compose down
+#      Derrube e apague volumes:    docker compose down -v
+#
+# Segredos ficam somente no .env (ignorado pelo Git). As portas são publicadas
+# apenas em 127.0.0.1; o PostgreSQL não é publicado fora da rede interna.
+
+name: afdevops
+
+x-ai-service-build: &ai-service-build
+  context: ./ai-service
+  dockerfile: Dockerfile
+
+services:
+  postgres:
+    image: postgres:17
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${DB_NAME:-afdevops}
+      POSTGRES_USER: ${DB_USERNAME:-afdevops}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?Defina DB_PASSWORD no .env}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - dados
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U \"$${POSTGRES_USER}\" -d \"$${POSTGRES_DB}\""]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  rabbitmq:
+    image: rabbitmq:4.1-management
+    # O nome do nó (e o diretório de dados) depende do hostname; fixá-lo
+    # preserva filas e mensagens duráveis entre recriações do container.
+    hostname: rabbitmq
+    restart: unless-stopped
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-afdevops}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:?Defina RABBITMQ_PASSWORD no .env}
+    ports:
+      - "127.0.0.1:${RABBITMQ_AMQP_PORT:-5672}:5672"
+      - "127.0.0.1:${RABBITMQ_MANAGEMENT_PORT:-15672}:15672"
+    volumes:
+      - rabbitmq-data:/var/lib/rabbitmq
+    networks:
+      - servicos
+    # Testa as portas AMQP e de gerenciamento sem usar a CLI do RabbitMQ: o
+    # healthcheck roda como root e a CLI criaria um .erlang.cookie com dono
+    # root antes do broker, impedindo a inicialização (erro eacces).
+    healthcheck:
+      test: ["CMD", "bash", "-c", "exec 3<>/dev/tcp/127.0.0.1/5672 && exec 4<>/dev/tcp/127.0.0.1/15672"]
+      interval: 10s
+      timeout: 10s
+      retries: 18
+      start_period: 20s
+
+  # Job único: aplica exchange, filas, binding e políticas (infra/rabbitmq).
+  rabbitmq-setup:
+    image: curlimages/curl:8.11.1
+    entrypoint: ["sh", "/definitions/setup.sh"]
+    restart: "no"
+    environment:
+      RABBITMQ_USER: ${RABBITMQ_USER:-afdevops}
+      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD:?Defina RABBITMQ_PASSWORD no .env}
+      RABBITMQ_MANAGEMENT_URL: http://rabbitmq:15672
+    volumes:
+      - ./infra/rabbitmq:/definitions:ro
+    networks:
+      - servicos
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+
+  backend:
+    build:
+      context: ./backend
+    image: afdevops-backend:local
+    restart: unless-stopped
+    environment:
+      SERVER_ADDRESS: 0.0.0.0
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: ${DB_NAME:-afdevops}
+      DB_USERNAME: ${DB_USERNAME:-afdevops}
+      DB_PASSWORD: ${DB_PASSWORD:?Defina DB_PASSWORD no .env}
+      AFDEVOPS_ADMIN_USERNAME: ${AFDEVOPS_ADMIN_USERNAME:?Defina AFDEVOPS_ADMIN_USERNAME no .env}
+      AFDEVOPS_ADMIN_PASSWORD_HASH: ${AFDEVOPS_ADMIN_PASSWORD_HASH:?Defina AFDEVOPS_ADMIN_PASSWORD_HASH no .env}
+      AFDEVOPS_COLABORADOR_USERNAME: ${AFDEVOPS_COLABORADOR_USERNAME:?Defina AFDEVOPS_COLABORADOR_USERNAME no .env}
+      AFDEVOPS_COLABORADOR_PASSWORD_HASH: ${AFDEVOPS_COLABORADOR_PASSWORD_HASH:?Defina AFDEVOPS_COLABORADOR_PASSWORD_HASH no .env}
+    ports:
+      - "127.0.0.1:${BACKEND_PORT:-8080}:8080"
+    networks:
+      - dados
+      - servicos
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "-o", "/dev/null", "http://127.0.0.1:8080/actuator/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 18
+      start_period: 40s
+
+  ai-service:
+    build: *ai-service-build
+    image: afdevops-ai-service:local
+    command: ["api"]
+    restart: unless-stopped
+    environment:
+      INTERNAL_API_TOKEN: ${INTERNAL_API_TOKEN:?Defina INTERNAL_API_TOKEN no .env}
+    ports:
+      - "127.0.0.1:${AI_SERVICE_PORT:-8000}:8000"
+    volumes:
+      - ai-artifacts:/data/artifacts
+    networks:
+      - servicos
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=3)"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
+
+  ai-worker:
+    build: *ai-service-build
+    image: afdevops-ai-service:local
+    command: ["worker"]
+    restart: unless-stopped
+    environment:
+      RABBITMQ_URL: amqp://${RABBITMQ_USER:-afdevops}:${RABBITMQ_PASSWORD:?Defina RABBITMQ_PASSWORD no .env}@rabbitmq:5672/%2F
+      JAVA_BACKEND_URL: http://backend:8080
+      INTERNAL_API_TOKEN: ${INTERNAL_API_TOKEN:?Defina INTERNAL_API_TOKEN no .env}
+      MAX_MESSAGE_RETRIES: ${MAX_MESSAGE_RETRIES:-3}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+    # Mesmo volume da API: o modelo treinado pelo worker e o ledger de
+    # idempotência sobrevivem à recriação dos containers.
+    volumes:
+      - ai-artifacts:/data/artifacts
+    networks:
+      - servicos
+    depends_on:
+      rabbitmq-setup:
+        condition: service_completed_successfully
+      backend:
+        condition: service_healthy
+      ai-service:
+        condition: service_healthy
+
+networks:
+  # Rede interna: somente backend e PostgreSQL, sem acesso externo.
+  dados:
+    internal: true
+  servicos:
+
+volumes:
+  postgres-data:
+  rabbitmq-data:
+  ai-artifacts:
