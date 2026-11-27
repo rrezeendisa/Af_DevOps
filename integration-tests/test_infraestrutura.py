@@ -1,5 +1,5 @@
 """Saúde dos serviços e topologia RabbitMQ combinada entre as frentes."""
-from conftest import Ambiente
+from conftest import Ambiente, aguardar
 
 EXCHANGE = "ml.training"
 ROUTING_KEY = "training.requested"
@@ -40,5 +40,5 @@ def test_binding_da_routing_key(rabbit):
 
 
 def test_worker_consumindo_a_fila(rabbit):
-    fila = rabbit.get(f"/queues/%2F/{FILA}").json()
-    assert fila["consumers"] >= 1, "O worker do ai-service não está consumindo a fila."
+    consumidores = aguardar(lambda: rabbit.get(f"/queues/%2F/{FILA}").json()["consumers"])
+    assert consumidores >= 1, "O worker do ai-service não está consumindo a fila."
