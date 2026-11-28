@@ -334,6 +334,11 @@ Em `forced-colors`, o gradiente é removido. As fichas `.vidro` têm opacidade d
   preenchem) e campo arredondado, centralizados com um único halo. Com conversa, só a pergunta e a
   resposta atuais, e o campo fixo na base. Mascote: acenando nas boas-vindas e na resposta, pensativo no
   processamento; erro sem mascote.
+- **Competências:** um só cartão com três linhas (ícone em lima, rosa ou lilás) e cinco rádios; ações
+  embaixo, à direita. Resultado em superfície branca (`.fundo-resultado`), com notas, radar decorativo e
+  mascote comemorando. “Limpar” descarta notas e resultados.
+- **Recomendações:** cartões horizontais, um por linha. Foto ilustrativa escolhida por palavras do nome;
+  sem categoria, nível, carga horária ou fonte por curso, que a API não informa.
 - **Tela de entrada:** um cartão central (28 px, até 1200 px), formulário à esquerda em superfície
   quase opaca e painel visual à direita a partir de `lg`. Botão principal em gradiente
   `primary` → `neon-violet` com texto escuro (5,1:1 no extremo violeta). Sem recursos que não existem

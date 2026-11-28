@@ -1,5 +1,6 @@
 import { act, screen, within } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
+import { urlDaFoto } from '@/components/arte/fotos'
 import { chamadas, corpoEnviado, json, renderizarAutenticado, type RotasSimuladas } from '@/test/app'
 
 // Respostas simuladas existem somente nestes testes.
@@ -49,7 +50,7 @@ async function avaliarEIr(usuario: ReturnType<typeof abrir>['usuario'], notas: [
   }
   await usuario.click(screen.getByRole('button', { name: 'Classificar' }))
   await usuario.click(await screen.findByRole('link', { name: 'Ver recomendações' }))
-  await screen.findByRole('heading', { level: 1, name: 'Recomendações' })
+  await screen.findByRole('heading', { level: 1, name: 'Recomendações para você' })
 }
 
 describe('recomendações', () => {
@@ -81,6 +82,15 @@ describe('recomendações', () => {
     expect(posts(fetchMock, '/api/ia/recomendacoes')).toBe(1)
   })
 
+  it('um só curso, sem categoria, nível ou carga horária inventados e sem fonte atribuída a ele', async () => {
+    const { usuario } = abrir({ 'POST /api/ia/recomendacoes': () => json({ recomendacoes: [RECOMENDACOES.recomendacoes[0]], fontes: ['curso-001.md'] }) })
+    await avaliarEIr(usuario)
+    await usuario.click(screen.getByRole('button', { name: 'Gerar recomendações' }))
+    const cartao = within(await screen.findByRole('list', { name: 'Cursos recomendados' })).getByRole('article')
+    expect(cartao.textContent).not.toMatch(/\.md|Básico|Intermediário|Avançado|\d+\s?h\b/)
+    expect(within(cartao).queryByRole('link')).toBeNull()
+  })
+
   it('lista vazia e sem fontes têm estados próprios', async () => {
     const { usuario } = abrir({ 'POST /api/ia/recomendacoes': () => json({ recomendacoes: [], fontes: [] }) })
     await avaliarEIr(usuario)
@@ -99,8 +109,14 @@ describe('recomendações', () => {
     await usuario.click(screen.getByRole('button', { name: 'Gerar recomendações' }))
     expect(await screen.findByText(html, { selector: 'p' })).toBeInTheDocument()
     expect(screen.getByText('Curso <script>x</script>')).toBeInTheDocument()
-    // Só o conteúdo da página: a assinatura da marca, na navegação, é uma imagem legítima.
-    expect(container.querySelector('main')!.querySelector('img, b, script, i')).toBeNull()
+    // Só o conteúdo da página. As únicas imagens aceitas são as fotografias da própria interface.
+    const conteudo = container.querySelector('main')!
+    expect(conteudo.querySelector('b, script, i, [onerror]')).toBeNull()
+    const permitidas = (['area-tecnologia', 'capa-seguranca', 'area-comunicacao', 'area-logica', 'experiencia-estudo'] as const).map((nome) => urlDaFoto(nome))
+    for (const imagem of conteudo.querySelectorAll('img')) {
+      expect(permitidas).toContain(imagem.getAttribute('src'))
+      expect(imagem.getAttribute('alt')).toBe('')
+    }
   })
 
   it('alterar uma nota descarta classificação e recomendações', async () => {

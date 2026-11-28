@@ -3,7 +3,7 @@ import type { CampoCompetencia, Classificacao, Competencias, Nota, Orientacao, R
 
 export type OperacaoIa = 'classificacao' | 'recomendacoes' | 'orientacao'
 
-export type AvisoJornada = 'revogado' | 'consentimento-necessario' | 'orientacao-cancelada'
+export type AvisoJornada = 'revogado' | 'consentimento-necessario' | 'orientacao-cancelada' | 'avaliacao-limpa'
 
 /**
  * Jornada de IA da sessão atual. Vive só em memória, dentro do `AppShell`, com `key` igual à

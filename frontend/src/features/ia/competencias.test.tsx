@@ -85,6 +85,25 @@ describe('classificação de competências', () => {
     expect(within(resultado).getByRole('link', { name: 'Ver recomendações' })).toHaveAttribute('href', '/recomendacoes')
   })
 
+  it('mostra as notas informadas no resultado e “Limpar” apaga notas e resultado sem chamar a IA', async () => {
+    const { usuario, fetchMock } = abrir({ 'POST /api/ia/classificacoes': () => json(CLASSIFICACAO) })
+    await screen.findByRole('button', { name: 'Classificar' })
+    expect(screen.getByRole('button', { name: 'Limpar' })).toBeDisabled()
+    await escolher(usuario, 2, 4, 3)
+    await usuario.click(screen.getByRole('button', { name: 'Classificar' }))
+    const resultado = await screen.findByRole('region', { name: 'Nível estimado' })
+    expect(resultado).toHaveTextContent('Lógica2Comunicação4Tecnologia3')
+
+    await usuario.click(screen.getByRole('button', { name: 'Limpar' }))
+    expect(screen.queryByRole('region', { name: 'Nível estimado' })).toBeNull()
+    expect(screen.getAllByRole('radio').filter((r) => (r as HTMLInputElement).checked)).toHaveLength(0)
+    expect(screen.getByRole('button', { name: 'Classificar' })).toBeDisabled()
+    expect(posts(fetchMock)).toBe(1)
+    expect(screen.queryByRole('alert')).toBeNull()
+    expect(within(grupo('Lógica')).getByRole('radio', { name: '1' })).toHaveFocus()
+    expect(screen.getByText('Avaliação limpa.')).toHaveAttribute('role', 'status')
+  })
+
   it('alterar uma nota descarta o resultado anterior', async () => {
     const { usuario } = abrir({ 'POST /api/ia/classificacoes': () => json(CLASSIFICACAO) })
     await screen.findByRole('button', { name: 'Classificar' })

@@ -420,3 +420,9 @@
     background-image: radial-gradient(ellipse 46% 27% at 50% 29%, var(--luz-violeta), transparent 100%);
   }
 }
+@layer components {
+  /* Competências e recomendações: iluminação lilás só num canto da superfície branca. */
+  .fundo-resultado {
+    background-image: radial-gradient(ellipse 50% 70% at 100% 0%, var(--luz-violeta), transparent 100%);
+  }
+}

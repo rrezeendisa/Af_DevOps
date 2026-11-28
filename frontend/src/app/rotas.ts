@@ -80,8 +80,7 @@ export const ROTAS: readonly Rota[] = [
   },
   {
     caminho: '/competencias',
-    titulo: 'Competências',
-    rotuloNav: 'Minhas competências',
+    titulo: 'Minhas competências',
     icone: ChartNoAxesColumn,
     permitir: INDIVIDUAL,
     situacao: 'disponivel',
