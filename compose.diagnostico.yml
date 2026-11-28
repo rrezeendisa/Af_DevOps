@@ -1,0 +1,20 @@
+# Exposição adicional apenas quando este arquivo for solicitado explicitamente.
+services:
+  backend:
+    ports:
+      - "127.0.0.1:${BACKEND_PORT:-8080}:8080"
+    networks:
+      - diagnostico
+  ai-service:
+    ports:
+      - "127.0.0.1:${AI_SERVICE_PORT:-8000}:8000"
+    networks:
+      - diagnostico
+  rabbitmq:
+    ports:
+      - "127.0.0.1:${RABBITMQ_MANAGEMENT_PORT:-15672}:15672"
+    networks:
+      - diagnostico
+
+networks:
+  diagnostico:
