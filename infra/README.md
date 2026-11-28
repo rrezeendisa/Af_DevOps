@@ -1,7 +1,7 @@
-# Infraestrutura e QA (Frente C)
+# Infraestrutura e testes integrados
 
-Este documento descreve o ambiente integrado, a mensageria das solicitações
-de treinamento, a pipeline e os testes integrados.
+Aqui descrevemos o ambiente em Docker, as filas de treinamento, a pipeline e os testes integrados. Para
+apenas executar a aplicação, siga o [README principal](../README.md#como-executar).
 
 ## Visão geral
 
@@ -84,8 +84,8 @@ gerados com o `htpasswd` da imagem `httpd`). O modelo comentado está em
 | `DB_NAME`, `DB_USERNAME`, `DB_PASSWORD` | PostgreSQL e backend |
 | `RABBITMQ_USER`, `RABBITMQ_PASSWORD` | Broker, setup, backend e worker (compõem a `RABBITMQ_URL`) |
 | `INTERNAL_API_TOKEN` | Backend (rota interna), ai-service (`/orientacoes`) e worker |
-| `AFDEVOPS_*_USERNAME`, `AFDEVOPS_*_PASSWORD_HASH` | Contas de demonstração do backend |
-| `E2E_ADMIN_PASSWORD`, `E2E_COLABORADOR_PASSWORD` | Somente testes integrados |
+| `AFDEVOPS_*_USERNAME`, `AFDEVOPS_*_PASSWORD_HASH` | Contas de administrador e de demonstração |
+| `E2E_ADMIN_PASSWORD`, `E2E_COLABORADOR_PASSWORD` | Senhas dessas contas, usadas pelos testes integrados e pelo script do catálogo |
 | `MAX_MESSAGE_RETRIES` | Worker (padrão 3) |
 
 Dentro da rede do Compose a URL do broker é
@@ -94,7 +94,7 @@ Hashes BCrypt devem ficar entre aspas simples no `.env`, pois contêm `$`.
 
 ## Mensageria das solicitações de treinamento
 
-Nomes confirmados com a Frente B (`ai-service/worker/consumer.py`):
+Os mesmos nomes são usados no *worker* (`ai-service/worker/consumer.py`):
 
 | Item | Valor |
 | --- | --- |
@@ -142,8 +142,8 @@ final é idempotente (204); trocar um status final responde 409.
 | `ai-artifacts` | `/data/artifacts`: modelo (`classifier.joblib`) e ledger do worker (`training-results.json`), compartilhado entre API e worker |
 | `ollama-data` | `/root/.ollama`: modelo generativo local, preservado entre inicializações |
 
-O ledger em volume garante a idempotência do worker mesmo após recriar os
-containers. A API de IA só carrega um modelo novo ao reiniciar
+Como o *ledger* fica em um volume, o *worker* não repete um treinamento já
+concluído, mesmo depois de recriar os contêineres. A API de IA só carrega um modelo novo ao reiniciar
 (`docker compose restart ai-service`).
 
 ### Ollama
@@ -200,7 +200,7 @@ com o mesmo endereço e dividir o limite. Valores inválidos impedem o gateway d
 | --- | --- | --- |
 | Unitários e integração Java (Testcontainers: PostgreSQL e RabbitMQ) | `backend/src/test` | `cd backend && ./mvnw test` |
 | Unitários Python (mocks) | `ai-service/tests` | ver `ai-service/README.md` |
-| Ponta a ponta (ambiente Compose real) | `integration-tests/` | `./scripts/testes-integrados.sh` |
+| Ponta a ponta (ambiente Compose real; Python 3.12+) | `integration-tests/` | `./scripts/testes-integrados.sh` |
 
 Os testes ponta a ponta cobrem saúde dos serviços, topologia do broker,
 fluxo completo de treinamento (PENDENTE → CONCLUIDO), autorização,

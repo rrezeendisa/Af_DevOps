@@ -420,7 +420,7 @@ Valores padrão do backend (`backend/src/main/resources/application.yml`):
 Regra: **todo intermediário precisa esperar mais que o backend**, para que o *fallback* e os erros
 504 `IA_TEMPO_LIMITE` do próprio backend cheguem ao usuário.
 
-| Camada | Valor proposto |
+| Camada | Valor usado |
 | --- | --- |
 | Cliente HTTP, `POST /api/ia/orientacoes` | 90 s (`AbortSignal.timeout`) |
 | Cliente HTTP, demais rotas de IA | 20 s |

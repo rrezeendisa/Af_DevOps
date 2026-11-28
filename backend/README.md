@@ -1,15 +1,14 @@
-# Backend AF-DevOps
+# Backend da Evolia
 
-Este backend faz parte do AF-DevOps, uma plataforma de educação corporativa
-desenvolvida como atividade acadêmica de Engenharia de Computação. O backend
-oferece cadastro e consulta de colaboradores e cursos para o RF01 e integra
-os serviços de classificação, recomendação e orientação dos RF02, RF03 e RF04.
-Também controla o consentimento para uso da IA, complementa a orientação com
-Spring AI e acompanha solicitações de treinamento do RF05.
+Este é o backend da Evolia, um projeto acadêmico. Ele cuida do cadastro e da consulta de colaboradores e
+cursos (RF01), integra a classificação, a recomendação e a orientação (RF02, RF03 e RF04), controla o
+consentimento para o uso da IA e acompanha as solicitações de treinamento (RF05).
 
-A aplicação usa a arquitetura de monólito modular. Isso significa que os módulos
-compartilham a mesma aplicação Spring Boot e o mesmo banco de dados, mas cada
-domínio mantém suas próprias entidades, regras e rotas.
+Usamos um monólito modular: os módulos ficam na mesma aplicação Spring Boot e no mesmo banco, mas cada
+assunto tem suas próprias classes, regras e rotas.
+
+Para apenas executar a aplicação, siga o [README principal](../README.md#como-executar). Este documento é
+para quem quer desenvolver, testar ou chamar a API diretamente.
 
 ## Organização do backend
 
@@ -67,7 +66,8 @@ desenvolvimento. A senha deve ser fornecida pelo ambiente.
 
 ### Contas de demonstração
 
-Configure duas contas fictícias com nomes distintos, usando até 64 letras
+No ambiente com Docker, o `scripts/gerar-env.sh` já cria essas contas. Ao executar o backend fora dele,
+configure duas contas fictícias com nomes distintos, usando até 64 letras
 ASCII, números, pontos, hífens ou sublinhados. A comparação dos nomes não
 diferencia maiúsculas de minúsculas.
 
@@ -595,7 +595,10 @@ CSRF: exige `Authorization: Bearer <INTERNAL_API_TOKEN>` e compara o token em
 tempo constante. Os testes de integração do
 módulo usam RabbitMQ real via Testcontainers.
 
-## Última validação
+## Histórico de validações
+
+Os números abaixo são registros de cada data. Os resultados mais recentes estão no
+[README principal](../README.md#12-desempenho-e-qualidade).
 
 Na Etapa 14.1 (27–28/11/2026), com a autenticação por sessão, passaram 274
 testes Java, 507 testes React, 38 testes integrados pelo gateway e 25 cenários

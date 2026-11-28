@@ -104,18 +104,10 @@ resposta) e no resultado da avaliação. A pose comemorando é do mesmo personag
 `petalas` e `mascote`. Para acrescentar um, converta para WebP transparente,
 registre a origem acima e inclua a entrada no registro.
 
-## Imagens pendentes
+## Como acrescentar uma imagem
 
-Formatos aceitos em `fotos/`: `.avif` ou `.webp`, com o nome abaixo. Sem texto, logotipos ou marcas de
-terceiros dentro da imagem. **Registre a origem ao incorporar e defina o texto alternativo no
-componente conforme o conteúdo.**
-
-### Outras
-
-| Arquivo | Fundo | Exportar | Observação | Peso máx. |
-| --- | --- | --- | --- | --- |
-| `capa-tecnologia`, `capa-comunicacao`, `capa-logica` | opaco | 1280×720 | assunto em x 15–85, y 22–78 | 80 kB cada |
-| `login-acolhimento` | opaco | 1000×1250 | o espaço será medido no incremento do login | 150 kB |
+Formatos aceitos em `fotos/`: `.avif` ou `.webp`. A imagem não deve ter texto, logotipos ou marcas de
+terceiros. **Registre a origem acima e defina o texto alternativo no componente conforme o conteúdo.**
 
 ## Ilustrações
 

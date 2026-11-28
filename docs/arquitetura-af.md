@@ -1,6 +1,6 @@
 # Arquitetura da Evolia
 
-Resposta aos itens do enunciado oficial da AF (Estudo de Caso 1, DevOps e QA, 01/12/2026, páginas 1–3; não distribuído neste repositório). Os resultados de cada requisito estão na [matriz de evidências](evidencias-af.md).
+Aqui respondemos aos itens do enunciado oficial da AF (Estudo de Caso 1, DevOps e QA, 01/12/2026, páginas 1–3; não distribuído neste repositório). Os resultados de cada requisito estão na [matriz de evidências](evidencias-af.md).
 
 - [a) Organização no código](#a-organização-arquitetural-no-código)
 - [b) C4 nível 2](#b-c4-nível-2)
@@ -14,7 +14,7 @@ Resposta aos itens do enunciado oficial da AF (Estudo de Caso 1, DevOps e QA, 01
 
 ### Escolha
 
-**Monólito modular híbrido** (Alternativa A): as regras de negócio ficam em uma aplicação Spring Boot organizada por domínio, e as cargas de IA rodam em processos separados.
+Escolhemos o **monólito modular híbrido** (Alternativa A): as regras de negócio ficam em uma aplicação Spring Boot dividida por assunto, e a IA roda em processos separados.
 
 | Critério | Efeito da escolha |
 |---|---|
@@ -24,7 +24,7 @@ Resposta aos itens do enunciado oficial da AF (Estudo de Caso 1, DevOps e QA, 01
 | Manutenção | Um único banco, build e implantação para o negócio. Mudanças de IA não exigem alterar o cadastro. |
 | Complexidade operacional | Evita descoberta de serviços, banco por serviço e transações distribuídas entre cadastros, adequado a uma equipe pequena. |
 
-Microsserviços permitiriam escalar cada domínio isoladamente, ao custo de mais implantações, contratos de rede e consistência distribuída, sem necessidade demonstrada para cadastro, identidade e consentimento.
+Com microsserviços, poderíamos escalar cada domínio sozinho. Em troca, teríamos mais implantações, mais contratos de rede e o problema de manter dados consistentes entre serviços. Não vimos essa necessidade para cadastro, identidade e consentimento.
 
 ### Backend Java
 
@@ -132,9 +132,9 @@ Se a publicação falhar, a solicitação fica `FALHOU` e a API responde 503. Me
 
 **Contexto.** Equipe reduzida, previsão de crescimento e necessidade de evoluir a IA de forma independente. Classificação, busca documental, agente e treinamento têm tecnologias e ciclos de execução diferentes dos cadastros.
 
-**Decisão.** Regras de negócio em módulos de uma aplicação Spring Boot; IA em processos Python e Ollama; treinamento integrado por fila.
+**Decisão.** Colocamos as regras de negócio em módulos de uma aplicação Spring Boot, a IA em processos Python e no Ollama, e o treinamento em uma fila.
 
-**Justificativa.** Reduz integrações distribuídas entre os domínios de cadastro e mantém a IA implantável separadamente. A fila absorve a diferença entre o tempo de resposta e o de treinamento.
+**Justificativa.** Os cadastros não precisam conversar pela rede, e a IA continua podendo ser implantada à parte. A fila permite responder logo, mesmo que o treinamento demore.
 
 **Consequências.** O Java é implantado e escalado como uma unidade, e uma falha nele afeta todos os domínios. O sistema híbrido ainda exige operar broker, serviço de IA e modelo local. Com o FastAPI parado, cadastro e consulta continuaram funcionando ([RNF04](evidencias-af.md#rnf04--evolução-independente-do-serviço-de-ia)).
 

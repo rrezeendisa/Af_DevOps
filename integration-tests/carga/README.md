@@ -1,6 +1,7 @@
-# Validação isolada da AF
+# Testes de carga e de falha
 
-Use uma cópia do repositório sem o `.env` de desenvolvimento e um projeto Compose exclusivo, com nome iniciado por `evolia-`. Pause outras stacks completas antes de executar. Use Bash, Docker Compose e Python 3.9+ para os verificadores. O k6 é executado em container.
+Estes roteiros geraram as evidências do RNF01, RNF02 e RNF04. Eles não são necessários para executar a
+aplicação. Use uma cópia do repositório sem o `.env` de desenvolvimento e um projeto Compose exclusivo, com nome iniciado por `evolia-`. Pause outras stacks completas antes de executar. Use Bash, Docker Compose e Python 3.9+ para os verificadores. O k6 é executado em container.
 
 1. Na cópia, rode `bash scripts/gerar-env.sh` e escolha um nome de projeto e uma porta livre para o gateway. Use `COMPOSE_PARALLEL_LIMIT=1` no Mac Intel. Com as variáveis exportadas, rode `docker compose up -d --build --wait gateway ai-worker` para preparar somente os serviços necessários. A classificação independe do Ollama.
 2. No repositório onde estão os roteiros, crie uma pasta temporária com `mktemp -d`. Provisione as contas nessa pasta, fora da árvore versionável. A senha de cada conta é aleatória, o consentimento é registrado pela conta correspondente e a preparação fica fora do tempo da carga.

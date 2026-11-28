@@ -155,13 +155,13 @@ Use valores numéricos tabulares (`font-variant-numeric: tabular-nums`) em tabel
 
 - **Shell e início:** ver “Telas internas” na seção 11. Item ativo com `--selected` e
   `aria-current="page"`; nunca usar sidebar escura ou plum.
-- **Telas pendentes:** cabeçalho, badge “Em desenvolvimento” e estado vazio explicativo, sem nenhum dado simulado.
+- **Telas pendentes:** hoje todas as rotas estão disponíveis. Uma futura tela incompleta usa o selo “Em desenvolvimento” e um estado vazio, sem dados simulados.
 - **Cartão de curso** (`CartaoCurso`):
   - Cartão branco com *chip* de categoria em `--surface-2` e badge de nível (Básico em lilás,
     Intermediário em lima, Avançado em rosa, sempre com texto escuro).
   - Nome em Inter 600, que é um link e torna o cartão inteiro clicável, e descrição em até 3 linhas.
   - Carga horária com ícone `Clock` em `--brand-detail`.
-  - **Sem imagem, progresso, matrícula ou certificado.**
+  - Capa ilustrativa (seção 11). **Sem progresso, matrícula ou certificado.**
 - **Tabelas** (colaboradores e treinamentos):
   - Contêiner com borda e raio de 16 px, cabeçalho em `--surface-2` com rótulos em maiúsculas pequenas.
   - A primeira coluna é `<th scope="row">` com link para o detalhe.
@@ -230,8 +230,8 @@ Use valores numéricos tabulares (`font-variant-numeric: tabular-nums`) em tabel
   - Sucesso: *toast* curto com `role="status"`
 - **IA:** respostas em bloco de leitura, com rótulo “Gerado por IA” nos `proximosPassos`, fontes listadas
   como texto e aviso quando os próximos passos não estiverem disponíveis (sem tratar como erro).
-- **Gráficos** (Recharts, só com dados reais): cores lilás, rosa e lima, com rótulos diretos e uma
-  tabela ou texto alternativo equivalente.
+- **Gráficos** (só com dados reais; não usamos biblioteca de gráficos): cores lilás, rosa e lima, com rótulos
+  diretos e uma tabela ou texto alternativo equivalente.
 - **Ícones:** Lucide, 16–20 px, traço 1,75–2, com `aria-hidden` quando acompanhados de texto e `aria-label` quando sozinhos.
 
 ## 8. Acessibilidade (meta: WCAG 2.2 AA)
@@ -242,7 +242,7 @@ Use valores numéricos tabulares (`font-variant-numeric: tabular-nums`) em tabel
 - **Navegação:** *skip link* “Ir para o conteúdo”, foco movido para o h1 ao trocar de rota, e `<title>` por página.
 - **Alvo mínimo** de 24×24 px (2.5.8). Em botões, prefira 40 px de altura.
 - **Cor:** a cor nunca é o único indicador, e status sempre vêm com texto ou ícone.
-- **Movimento:** respeitar `prefers-reduced-motion`. Sem animação decorativa.
+- **Movimento:** respeitar `prefers-reduced-motion`. Animação decorativa só de forma discreta e com `motion-safe:`.
 - **Formulários:** erros anunciados (`aria-live="polite"` no resumo), sem placeholder no lugar
   do rótulo. Campos de senha com opção “mostrar senha” e `autocomplete` adequado.
 - **Conteúdo dinâmico:** respostas da IA e resultados de operações anunciados com `role="status"`.
@@ -339,8 +339,9 @@ Em `forced-colors`, o gradiente é removido. As fichas `.vidro` têm opacidade d
   mascote comemorando. “Limpar” descarta notas e resultados.
 - **Recomendações:** cartões horizontais, um por linha. Foto ilustrativa escolhida por palavras do nome;
   sem categoria, nível, carga horária ou fonte por curso, que a API não informa.
-- **Catálogo e detalhe:** cartões com capa ilustrativa (`features/cursos/capas.ts`: o nome decide temas
-  específicos, depois a categoria; sem correspondência, foto de estudo), categoria, nome, nível e carga.
+- **Catálogo e detalhe:** cartões com capa ilustrativa, categoria, nome, nível e carga. Em
+  `features/cursos/capas.ts`, os cursos de demonstração têm capa definida pelo nome; os demais usam a foto
+  do tema (nome ou categoria) e, sem correspondência, a foto de estudo.
 - **Administração:** tabelas em cartão de 24 px com cabeçalho lilás claro; iniciais só visuais (CSS);
   contagens por status nos treinamentos, sempre derivadas da lista.
 - **Privacidade e IA:** mesma ilustração com ou sem autorização, para não induzir a escolha.

@@ -5,9 +5,11 @@
 <h1 align="center">Evolia</h1>
 <p align="center"><em>Inteligência que desenvolve pessoas.</em></p>
 
-Plataforma de educação corporativa que reúne cadastro de colaboradores e cursos, classificação de
-competências por *Machine Learning*, recomendações a partir de documentos, orientação assistida por IA
-com autorização do usuário e treinamento assíncrono de modelos.
+A Evolia é uma plataforma de educação corporativa. Nela, cadastramos colaboradores e cursos, estimamos o
+nível de competência com *Machine Learning*, recomendamos cursos a partir de documentos, oferecemos
+orientação com apoio de IA (somente com autorização) e treinamos o modelo de forma assíncrona.
+
+**Para executar agora:** siga as [instruções de execução](#como-executar).
 
 | | |
 | --- | --- |
@@ -28,10 +30,12 @@ com autorização do usuário e treinamento assíncrono de modelos.
 Os registros acadêmicos (RA) constam na versão privada de identificação, fora deste repositório público.
 
 > [!NOTE]
-> Projeto acadêmico, executado localmente com dados e documentos fictícios. Não é um produto certificado
-> para produção.
+> Este é um projeto acadêmico. Ele roda localmente, com dados e documentos fictícios, e não é um produto
+> pronto para produção.
 
 ## Índice
+
+- [Como executar](#como-executar) e [problemas comuns](#problemas-comuns)
 
 1. [Situação-problema](#1-situação-problema)
 2. [Visão geral da solução](#2-visão-geral-da-solução)
@@ -46,20 +50,187 @@ Os registros acadêmicos (RA) constam na versão privada de identificação, for
 11. [Segurança e privacidade](#11-segurança-e-privacidade)
 12. [Desempenho e qualidade](#12-desempenho-e-qualidade)
 13. [Tecnologias e estrutura do repositório](#13-tecnologias-e-estrutura-do-repositório)
-14. [Instalação e execução](#14-instalação-e-execução)
+14. [Testes automatizados](#14-testes-automatizados)
 15. [Guia de demonstração](#15-guia-de-demonstração)
 16. [Limitações e evolução futura](#16-limitações-e-evolução-futura)
 
 ---
 
+## Como executar
+
+A aplicação inteira roda em Docker. Os comandos usam um terminal **Bash** (no Windows, o Git Bash).
+
+### Etapa 1 — Pré-requisitos
+
+| Ferramenta | Para quê |
+| --- | --- |
+| Git | Baixar o repositório |
+| Docker com Docker Compose (Docker Desktop, por exemplo), em execução | Rodar a aplicação |
+| Bash | Gerar a configuração inicial |
+| Python 3.9 ou superior | Apenas para os scripts auxiliares: catálogo e troca de senha |
+
+Não é preciso instalar Java, Node.js, PostgreSQL, RabbitMQ nem Ollama. Na primeira execução é necessária
+conexão com a internet. Como referência, reserve cerca de 8 GB de memória para o Docker e 20 GB de disco.
+
+### Etapa 2 — Baixar o repositório *(somente na primeira instalação)*
+
+Em um terminal, na pasta onde o projeto deve ficar:
+
+```bash
+git clone https://github.com/rrezeendisa/Af_DevOps.git
+cd Af_DevOps
+```
+
+**Resultado esperado:** o terminal fica na pasta `Af_DevOps`, a **raiz do projeto**. Todos os comandos
+seguintes são executados nela.
+
+### Etapa 3 — Configuração inicial *(somente na primeira instalação)*
+
+No mesmo terminal, na raiz:
+
+```bash
+bash scripts/gerar-env.sh
+```
+
+O script cria o arquivo `.env`, com senhas e *tokens* aleatórios. Ele usa o Docker para calcular os *hashes*
+das senhas. **Resultado esperado:** a mensagem `.env criado com permissões restritas`.
+
+- O `.env` guarda os usuários (`AFDEVOPS_ADMIN_USERNAME`, `AFDEVOPS_COLABORADOR_USERNAME`) e as senhas das
+  duas contas iniciais (`E2E_ADMIN_PASSWORD`, `E2E_COLABORADOR_PASSWORD`). Para consultá-las, abra o
+  arquivo em um editor de texto. Ele pode ficar oculto no explorador de arquivos.
+- O `.env` não vai para o Git. Não o compartilhe nem o mostre em gravações.
+- Se o `.env` já existir, o script não altera nada e informa que o arquivo foi preservado.
+- Depois da primeira inicialização, **não apague o `.env`**: o banco continua usando a senha antiga.
+
+### Etapa 4 — Iniciar a aplicação
+
+No mesmo terminal, na raiz:
+
+```bash
+docker compose up --build
+```
+
+A primeira execução demora, porque o Docker baixa as imagens, constrói os serviços e o Ollama baixa o
+modelo (cerca de 1 GB). Esse terminal passa a mostrar os *logs*; mantenha-o aberto. Para parar, use `Ctrl+C`.
+
+Se preferir rodar em segundo plano e liberar o terminal:
+
+```bash
+docker compose up --build -d
+```
+
+**Para conferir se está pronto**, abra **outro terminal** na raiz (ou use o mesmo, se usou `-d`):
+
+```bash
+docker compose ps
+curl http://localhost:8088/healthz
+```
+
+**Resultado esperado:** os serviços principais aparecem como `healthy`, o `ai-worker` como `Up`, e o
+segundo comando responde `ok`. O modelo do Ollama pode terminar de baixar depois; até lá, o Orientador
+funciona sem os próximos passos gerados.
+
+### Etapa 5 — Carregar o catálogo *(somente na primeira instalação)*
+
+Uma instalação nova começa sem cursos. Com a aplicação no ar, em outro terminal, na raiz:
+
+```bash
+python3 scripts/preencher_catalogo.py
+```
+
+O script entra como administrador, lendo o usuário e a senha no `.env`. Nenhuma credencial é exibida.
+**Resultado esperado:** uma linha para cada curso e, no final,
+`18 cadastrados, 0 já existiam; 18 cursos no catálogo.`
+
+Ele pode ser executado de novo sem duplicar cursos. Se a senha do administrador não estiver no `.env`, o
+script pede a senha no terminal. Se o comando `python3` não existir no Windows, use `python`.
+
+### Etapa 6 — Acessar e conhecer os perfis
+
+Abra no navegador: **<http://localhost:8088>** e clique em **Acessar plataforma**.
+
+| Perfil | Como obter o acesso | O que pode fazer |
+| --- | --- | --- |
+| Administrador | Usuário e senha no `.env` | Colaboradores, contas, cursos e treinamentos da IA |
+| Colaborador de demonstração | Usuário e senha no `.env` | Somente consultar o catálogo |
+| Colaborador individual | Criado pelo administrador (etapa 7) | Catálogo, autorização da IA, competências, recomendações e Orientador |
+
+Nenhuma conta reúne as funções de administrador e as de IA.
+
+### Etapa 7 — Criar uma conta individual *(somente na primeira instalação)*
+
+Os colaboradores e as contas do nosso ambiente de desenvolvimento **não vêm pelo GitHub**. É preciso criar
+uma conta na própria instalação:
+
+1. Entre com a conta **administrador**.
+2. No menu, abra **Colaboradores**, clique em **Cadastrar colaborador**, preencha nome, e-mail (fictício),
+   cargo e departamento e confirme.
+3. No menu, abra **Contas**, escolha o colaborador, defina um nome de usuário (letras sem acento, números,
+   ponto, hífen ou sublinhado) e uma senha com pelo menos 12 caracteres em **Senha inicial**. Repita-a em
+   **Confirmar senha** e clique em **Criar conta**.
+4. Clique no ícone **Sair**, na parte de baixo do menu.
+5. Entre com o usuário e a senha que acabou de criar.
+6. Abra **Privacidade e IA** e clique em **Autorizar uso da IA**.
+7. Abra **Minhas competências**, marque uma nota de 1 a 5 em cada competência e clique em **Classificar**.
+8. Abra **Recomendações** e clique em **Gerar recomendações**.
+9. Abra **Orientador Evolia**, escreva uma pergunta e envie. A primeira resposta com próximos passos pode
+   demorar mais, porque o modelo está sendo carregado.
+
+Faça os passos 7 a 9 sem recarregar a página: a avaliação fica só na memória. Se recarregar ou sair,
+classifique de novo.
+
+Para usar duas contas ao mesmo tempo, use uma janela normal e uma janela anônima.
+
+### Etapa 8 — Parar e iniciar novamente
+
+Na raiz do projeto:
+
+| Comando | O que faz |
+| --- | --- |
+| `docker compose stop` | Para os contêineres, sem removê-los |
+| `docker compose down` | Para e remove os contêineres; os **volumes** (banco, filas e modelos) ficam |
+| `docker compose up -d` | Inicia novamente (use `--build` depois de atualizar o código) |
+
+Nas próximas vezes, basta o último comando; as etapas 2, 3, 5 e 7 não se repetem. Não use
+`docker compose down -v`: ele apaga os dados.
+
+### Trocar uma senha (opcional)
+
+```bash
+python3 scripts/definir_credenciais.py admin
+python3 scripts/definir_credenciais.py demo
+python3 scripts/definir_credenciais.py colaborador --usuario NOME_DA_CONTA
+```
+
+Rode esses comandos com a aplicação no ar. Em `NOME_DA_CONTA`, escreva o nome de usuário em minúsculas. No
+Windows, use o PowerShell, com `python` no lugar de `python3`, para a senha não aparecer na tela.
+
+A senha é digitada sem aparecer na tela e deve ter pelo menos 12 caracteres. O backend é recriado, e quem
+estiver conectado precisa entrar de novo. Para `admin` e `demo`, a senha nova não fica no `.env` (use
+`--guardar-no-env` se quiser guardá-la).
+
+## Problemas comuns
+
+| Problema | O que fazer |
+| --- | --- |
+| A página não abre ou mostra erro logo após iniciar | Os serviços ainda estão subindo. Acompanhe com `docker compose ps` |
+| A porta 8088 está ocupada | Acrescente `GATEWAY_PORT=8090` ao `.env`, rode `docker compose up -d` e use a nova porta. No script do catálogo: `EVOLIA_URL=http://127.0.0.1:8090 python3 scripts/preencher_catalogo.py` |
+| O catálogo está vazio | Execute a etapa 5 |
+| Usuário ou senha não funcionam | Confira o usuário e a senha no `.env`. Mudar a senha direto no arquivo não funciona. Para criar uma nova, com a aplicação no ar, rode `python3 scripts/definir_credenciais.py admin` (ou `demo`) |
+| "O serviço de IA está indisponível no momento" | `docker compose up -d --force-recreate ai-service`, aguarde ficar `healthy` e, se continuar, veja `docker compose logs --tail=50 ai-service` |
+| O Orientador demora ou não mostra próximos passos | A primeira geração carrega o modelo. Confira `docker compose logs --tail=20 ollama-modelo`; se o download falhou, rode `docker compose up -d ollama-modelo` |
+| A tela mostra uma versão antiga | `docker compose up -d --build --no-deps gateway` e recarregue a página |
+| Ver o estado e os *logs* | `docker compose ps` e `docker compose logs --tail=100 backend gateway ai-worker` |
+
+---
+
 ## 1. Situação-problema
 
-O enunciado descreve uma empresa de educação corporativa que quer uma plataforma inteligente para apoiar
-a formação de profissionais: colaboradores avaliam competências, recebem recomendações personalizadas de
-cursos e acompanham a própria evolução. A equipe propõe Spring Boot para o negócio, Python para ML,
-RabbitMQ para mensageria e REST entre aplicações, além de RAG sobre documentos institucionais e agentes
-de IA. A equipe é **reduzida** e quer evitar complexidade operacional, mas prevê **crescimento de
-usuários** e **evolução independente** de alguns componentes.
+O enunciado descreve uma empresa de educação corporativa. Os colaboradores avaliam suas competências,
+recebem recomendações de cursos e acompanham a própria evolução. A proposta usa Spring Boot para o negócio,
+Python para *Machine Learning*, RabbitMQ para mensageria e REST entre as aplicações, além de RAG sobre
+documentos institucionais e agentes de IA. A equipe é **pequena** e quer evitar complexidade, mas espera
+**crescimento de usuários** e precisa **evoluir a IA** sem afetar o restante.
 
 | Necessidade do cenário | Resposta da Evolia |
 | --- | --- |
@@ -70,14 +241,14 @@ usuários** e **evolução independente** de alguns componentes.
 | Equipe reduzida | Um backend modular, um Compose e um único ponto de entrada |
 | Crescimento e evolução independente | IA e *worker* isolados em contêineres; treinamento desacoplado por fila |
 
-O "acompanhamento da evolução" é atendido apenas em parte: não há histórico persistido (ver RF04).
+Atendemos apenas em parte o acompanhamento da evolução, porque não guardamos histórico (ver RF04).
 
 ## 2. Visão geral da solução
 
 ### 2.1 Funcionalidades
 
 - **Gestão de colaboradores e contas:** cadastro, consulta e criação de conta individual.
-- **Catálogo:** cursos com busca e filtros, cadastrados pelo administrador. Um script ([seção 14](#14-instalação-e-execução))
+- **Catálogo:** cursos com busca e filtros, cadastrados pelo administrador. Um script ([etapa 5 da execução](#etapa-5--carregar-o-catálogo-somente-na-primeira-instalação))
   carrega os 18 cursos de demonstração em Tecnologia, Comunicação e Raciocínio lógico.
 - **Avaliação de competências:** lógica, comunicação e tecnologia, de 1 a 5, sem resposta pré-marcada.
 - **Classificação por ML:** nível Iniciante, Intermediário ou Avançado.
@@ -96,8 +267,8 @@ O "acompanhamento da evolução" é atendido apenas em parte: não há históric
 | Solicitar e acompanhar treinamentos | sim | não | não |
 | Consentimento, classificação, recomendações, orientação | não | sim | não |
 
-As contas de administrador e de demonstração são configuradas por ambiente; as individuais ficam no
-PostgreSQL, vinculadas a um colaborador.
+As contas de administrador e de demonstração são definidas no `.env`. As contas individuais ficam no
+PostgreSQL, ligadas a um colaborador.
 
 ### 2.3 A aplicação
 
@@ -146,10 +317,9 @@ Detalhes e dados brutos: [matriz de evidências](docs/evidencias-af.md).
 
 ### 5.1 Decisão
 
-A Evolia adota um **monólito modular híbrido** (Alternativa A): as funcionalidades de negócio vivem em
-uma única aplicação Spring Boot dividida em módulos por domínio; a inteligência artificial, que tem outra
-linguagem, outro ciclo de evolução e outro perfil de consumo, roda em processos separados; o treinamento,
-demorado, passa por uma fila.
+Escolhemos o **monólito modular híbrido** (Alternativa A). As funcionalidades de negócio ficam em uma única
+aplicação Spring Boot, dividida em módulos por assunto. A inteligência artificial roda em processos
+separados, porque usa outra linguagem e muda em outro ritmo. O treinamento, que é demorado, passa por uma fila.
 
 ### 5.2 Comparação entre as alternativas
 
@@ -161,29 +331,27 @@ demorado, passa por uma fila.
 | **Manutenção** | Um repositório, um build Java, refatorações simples, transações locais. | Mais repositórios ou pipelines, versionamento de contratos, depuração distribuída. | Três pessoas mantêm o sistema. |
 | **Complexidade operacional** | Um Compose; banco, broker, três processos de aplicação, gateway e modelo local. | Descoberta de serviços, observabilidade distribuída, vários bancos e implantações. | O enunciado pede para evitá-la. |
 
-**Justificativa para a equipe.** Microsserviços resolveriam problemas que o cenário ainda não tem (times
-independentes, cargas muito diferentes entre domínios de negócio) e cobrariam um preço que uma equipe
-reduzida sente de imediato. Separar apenas a IA captura o benefício pedido pelo enunciado (evolução
-independente) sem multiplicar a operação.
+**Por que não microsserviços em tudo.** Os microsserviços resolvem problemas que o nosso cenário ainda não
+tem, como várias equipes independentes ou domínios com cargas muito diferentes. Para um grupo pequeno, o
+custo de operar vários serviços e bancos apareceria logo. Separando apenas a IA, atendemos à evolução
+independente pedida no enunciado sem multiplicar a operação.
 
 ### 5.3 Por que cada parte está onde está
 
-- **Negócio no Java:** cadastro, identidade, consentimento e solicitações compartilham transações,
-  regras de acesso e um modelo de dados pequeno. Mantê-los juntos evita consistência distribuída.
-- **IA em Python:** o ecossistema de ML (scikit-learn) e a evolução do modelo e do acervo são
-  independentes do cadastro. Trocar o modelo ou os documentos não exige recompilar o backend.
-- **Nem tudo em microsserviços:** não há requisito de escala ou de implantação separada para colaboradores
-  e cursos; dividi-los só criaria chamadas de rede e falhas parciais.
-- **Evolução independente da IA:** o Java depende de interfaces (`ServicoIaPort`,
-  `ProximosPassosPort`) e de um contrato REST. Com a IA parada, cadastro e consulta continuam.
-- **Assincronia:** o Java publica o pedido de treinamento e responde; não precisa que o *worker* esteja
-  ocupado ou disponível naquele instante.
-- **Extrações futuras, se houver necessidade comprovada:** o módulo `treinamento` (se o volume de
-  treinamentos justificar), o módulo de identidade com armazenamento de sessões compartilhado (para escalar
-  horizontalmente) e o acervo documental com seu próprio ciclo de publicação.
+- **Negócio no Java:** cadastro, identidade, consentimento e solicitações usam as mesmas transações e
+  regras de acesso. Juntos, evitam o problema de manter dados consistentes entre serviços.
+- **IA em Python:** é onde estão as bibliotecas de ML (scikit-learn). Podemos trocar o modelo ou os
+  documentos sem recompilar o backend.
+- **Sem dividir colaboradores e cursos:** não há motivo para escalá-los ou implantá-los separadamente.
+  Dividi-los só criaria chamadas de rede e novos pontos de falha.
+- **Evolução da IA:** o Java depende de duas interfaces (`ServicoIaPort` e `ProximosPassosPort`) e de um
+  contrato REST. Com a IA parada, o cadastro e a consulta continuam funcionando.
+- **Assincronia:** o Java publica o pedido de treinamento e responde, sem esperar o *worker*.
+- **O que poderíamos separar depois, se houver necessidade real:** o módulo de treinamento, o módulo de
+  identidade (com sessões compartilhadas) e o acervo de documentos.
 
-**Trade-offs e limites:** banco compartilhado entre módulos; fronteiras internas dependem de disciplina;
-backend é uma unidade de implantação e de falha; banco e fila não participam da mesma transação.
+**Trade-offs:** os módulos compartilham o banco; as fronteiras entre eles dependem da nossa disciplina; o
+backend é implantado e pode falhar como uma unidade; banco e fila não participam da mesma transação.
 
 ### 5.4 Organização do código
 
@@ -316,8 +484,8 @@ diagrama. No Compose, as redes de dados, IA, treinamento e geração são intern
 
 ## 7. Item C — Comunicação arquitetural
 
-**Critério:** REST quando alguém está esperando a resposta e o processamento é curto; RabbitMQ quando o
-trabalho é demorado, pode ser feito depois e não pode se perder se o consumidor estiver indisponível.
+**Nosso critério:** usamos REST quando alguém está esperando uma resposta rápida. Usamos RabbitMQ quando o
+trabalho é demorado, pode ser feito depois e não pode se perder se o consumidor estiver parado.
 
 ### 7.1 Interações síncronas (REST)
 
@@ -420,7 +588,7 @@ sequenceDiagram
 
 ## 8. Item D — Requisitos arquiteturalmente significativos
 
-Três requisitos do enunciado que mudaram decisões.
+Estes três requisitos do enunciado mudaram decisões do projeto.
 
 ### ASR 1 — RNF01: 95% das classificações em até 2 s com 300 usuários
 
@@ -506,7 +674,8 @@ cada um com competência, nível, pré-requisitos, descrição e objetivos.
 4. Filtra-se por nível e competência e devolvem-se até três cursos.
 5. A justificativa é a descrição do documento mais os requisitos; as fontes são os nomes dos arquivos.
 
-Há recuperação, mas a resposta é **determinística**: nenhum LLM redige texto fundamentado nos documentos.
+Há busca nos documentos, mas a resposta é **determinística**: nenhum modelo de linguagem escreve um texto a
+partir deles.
 Os identificadores `CURSO-001` a `CURSO-012` são do acervo e **não** são os IDs do catálogo no PostgreSQL.
 
 ### 10.3 Agente de orientação
@@ -552,7 +721,7 @@ marcado como "Gerado por IA".
 | Limite de requisições | Login: 10 por segundo por IP, rajada de 50 (resposta 429) |
 | Exposição | Só o gateway publica porta; redes internas para banco, IA e fila |
 
-**Para uma implantação pública** seriam necessários, no mínimo: HTTPS com HSTS e
+**Para publicar a aplicação na internet**, precisaríamos pelo menos de: HTTPS com HSTS e
 `SESSION_COOKIE_SECURE=true`; armazenamento compartilhado de sessões; bloqueio de tentativas por conta e
 limites nas demais rotas; troca e recuperação de senha e segundo fator; autenticação também nas rotas de
 classificação e recomendação do serviço de IA (hoje protegidas só pelo isolamento de rede); gestão de
@@ -606,6 +775,9 @@ Dados: [Etapa 14.1](docs/evidencias-etapa14-1/README.md) e [Etapa 14](docs/evide
 
 ### 12.2 Suítes na versão atual (28/11/2026)
 
+Resultados obtidos antes de incluirmos as capas dos cursos. Depois disso, repetimos apenas os testes de
+catálogo e de imagens (59 de 59), além de typecheck, lint e build.
+
 | Suíte | Resultado |
 | --- | ---: |
 | Java (unitários e Testcontainers) | 274 de 274 |
@@ -656,68 +828,15 @@ Documentos: [arquitetura](docs/arquitetura-af.md) · [backend](backend/README.md
 [contratos da API](frontend/API_CONTRACTS.md) · [design system](frontend/DESIGN_SYSTEM.md) ·
 [créditos das imagens](frontend/src/assets/CREDITOS.md).
 
-## 14. Instalação e execução
+## 14. Testes automatizados
 
-**Pré-requisitos:** Git, Docker com o plugin Compose, Bash (no Windows, Git Bash), internet no primeiro
-build e Python 3.9 ou superior para os scripts de catálogo e credenciais. A aplicação em si não exige
-Node, Java ou Ollama instalados.
-
-### 14.1 Primeira instalação
-
-```bash
-git clone https://github.com/rrezeendisa/Af_DevOps.git
-cd Af_DevOps
-bash scripts/gerar-env.sh      # cria o .env com segredos aleatórios; preserva um existente
-docker compose up --build      # constrói e inicia; acrescente -d para rodar em segundo plano
-```
-
-O `.env` é um pré-requisito: sem ele o Compose não sobe. Ele não é versionado. Em outro terminal:
-
-```bash
-curl -fsS http://127.0.0.1:8088/healthz     # deve responder "ok"
-docker compose ps                           # serviços "healthy"; o ai-worker aparece só como "Up"
-python3 scripts/preencher_catalogo.py       # 18 cursos; não duplica
-```
-
-Acesse <http://127.0.0.1:8088>. Se a porta estiver ocupada, defina `GATEWAY_PORT` no `.env`. Na primeira
-execução o Ollama baixa o modelo (cerca de 1 GB); até lá a orientação funciona sem os próximos passos.
-
-### 14.2 Contas e senhas
-
-Nenhuma senha é publicada. Na primeira instalação, as senhas geradas de administrador e de demonstração
-ficam em `E2E_ADMIN_PASSWORD` e `E2E_COLABORADOR_PASSWORD`, no `.env` local. Os nomes das contas de administrador e de demonstração ficam em
-`AFDEVOPS_ADMIN_USERNAME` e `AFDEVOPS_COLABORADOR_USERNAME`, no `.env` local. Para definir senhas próprias
-(digitadas sem aparecer na tela; o backend é recriado e as sessões são encerradas):
-
-```bash
-python3 scripts/definir_credenciais.py admin
-python3 scripts/definir_credenciais.py demo
-python3 scripts/definir_credenciais.py colaborador --usuario NOME   # conta individual existente
-```
-
-Ao trocar uma senha, por padrão o texto novo não é guardado no `.env`; com isso, o script do catálogo passa a perguntá-la e
-os testes integrados a esperam nas variáveis `E2E_*_PASSWORD`. Use `--guardar-no-env` se preferir.
-
-Para criar a conta individual, que usa a IA: como administrador, cadastre um colaborador, crie a conta em
-**Contas** e, já na conta individual, autorize em **Privacidade e IA**.
-
-### 14.3 Uso cotidiano
-
-```bash
-docker compose up -d           # inicia (use --build depois de atualizar o código)
-docker compose stop            # para e preserva tudo
-docker compose down            # remove os contêineres e preserva os volumes
-```
-
-> [!CAUTION]
-> Não use `docker compose down -v`: apaga o banco, a fila e os modelos.
-
-### 14.4 Testes
+A instalação está em [Como executar](#como-executar). Para rodar os testes são necessárias outras
+ferramentas, que não são usadas na execução normal. Os comandos partem da raiz.
 
 ```bash
 # frontend (Node 24)
 (cd frontend && npm ci && npm run typecheck && npm run lint && npm test && npm run build)
-# backend (JDK 17 ou 21, com Docker em execução)
+# backend (JDK 17 ou 21, com o Docker em execução)
 (cd backend && ./mvnw -B verify)
 # serviço de IA (Python 3.13)
 (cd ai-service && python -m pip install -r requirements.txt && python -m pytest)
@@ -726,16 +845,15 @@ COMPOSE_PROJECT_NAME=evolia-testes ./scripts/testes-integrados.sh --down
 ```
 
 Os testes ponta a ponta gravam cursos e treinamentos. O nome de projeto próprio cria volumes separados dos
-da demonstração; pare antes a pilha principal (`docker compose stop`), porque as portas são as mesmas, e use
-uma cópia do repositório com `.env` próprio se não quiser compartilhar as credenciais.
+da demonstração. Antes, pare a aplicação principal (`docker compose stop`), porque as portas são as mesmas.
 
 Diagnóstico, Ollama nativo e carga: [infraestrutura](infra/README.md) e
 [roteiros de carga](integration-tests/carga/README.md).
 
 ## 15. Guia de demonstração
 
-Ordem definida pelas orientações da disciplina, com cerca de 6 minutos por integrante. As falas estão no
-[roteiro da apresentação](docs/roteiro-apresentacao.md), junto com a preparação do ambiente.
+Seguimos a ordem pedida pela professora, com cerca de 6 minutos para cada integrante. As falas e a
+preparação do ambiente estão no [roteiro](docs/roteiro-apresentacao.md).
 
 | Parte | Quem | Tempo | O que explicar | O que mostrar | Requisito ou item |
 | :---: | --- | ---: | --- | --- | --- |
@@ -744,7 +862,7 @@ Ordem definida pelas orientações da disciplina, com cerca de 6 minutos por int
 | C | Isadora | 3 min | Arquitetura C4 | Seção [6](#6-item-b--arquitetura-em-c4), direto no README | Item B |
 | D | Maria Julia | 2,5 min | Serviços e módulos implementados | Seções [5.4](#54-organização-do-código) e [5.6](#56-responsabilidade-de-cada-componente); aplicação em execução | Item A, RF01–RF05 |
 | E | Maria Julia | 2,5 min | Microsserviços, monólito modular híbrido, gateway e ADR | Seções [5.2](#52-comparação-entre-as-alternativas) e [9](#9-item-e--registro-da-decisão-arquitetural); [`evolia.conf`](frontend/nginx/evolia.conf) | Itens A e E |
-| F | Maria Julia | 1 min | Ports and Adapters, aplicação parcial | Seção [5.5](#55-portas-e-adaptadores-somente-na-integração-com-ia); [`ServicoIaPort`](backend/src/main/java/br/edu/facens/afdevops/ia/ServicoIaPort.java) | Item A |
+| F | Maria Julia | 1 min | Arquitetura Hexagonal e Ports and Adapters (aplicação parcial) | Seção [5.5](#55-portas-e-adaptadores-somente-na-integração-com-ia); [`ServicoIaPort`](backend/src/main/java/br/edu/facens/afdevops/ia/ServicoIaPort.java) | Item A |
 | G | Felipe | 4 min | REST, RabbitMQ e os três ASRs | Seções [7](#7-item-c--comunicação-arquitetural) e [8](#8-item-d--requisitos-arquiteturalmente-significativos); [`PublicadorTreinamento`](backend/src/main/java/br/edu/facens/afdevops/treinamento/PublicadorTreinamento.java) | Itens C e D |
 | H | Felipe | 1,5 min | Limitações | Seção [16](#16-limitações-e-evolução-futura) | RF03, RF04 |
 | I | Felipe | 0,5 min | Considerações finais | Seção [2](#2-visão-geral-da-solução) | — |

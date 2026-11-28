@@ -1,6 +1,10 @@
 # AI Service
 
-Serviço Python da Plataforma Inteligente de Educação Corporativa. A Frente B fornece classificação de competências, recuperação documental para recomendações, orientação determinística protegida por token interno e um worker separado para treinamento assíncrono.
+Este é o serviço de IA da Evolia, escrito em Python. Ele classifica competências, recomenda cursos a partir
+de documentos e monta a orientação. Um processo separado, o *worker*, treina o modelo quando o backend pede.
+
+Para apenas executar a aplicação, siga o [README principal](../README.md#como-executar). As instruções
+abaixo são para quem quer desenvolver ou testar este serviço fora do Docker.
 
 ## Tecnologias
 
@@ -84,7 +88,7 @@ A base tem 35 registros iniciantes, 55 intermediários e 35 avançados. Esses da
 .\.venv\Scripts\python.exe -m ml.train_model
 ```
 
-A API carrega o modelo uma vez durante o startup. Ela não treina automaticamente. Para aplicar um modelo novo treinado pelo worker, reinicie a API; até o reinício, a instância existente continua usando o artefato carregado anteriormente.
+A API carrega o modelo uma vez, ao iniciar. Executada diretamente, ela não treina sozinha. No contêiner, o script de entrada treina o modelo inicial se o arquivo ainda não existir. Depois de um novo treinamento pelo *worker*, é preciso reiniciar a API para usar o modelo novo.
 
 ### Avaliação holdout
 
@@ -121,7 +125,7 @@ A base `knowledge/courses/` contém doze documentos institucionais **fictícios*
 
 `app/knowledge_base.py` carrega os Markdown, cria vetores TF-IDF em memória e recupera conteúdo por similaridade de cosseno. `POST /recomendacoes` usa as competências com nota até 3 (ou a menor nota, se todas forem altas), filtra os documentos recuperados pelo nível recebido e devolve os cursos e nomes dos arquivos fonte. As justificativas usam descrição e pré-requisitos dos documentos.
 
-Não há provedor de LLM configurado. A resposta de recomendações é determinística, baseada na recuperação e em campos dos documentos; não é geração por LLM nem RAG generativo completo. O modo atual não usa serviços pagos ou credenciais externas.
+Este serviço não usa nenhum modelo de linguagem. A resposta é determinística, montada com os campos dos documentos encontrados. Por isso, não é um RAG generativo completo. Também não usamos serviços pagos nem credenciais externas.
 
 Exemplo de `POST /recomendacoes`:
 
@@ -220,7 +224,7 @@ Os testes unitários usam dados/modelos temporários, mocks HTTP e um canal Rabb
 .\.venv\Scripts\python.exe -m pytest -p no:cacheprovider --basetemp .venv\pytest-b4-tmp
 ```
 
-A suíte cobre validação B1–B3, avaliação holdout, documentos e recuperação, recomendações, autenticação/ferramentas do agente, idempotência, callback HTTP, retries, DLQ e ACK.
+Os testes cobrem a validação das entradas, a avaliação do modelo, a busca nos documentos, as recomendações, a autenticação e as ferramentas do agente e o comportamento do *worker* (idempotência, aviso ao backend, novas tentativas, DLQ e ACK).
 
 ## Demonstração local
 
@@ -233,6 +237,6 @@ A suíte cobre validação B1–B3, avaliação holdout, documentos e recuperaç
 ## Limitações
 
 - Dados de treino, documentos e contas são fictícios; as métricas vêm de uma única divisão holdout pequena e artificial e não medem eficácia profissional.
-- A recuperação é TF-IDF com montagem determinística das justificativas: não há LLM redigindo a partir dos trechos.
+- A busca usa TF-IDF, e as justificativas são montadas por código; nenhum modelo de linguagem escreve a partir dos trechos.
 - O acervo documental é independente do catálogo de cursos do backend.
 - A API precisa reiniciar para carregar um artefato de modelo novo.

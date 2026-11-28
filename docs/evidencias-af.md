@@ -21,7 +21,9 @@ Referência: enunciado oficial da AF (Estudo de Caso 1, DevOps e QA, 01/12/2026,
 
 > **Leia antes:** a tabela abaixo e os cenários descritos neste documento são da Etapa 14.1, **anteriores
 > ao redesenho da interface**. A verificação da versão atual está em
-> [Versão atual](#versão-atual-design-20-28112026). As medições de desempenho não foram repetidas.
+> [Versão atual](#versão-atual-design-20-28112026). As medições de desempenho não foram repetidas. Depois
+> desses resultados, incluímos as capas dos cursos e repetimos apenas os testes de catálogo e de imagens
+> (59 de 59), typecheck, lint e build.
 
 
 | Verificação | Etapa 14.1 | Histórico (Etapa 14) |
