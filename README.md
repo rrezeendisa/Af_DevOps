@@ -19,11 +19,13 @@ com autorização do usuário e treinamento assíncrono de modelos.
 
 **Integrantes**
 
-| Identificação no Git | Nome completo | RA | Frente registrada nos commits |
-| --- | --- | --- | --- |
-| `mjdutil` | _a informar_ | _a informar_ | Backend, frontend, infraestrutura, testes integrados e documentação |
-| Felipe Brito | _a informar_ | _a informar_ | Backend de treinamento, RabbitMQ/Compose, testes integrados, scripts, CI e documentação de infraestrutura |
-| `rrezeendisa` | _a informar_ | _a informar_ | Serviço de IA: classificação, recomendações, orientação e *worker* |
+| Nome completo | Apresentação | Frente registrada nos commits |
+| --- | --- | --- |
+| Isadora Gesaro Rezende | Equipe, problema, requisitos e C4 | Serviço de IA: classificação, recomendações, orientação e *worker* |
+| Maria Julia de Paula Dutil | Serviços, arquitetura, gateway e ADR | Backend, frontend, infraestrutura, testes integrados e documentação |
+| Felipe de Brito Lima | Comunicação, ASRs, limitações e conclusão | Backend de treinamento, RabbitMQ/Compose, testes integrados, scripts, CI e documentação de infraestrutura |
+
+Os registros acadêmicos (RA) constam na versão privada de identificação, fora deste repositório público.
 
 > [!NOTE]
 > Projeto acadêmico, executado localmente com dados e documentos fictícios. Não é um produto certificado
@@ -732,29 +734,20 @@ Diagnóstico, Ollama nativo e carga: [infraestrutura](infra/README.md) e
 
 ## 15. Guia de demonstração
 
-Roteiro proposto de 18 minutos, detalhado em [docs/roteiro-apresentacao.md](docs/roteiro-apresentacao.md).
-O enunciado não define formato nem duração: confirmem com o responsável pela disciplina. Antes: pilha no ar, catálogo
-preenchido, três janelas de navegador (uma por perfil), consentimento **não** autorizado e uma geração de
-teste para aquecer o modelo (a primeira levou cerca de 34 s; as seguintes, cerca de 4 s).
+Ordem definida pelas orientações da disciplina, com cerca de 6 minutos por integrante. As falas estão no
+[roteiro da apresentação](docs/roteiro-apresentacao.md), junto com a preparação do ambiente.
 
-| # | O que explicar | Tela | Código ou documento a abrir | Requisito |
-| ---: | --- | --- | --- | --- |
-| 1 | Equipe e problema | Este README, seção 1 | — | — |
-| 2 | Visão geral e perfis | Página pública `/` | seção 2 | RF01–RF05 |
-| 3 | Organização e alternativas A × B | seção 5 | [`ia/`](backend/src/main/java/br/edu/facens/afdevops/ia), [`CursoService`](backend/src/main/java/br/edu/facens/afdevops/curso/CursoService.java) | Item A |
-| 4 | Contêineres e limites | seção 6 | [`docker-compose.yml`](docker-compose.yml) | Item B |
-| 5 | REST × RabbitMQ | seção 7 | [`PublicadorTreinamento`](backend/src/main/java/br/edu/facens/afdevops/treinamento/PublicadorTreinamento.java), [`consumer.py`](ai-service/worker/consumer.py) | Item C |
-| 6 | Cadastro, conta e catálogo | Admin: Visão geral, Colaboradores, Contas, Cursos | [`ColaboradorController`](backend/src/main/java/br/edu/facens/afdevops/colaborador/ColaboradorController.java) | RF01 |
-| 7 | Área do colaborador | Início e Catálogo; depois a conta de demonstração tentando `/orientacao` | [`rotas.ts`](frontend/src/app/rotas.ts) | RNF03 |
-| 8 | Autorizar e classificar | Privacidade e IA; Minhas competências (2, 4, 3) | [`train_model.py`](ai-service/ml/train_model.py) | RF02 |
-| 9 | Recuperação e fontes | Recomendações | [`recommendation_service.py`](ai-service/app/recommendation_service.py) | RF03 |
-| 10 | Orientação, passos gerados e revogação | Orientador Evolia; Privacidade e IA | [`IaService`](backend/src/main/java/br/edu/facens/afdevops/ia/IaService.java), [`guidance_agent.py`](ai-service/app/guidance_agent.py) | RF04 |
-| 11 | Treinamento assíncrono | Admin: Treinamentos da IA | [`processor.py`](ai-service/worker/processor.py) | RF05, RNF02 |
-| 12 | Sessão, CSRF e redes | seção 11 | [`SegurancaConfig`](backend/src/main/java/br/edu/facens/afdevops/seguranca/SegurancaConfig.java), [`evolia.conf`](frontend/nginx/evolia.conf) | RNF03 |
-| 13 | Antes e depois | seção 12 | [evidências](docs/evidencias-etapa14-1/README.md) | RNF01 |
-| 14 | Três requisitos que moldaram a arquitetura | seção 8 | — | Item D |
-| 15 | Decisões registradas | seção 9 | [ADRs](docs/arquitetura-af.md#e-adr--monólito-modular-híbrido) | Item E |
-| 16 | Limitações e conclusão | seção 16 | — | RF03, RF04, RNF05 |
+| Parte | Quem | Tempo | O que explicar | O que mostrar | Requisito ou item |
+| :---: | --- | ---: | --- | --- | --- |
+| A | Isadora | 0,5 min | Equipe, nomes completos, RAs, projeto e data | Identificação (versão privada, com RAs) | — |
+| B | Isadora | 2,5 min | Problema e requisitos | Seções [1](#1-situação-problema), [3](#3-requisitos-funcionais) e [4](#4-requisitos-não-funcionais) | RF01–RF05, RNF01–RNF05 |
+| C | Isadora | 3 min | Arquitetura C4 | Seção [6](#6-item-b--arquitetura-em-c4), direto no README | Item B |
+| D | Maria Julia | 2,5 min | Serviços e módulos implementados | Seções [5.4](#54-organização-do-código) e [5.6](#56-responsabilidade-de-cada-componente); aplicação em execução | Item A, RF01–RF05 |
+| E | Maria Julia | 2,5 min | Microsserviços, monólito modular híbrido, gateway e ADR | Seções [5.2](#52-comparação-entre-as-alternativas) e [9](#9-item-e--registro-da-decisão-arquitetural); [`evolia.conf`](frontend/nginx/evolia.conf) | Itens A e E |
+| F | Maria Julia | 1 min | Ports and Adapters, aplicação parcial | Seção [5.5](#55-portas-e-adaptadores-somente-na-integração-com-ia); [`ServicoIaPort`](backend/src/main/java/br/edu/facens/afdevops/ia/ServicoIaPort.java) | Item A |
+| G | Felipe | 4 min | REST, RabbitMQ e os três ASRs | Seções [7](#7-item-c--comunicação-arquitetural) e [8](#8-item-d--requisitos-arquiteturalmente-significativos); [`PublicadorTreinamento`](backend/src/main/java/br/edu/facens/afdevops/treinamento/PublicadorTreinamento.java) | Itens C e D |
+| H | Felipe | 1,5 min | Limitações | Seção [16](#16-limitações-e-evolução-futura) | RF03, RF04 |
+| I | Felipe | 0,5 min | Considerações finais | Seção [2](#2-visão-geral-da-solução) | — |
 
 ## 16. Limitações e evolução futura
 
