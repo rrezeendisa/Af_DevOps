@@ -99,7 +99,8 @@ describe('recomendações', () => {
     await usuario.click(screen.getByRole('button', { name: 'Gerar recomendações' }))
     expect(await screen.findByText(html, { selector: 'p' })).toBeInTheDocument()
     expect(screen.getByText('Curso <script>x</script>')).toBeInTheDocument()
-    expect(container.querySelector('img, b, script, i')).toBeNull()
+    // Só o conteúdo da página: a assinatura da marca, na navegação, é uma imagem legítima.
+    expect(container.querySelector('main')!.querySelector('img, b, script, i')).toBeNull()
   })
 
   it('alterar uma nota descarta classificação e recomendações', async () => {

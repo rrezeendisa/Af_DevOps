@@ -1,89 +1,60 @@
-import { LoaderCircle, MessageSquareText, Send, Sparkles } from 'lucide-react'
-import { useId, useState } from 'react'
+import { ArrowUp, ChartNoAxesColumn, Code2, LoaderCircle, MessageCircle, Zap } from 'lucide-react'
+import { useId, useRef, useState } from 'react'
 import { Link } from 'react-router'
-import { BadgeStatus } from '@/components/feedback/BadgeStatus'
 import { EstadoVazio } from '@/components/feedback/EstadoVazio'
 import { MensagemErro } from '@/components/feedback/MensagemErro'
-import { Campo } from '@/components/formulario/Campo'
-import { CabecalhoPagina } from '@/components/layout/CabecalhoPagina'
+import { MascoteEvolia } from '@/components/marca/MascoteEvolia'
 import { Button } from '@/components/ui/button'
-import { Textarea } from '@/components/ui/textarea'
 import { ExigeConsentimento } from '@/features/consentimento/ExigeConsentimento'
+import { cn } from '@/lib/utils'
 import { contarCaracteres, LIMITE_PERGUNTA, problemaNaPergunta } from './api'
 import { useJornada } from './contextoJornada'
-import { ListaFontes } from './ListaFontes'
+import { Pergunta, Resposta } from './RespostaOrientador'
 
-function Resultado() {
-  const { orientacao } = useJornada()
-  if (!orientacao) return null
-  const { pergunta, resposta } = orientacao
-  // Tudo é exibido como texto: o React escapa o conteúdo e nada é interpretado como HTML.
+const SUGESTOES = [
+  { texto: 'Como desenvolver minhas habilidades em tecnologia?', icone: Code2 },
+  { texto: 'Como posso melhorar minha comunicação?', icone: MessageCircle },
+  { texto: 'Quais competências devo desenvolver primeiro?', icone: Zap },
+] as const
+
+/** Boas-vindas, enquanto não há conversa. Não mostra dado nenhum da jornada. */
+function Abertura() {
   return (
-    <section aria-labelledby="titulo-orientacao" className="grid gap-5">
-      <div className="grid gap-4 rounded-2xl border border-border bg-surface p-6">
-        <h2 id="titulo-orientacao" className="font-sans text-lg font-semibold">
-          Orientação
-        </h2>
-        <p className="text-sm text-muted-foreground">
-          Sua pergunta: <span className="text-foreground">{pergunta}</span>
-        </p>
-        <p className="text-base whitespace-pre-line">{resposta.orientacao}</p>
-      </div>
-
-      <section aria-labelledby="titulo-proximos" className="grid gap-3 rounded-2xl bg-accent p-6 text-accent-foreground dark:border dark:border-accent/30 dark:bg-surface-2 dark:text-foreground">
-        <div className="flex flex-wrap items-center gap-3">
-          <h2 id="titulo-proximos" className="font-sans text-base font-semibold">
-            Próximos passos sugeridos
-          </h2>
-          {resposta.proximosPassos && (
-            <BadgeStatus tom="rosa" icone={Sparkles}>
-              Gerado por IA
-            </BadgeStatus>
-          )}
-        </div>
-        {resposta.proximosPassos ? (
-          <ol className="grid list-decimal gap-1.5 pl-5 text-sm">
-            {resposta.proximosPassos.map((passo, indice) => (
-              <li key={indice}>{passo}</li>
-            ))}
-          </ol>
-        ) : (
-          <p className="text-sm">Próximos passos complementares não estão disponíveis agora. A orientação acima continua válida.</p>
-        )}
-      </section>
-
-      <div className="grid gap-5 lg:grid-cols-2">
-        <section aria-label="Cursos citados" className="grid content-start gap-3 rounded-2xl border border-border bg-surface p-5">
-          <h2 className="font-sans text-base font-semibold">Cursos citados</h2>
-          {resposta.cursosRecomendados.length === 0 ? (
-            <p className="text-sm text-muted-foreground">Nenhum curso citado nesta orientação.</p>
-          ) : (
-            <ul className="flex flex-wrap gap-2">
-              {resposta.cursosRecomendados.map((codigo, indice) => (
-                <li key={`${codigo}-${indice}`}>
-                  <code className="rounded-md bg-surface-2 px-2 py-1 font-mono text-xs">{codigo}</code>
-                </li>
-              ))}
-            </ul>
-          )}
-          <p className="text-xs text-muted-foreground">Códigos do acervo de documentos da IA.</p>
-        </section>
-        <ListaFontes fontes={resposta.fontes} />
-      </div>
-    </section>
+    <div className="grid justify-items-center gap-2 text-center sm:gap-3">
+      <MascoteEvolia decorativo className="w-24 sm:w-40" />
+      <h1 className="text-3xl font-semibold sm:text-4xl">Como posso ajudar você?</h1>
+      <p className="max-w-md text-base text-muted-foreground sm:text-lg">Vamos encontrar seu próximo passo de desenvolvimento.</p>
+    </div>
   )
 }
 
 function Orientacao() {
-  const { competenciasCompletas, orientar, cancelar, pendente, falha, aviso } = useJornada()
-  const [pergunta, setPergunta] = useState('')
+  const { competenciasCompletas, orientacao, perguntaEnviada: enviada, orientar, cancelar, pendente, falha, aviso } = useJornada()
+  const interrompida = !pendente.orientacao && (aviso === 'orientacao-cancelada' || Boolean(falha.orientacao))
+  // Em erro ou cancelamento o campo traz a pergunta de volta, mesmo depois de trocar de tela.
+  const [pergunta, setPergunta] = useState(() => (interrompida ? (enviada ?? '') : ''))
   const [erro, setErro] = useState<string | null>(null)
+  const campoRef = useRef<HTMLTextAreaElement>(null)
+  const idCampo = useId()
   const idContador = useId()
+  const idErro = useId()
+
+  // Quando a resposta chega, só a pergunta respondida sai do campo; um rascunho novo fica.
+  const [respondida, setRespondida] = useState(orientacao)
+  if (orientacao !== respondida) {
+    setRespondida(orientacao)
+    if (orientacao && pergunta.trim() === orientacao.pergunta) setPergunta('')
+  }
+  const [estavaInterrompida, setEstavaInterrompida] = useState(interrompida)
+  if (interrompida !== estavaInterrompida) {
+    setEstavaInterrompida(interrompida)
+    if (interrompida && pergunta === '' && enviada) setPergunta(enviada)
+  }
 
   if (!competenciasCompletas) {
     return (
       <EstadoVazio
-        icone={MessageSquareText}
+        icone={ChartNoAxesColumn}
         titulo="Faça a avaliação primeiro"
         descricao="A orientação usa as notas da sua avaliação nesta sessão."
         acao={
@@ -96,44 +67,52 @@ function Orientacao() {
   }
 
   const total = contarCaracteres(pergunta.trim())
+  // Uma pergunta por vez: cada uma é independente, sem histórico.
+  const emAndamento = (pendente.orientacao || interrompida) && enviada !== null
+  const conversando = pendente.orientacao || emAndamento || orientacao !== null
+
+  const enviar = () => {
+    if (pendente.orientacao) return
+    const problema = problemaNaPergunta(pergunta)
+    setErro(problema)
+    if (problema) return
+    void orientar(pergunta.trim())
+  }
 
   return (
-    <div className="grid gap-6">
-      <form
-        noValidate
-        className="grid gap-4 rounded-2xl border border-border bg-surface p-6"
-        onSubmit={(evento) => {
-          evento.preventDefault()
-          if (pendente.orientacao) return
-          const problema = problemaNaPergunta(pergunta)
-          setErro(problema)
-          if (!problema) void orientar(pergunta.trim())
-        }}
-      >
-        <Campo rotulo="Sua pergunta" erro={erro ?? undefined} ajuda={<span id={idContador}>{total}/{LIMITE_PERGUNTA} caracteres</span>}>
-          <Textarea
-            rows={4}
-            value={pergunta}
-            onChange={(evento) => setPergunta(evento.target.value)}
-            placeholder="Ex.: Por onde começo para melhorar em tecnologia?"
-          />
-        </Campo>
-        <Button type="submit" className="justify-self-start" disabled={pendente.orientacao}>
-          <Send aria-hidden="true" />
-          Pedir orientação
-        </Button>
-      </form>
+    <div className={cn('flex flex-col gap-6', conversando && 'flex-1')}>
+      {conversando && (
+        <div className="grid gap-6">
+          <h1 className="sr-only">Conversa com o orientador</h1>
+          {emAndamento ? (
+            <Pergunta texto={enviada} />
+          ) : (
+            !pendente.orientacao && orientacao && (
+              <>
+                <Pergunta texto={orientacao.pergunta} />
+                <Resposta resposta={orientacao.resposta} />
+              </>
+            )
+          )}
+        </div>
+      )}
+
+      {/* Região fixa: é ela que anuncia a chegada da resposta a leitores de tela. */}
+      <p role="status" className="sr-only">
+        {!pendente.orientacao && !interrompida && orientacao ? 'Resposta do orientador recebida.' : ''}
+      </p>
 
       {pendente.orientacao && (
-        <div role="status" className="flex flex-wrap items-center justify-between gap-4 rounded-2xl bg-surface-2 p-5">
-          <div className="flex items-start gap-3">
-            <LoaderCircle aria-hidden="true" className="mt-0.5 size-5 shrink-0 animate-spin text-brand-detail" />
-            <div className="grid gap-0.5 text-sm">
-              <p className="font-semibold">A IA está preparando sua orientação.</p>
-              <p className="text-muted-foreground">Isso pode levar até 90 segundos.</p>
-            </div>
+        <div role="status" className="flex flex-wrap items-center gap-4">
+          <MascoteEvolia pose="pensativo" decorativo className="w-16 shrink-0" />
+          <div className="grid min-w-0 flex-1 gap-0.5 text-sm">
+            <p className="flex items-center gap-2 font-semibold">
+              <LoaderCircle aria-hidden="true" className="size-4 shrink-0 text-brand-detail motion-safe:animate-spin" />
+              A IA está preparando sua orientação.
+            </p>
+            <p className="text-muted-foreground">Isso pode levar até 90 segundos.</p>
           </div>
-          <Button variant="outline" onClick={() => cancelar('orientacao')}>
+          <Button variant="outline" className="rounded-full" onClick={() => cancelar('orientacao')}>
             Cancelar espera
           </Button>
         </div>
@@ -144,23 +123,106 @@ function Orientacao() {
           A espera foi interrompida nesta tela. O processamento pode continuar no servidor, mas o resultado não será exibido.
         </MensagemErro>
       )}
-
       {falha.orientacao && (
         <MensagemErro titulo="Não foi possível obter a orientação">{falha.orientacao} Você pode enviar a pergunta novamente.</MensagemErro>
       )}
 
-      {!pendente.orientacao && <Resultado />}
+      {!conversando && (
+        <ul aria-label="Sugestões de perguntas" className="grid gap-3 sm:grid-cols-3">
+          {SUGESTOES.map(({ texto, icone: Icone }) => (
+            <li key={texto}>
+              <button
+                type="button"
+                onClick={() => {
+                  // Só preenche: quem envia é a pessoa.
+                  setPergunta(texto)
+                  setErro(null)
+                  campoRef.current?.focus()
+                }}
+                className="flex h-full w-full items-center gap-3 rounded-2xl border border-border bg-surface p-4 text-left text-sm font-medium shadow-baixa transition-[translate,border-color] outline-none hover:border-neon-violet focus-visible:ring-2 focus-visible:ring-ring motion-safe:hover:-translate-y-0.5"
+              >
+                <Icone aria-hidden="true" className="size-5 shrink-0 text-brand-detail" strokeWidth={1.75} />
+                {texto}
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+
+      <form
+        noValidate
+        className={cn('sticky bottom-3 z-10 grid gap-1.5 pt-2', conversando && 'mt-auto')}
+        onSubmit={(evento) => {
+          evento.preventDefault()
+          enviar()
+        }}
+      >
+        <div
+          className={cn(
+            'flex items-end gap-2 rounded-[1.75rem] border border-input bg-surface py-2 pr-2 pl-5 shadow-media transition-colors focus-within:border-ring focus-within:ring-4 focus-within:ring-ring/20',
+            erro && 'border-destructive',
+          )}
+        >
+          <label htmlFor={idCampo} className="sr-only">
+            Sua pergunta
+          </label>
+          <textarea
+            ref={campoRef}
+            id={idCampo}
+            rows={1}
+            value={pergunta}
+            onChange={(evento) => setPergunta(evento.target.value)}
+            onKeyDown={(evento) => {
+              if (evento.key === 'Enter' && !evento.shiftKey && !evento.nativeEvent.isComposing) {
+                evento.preventDefault()
+                enviar()
+              }
+            }}
+            placeholder="Pergunte sobre seu desenvolvimento..."
+            aria-invalid={erro ? true : undefined}
+            aria-describedby={erro ? `${idErro} ${idContador}` : idContador}
+            className="field-sizing-content max-h-40 min-h-10 min-w-0 flex-1 resize-none bg-transparent py-2 text-base outline-none placeholder:text-muted-foreground"
+          />
+          <span className="hidden shrink-0 pb-2.5 text-xs text-muted-foreground tabular-nums sm:block" aria-hidden="true">
+            {total}/{LIMITE_PERGUNTA}
+          </span>
+          <Button
+            type="submit"
+            size="icon"
+            aria-label="Pedir orientação"
+            disabled={pendente.orientacao}
+            className="size-11 shrink-0 rounded-full bg-linear-to-r from-primary to-neon-violet shadow-neon hover:brightness-105"
+          >
+            {pendente.orientacao ? (
+              <LoaderCircle aria-hidden="true" className="size-5 motion-safe:animate-spin" />
+            ) : (
+              <ArrowUp aria-hidden="true" className="size-5" />
+            )}
+          </Button>
+        </div>
+        {erro && (
+          <p id={idErro} role="alert" className="px-5 text-sm text-destructive">
+            {erro}
+          </p>
+        )}
+        <p id={idContador} className="px-5 text-xs text-muted-foreground">
+          <span className="sr-only">
+            {total}/{LIMITE_PERGUNTA} caracteres
+          </span>
+          Enter envia; Shift+Enter quebra a linha. Cada pergunta é independente.
+        </p>
+      </form>
     </div>
   )
 }
 
 export default function PaginaOrientacao() {
+  const { orientacao, pendente, falha, aviso } = useJornada()
+  const semConversa = !orientacao && !pendente.orientacao && !falha.orientacao && aviso !== 'orientacao-cancelada'
+
   return (
-    <div className="grid gap-8 pt-2">
-      <CabecalhoPagina
-        titulo="Orientação com IA"
-        descricao="Faça uma pergunta sobre seu desenvolvimento. A resposta considera as notas da sua avaliação."
-      />
+    <div className={cn('mx-auto flex min-h-[calc(100svh-7.5rem)] w-full max-w-3xl flex-col gap-5 pt-2 sm:gap-8', semConversa && 'fundo-orientador justify-center')}>
+      {semConversa && <Abertura />}
       <ExigeConsentimento>
         <Orientacao />
       </ExigeConsentimento>

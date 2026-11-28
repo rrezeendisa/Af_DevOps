@@ -15,6 +15,7 @@ const INICIAL: EstadoJornada = {
   classificacao: null,
   recomendacoes: null,
   orientacao: null,
+  perguntaEnviada: null,
   pendente: SEM_PENDENCIAS,
   falha: {},
   aviso: null,
@@ -23,6 +24,7 @@ const INICIAL: EstadoJornada = {
 type Acao =
   | { tipo: 'nota'; notas: EstadoJornada['notas']; versao: number }
   | { tipo: 'inicio'; operacao: OperacaoIa }
+  | { tipo: 'pergunta'; pergunta: string }
   | { tipo: 'classificado'; dados: Classificacao }
   | { tipo: 'recomendado'; dados: Recomendacoes; base: Classificacao }
   | { tipo: 'orientado'; pergunta: string; dados: Orientacao }
@@ -35,9 +37,11 @@ function reduzir(estado: EstadoJornada, acao: Acao): EstadoJornada {
   switch (acao.tipo) {
     case 'nota':
       // Notas novas invalidam tudo o que foi calculado com as anteriores.
-      return { ...estado, versao: acao.versao, notas: acao.notas, classificacao: null, recomendacoes: null, orientacao: null, pendente: SEM_PENDENCIAS, falha: {}, aviso: null }
+      return { ...estado, versao: acao.versao, notas: acao.notas, classificacao: null, recomendacoes: null, orientacao: null, perguntaEnviada: null, pendente: SEM_PENDENCIAS, falha: {}, aviso: null }
     case 'inicio':
       return { ...estado, pendente: { ...estado.pendente, [acao.operacao]: true }, falha: { ...estado.falha, [acao.operacao]: undefined }, aviso: null }
+    case 'pergunta':
+      return { ...estado, perguntaEnviada: acao.pergunta }
     case 'classificado':
       // Um novo nível torna as recomendações anteriores obsoletas.
       return { ...estado, classificacao: acao.dados, recomendacoes: null, pendente: { ...estado.pendente, classificacao: false } }
@@ -167,6 +171,7 @@ export function JornadaProvider({ children }: { children: ReactNode }) {
       async orientar(pergunta) {
         const notas = completas(estadoRef.current.notas)
         if (!notas) return
+        despachar({ tipo: 'pergunta', pergunta })
         await executar('orientacao', (signal) => orientar(api, pergunta, notas, signal), (dados) => ({ tipo: 'orientado', pergunta, dados }))
       },
       cancelar(operacao) {

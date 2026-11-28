@@ -16,6 +16,8 @@ export type EstadoJornada = {
   classificacao: Classificacao | null
   recomendacoes: Recomendacoes | null
   orientacao: { pergunta: string; resposta: Orientacao } | null
+  /** Última pergunta enviada. Só em memória; sobrevive à troca de tela enquanto a resposta não chega. */
+  perguntaEnviada: string | null
   pendente: Record<OperacaoIa, boolean>
   falha: Partial<Record<OperacaoIa, string>>
   aviso: AvisoJornada | null

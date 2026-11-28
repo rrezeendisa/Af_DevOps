@@ -4,6 +4,7 @@ import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { AppRotas } from '@/app/AppRotas'
+import { urlDaFoto } from '@/components/arte/fotos'
 import { criarQueryClient } from '@/app/queryClient'
 import { ProvedorTema } from '@/components/tema/ProvedorTema'
 import { AuthContext, type ValorAuth } from '@/features/auth/contexto'
@@ -49,7 +50,7 @@ async function prepararOrientacao(usuario: ReturnType<typeof abrir>['usuario']) 
   for (const [grupo, nota] of [['Lógica', 2], ['Comunicação', 4], ['Tecnologia', 3]] as const) {
     await usuario.click(within(screen.getByRole('group', { name: grupo })).getByRole('radio', { name: String(nota) }))
   }
-  await usuario.click(within(screen.getByRole('complementary')).getByRole('link', { name: 'Orientação' }))
+  await usuario.click(within(screen.getByRole('complementary')).getByRole('link', { name: 'Orientador Evolia' }))
   return screen.findByRole('textbox', { name: 'Sua pergunta' })
 }
 
@@ -136,7 +137,15 @@ describe('orientação com IA', () => {
     await usuario.type(campo, 'Teste')
     await usuario.click(screen.getByRole('button', { name: 'Pedir orientação' }))
     expect(await screen.findByText(html, { selector: 'p' })).toBeInTheDocument()
-    expect(container.querySelector('img, b, i, script')).toBeNull()
+    // Só o conteúdo da página. A única imagem aceita é o mascote da própria interface.
+    const conteudo = container.querySelector('main')!
+    expect(conteudo.querySelector('b, i, script, [onerror]')).toBeNull()
+    // Endereços exatos: nenhuma imagem vinda da resposta passa, mesmo com nome parecido.
+    const permitidas = [urlDaFoto('mascote-evolia'), urlDaFoto('mascote-pensativo')]
+    for (const imagem of conteudo.querySelectorAll('img')) {
+      expect(permitidas).toContain(imagem.getAttribute('src'))
+      expect(imagem.getAttribute('alt')).toBe('')
+    }
   })
 
   it('mostra o processamento (até 90 s) e o cancelamento interrompe só a espera no frontend', async () => {
@@ -237,7 +246,7 @@ describe('revogação e sessão', () => {
     await usuario.click(screen.getByRole('button', { name: 'Pedir orientação' }))
     await screen.findByText('A IA está preparando sua orientação.')
 
-    await usuario.click(within(screen.getByRole('complementary')).getByRole('link', { name: 'Consentimento' }))
+    await usuario.click(within(screen.getByRole('complementary')).getByRole('link', { name: 'Privacidade e IA' }))
     await usuario.click(await screen.findByRole('button', { name: 'Revogar autorização' }))
     await usuario.click(screen.getByRole('button', { name: 'Confirmar revogação' }))
 
@@ -247,12 +256,12 @@ describe('revogação e sessão', () => {
       orientacao.resolver(json(ORIENTACAO))
     })
 
-    await usuario.click(within(screen.getByRole('complementary')).getByRole('link', { name: 'Orientação' }))
+    await usuario.click(within(screen.getByRole('complementary')).getByRole('link', { name: 'Orientador Evolia' }))
     expect(await screen.findByText('Autorização necessária')).toBeInTheDocument()
     expect(screen.queryByText(ORIENTACAO.orientacao)).toBeNull()
 
     // A jornada foi apagada: mesmo autorizando de novo, não há notas nem resultados restaurados.
-    await usuario.click(within(screen.getByRole('complementary')).getByRole('link', { name: 'Competências' }))
+    await usuario.click(within(screen.getByRole('complementary')).getByRole('link', { name: 'Minhas competências' }))
     expect(screen.queryAllByRole('radio', { checked: true })).toHaveLength(0)
   })
 
@@ -349,6 +358,72 @@ describe('revogação e sessão', () => {
     expect(screen.getByRole('heading', { name: 'Autorização necessária' })).toBeInTheDocument()
     expect(screen.queryByText('Faça a avaliação primeiro')).toBeNull()
     expect(posts(fetchMock)).toBe(0)
+  })
+
+  it('as sugestões só preenchem o campo, sem enviar', async () => {
+    const { usuario, fetchMock } = abrir({ 'POST /api/ia/orientacoes': () => json(ORIENTACAO) })
+    const campo = await prepararOrientacao(usuario)
+    await usuario.click(screen.getByRole('button', { name: 'Como posso melhorar minha comunicação?' }))
+    expect(campo).toHaveValue('Como posso melhorar minha comunicação?')
+    expect(campo).toHaveFocus()
+    expect(posts(fetchMock)).toBe(0)
+  })
+
+  it('Enter envia uma vez, Shift+Enter quebra a linha e a conversa mostra só a pergunta atual', async () => {
+    const { usuario, fetchMock } = abrir({ 'POST /api/ia/orientacoes': () => json(ORIENTACAO) })
+    const campo = await prepararOrientacao(usuario)
+    await usuario.type(campo, 'Primeira linha{Shift>}{Enter}{/Shift}segunda')
+    expect(posts(fetchMock)).toBe(0)
+    await usuario.keyboard('{Enter}')
+    expect(await screen.findByText(ORIENTACAO.orientacao)).toBeInTheDocument()
+    expect(posts(fetchMock)).toBe(1)
+    expect(campo).toHaveValue('')
+    expect(screen.queryByRole('heading', { name: 'Como posso ajudar você?' })).toBeNull()
+
+    await usuario.type(campo, 'Outra pergunta{Enter}')
+    expect(await screen.findByText('Outra pergunta', { selector: 'p' })).toBeInTheDocument()
+    expect(screen.queryByText(/Primeira linha/, { selector: 'p' })).toBeNull()
+  })
+
+  it('sair e voltar durante a espera mantém a pergunta, que volta ao campo se a chamada falhar', async () => {
+    const resposta = adiado<Response>()
+    const { usuario } = abrir({ 'POST /api/ia/orientacoes': () => resposta.promessa })
+    const campo = await prepararOrientacao(usuario)
+    await usuario.type(campo, 'Pergunta em andamento{Enter}')
+    const barra = screen.getByRole('complementary')
+    await usuario.click(within(barra).getByRole('link', { name: 'Início' }))
+    await usuario.click(within(barra).getByRole('link', { name: 'Orientador Evolia' }))
+    expect(await screen.findByText('Pergunta em andamento', { selector: 'p' })).toBeInTheDocument()
+
+    await act(async () => {
+      resposta.resolver(problema(503, 'IA_INDISPONIVEL'))
+    })
+    expect(await screen.findByRole('alert')).toHaveTextContent('indisponível')
+    expect(screen.getByRole('textbox', { name: 'Sua pergunta' })).toHaveValue('Pergunta em andamento')
+    expect(screen.getByRole('heading', { level: 1 })).toBeInTheDocument()
+  })
+
+  it('um rascunho escrito durante a espera não é apagado quando a resposta chega, que é anunciada', async () => {
+    const resposta = adiado<Response>()
+    const { usuario } = abrir({ 'POST /api/ia/orientacoes': () => resposta.promessa })
+    const campo = await prepararOrientacao(usuario)
+    await usuario.type(campo, 'Primeira{Enter}')
+    await usuario.clear(campo)
+    await usuario.type(campo, 'Rascunho da próxima')
+    await act(async () => {
+      resposta.resolver(json(ORIENTACAO))
+    })
+    expect(await screen.findByText(ORIENTACAO.orientacao)).toBeInTheDocument()
+    expect(campo).toHaveValue('Rascunho da próxima')
+    expect(screen.getByText('Resposta do orientador recebida.')).toHaveAttribute('role', 'status')
+  })
+
+  it('em erro, a pergunta permanece no campo para reenviar', async () => {
+    const { usuario } = abrir({ 'POST /api/ia/orientacoes': () => problema(503, 'IA_INDISPONIVEL') })
+    const campo = await prepararOrientacao(usuario)
+    await usuario.type(campo, 'Pergunta que falha{Enter}')
+    expect(await screen.findByRole('alert')).toHaveTextContent('indisponível')
+    expect(campo).toHaveValue('Pergunta que falha')
   })
 
   it('não persiste notas, perguntas ou respostas no navegador', async () => {
