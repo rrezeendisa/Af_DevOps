@@ -1,6 +1,6 @@
 # Evidências da AF — Evolia
 
-Referência: enunciado oficial da AF (Estudo de Caso 1, DevOps e QA, 01/12/2026, páginas 1–3; não distribuído neste repositório). Decisões: [arquitetura](arquitetura-af.md). Arquivos: [evidências da Etapa 14](evidencias-etapa14/README.md).
+Referência: enunciado oficial da AF (Estudo de Caso 1, DevOps e QA, 01/12/2026, páginas 1–3; não distribuído neste repositório). Decisões: [arquitetura](arquitetura-af.md). Arquivos: [Etapa 14.1](evidencias-etapa14-1/README.md), com sessões autenticadas (estado atual), e [Etapa 14](evidencias-etapa14/README.md), com HTTP Basic (histórico).
 
 ## Situação resumida
 
@@ -11,7 +11,7 @@ Referência: enunciado oficial da AF (Estudo de Caso 1, DevOps e QA, 01/12/2026,
 | [RF03](#rf03--recomendação-por-rag) Recomendação por RAG | Atendido com ressalva |
 | [RF04](#rf04--orientação-e-acompanhamento-por-agente) Agente com autorização | Parcial |
 | [RF05](#requisitos-funcionais) Acompanhamento de treinamento | Atendido |
-| [RNF01](#rnf01--carga-de-classificação) 95% em até 2 s com 300 usuários | **Não atendido no ambiente testado** |
+| [RNF01](#rnf01--carga-de-classificação) 95% em até 2 s com 300 usuários | **Atendido nas condições testadas** |
 | [RNF02](#rnf02--disponibilidade-do-treinamento) Treinamento com ML indisponível | Atendido no cenário executado |
 | [RNF03](#rnf03--proteção-de-dados) Proteção de dados e acesso | Atendido no recorte local |
 | [RNF04](#rnf04--evolução-independente-do-serviço-de-ia) Evolução independente da IA | Atendido no cenário executado |
@@ -19,17 +19,19 @@ Referência: enunciado oficial da AF (Estudo de Caso 1, DevOps e QA, 01/12/2026,
 
 ## Testes e CI
 
-| Verificação | Resultado | Observação |
+| Verificação | Resultado atual (Etapa 14.1) | Histórico (Etapa 14) |
 |---|---|---|
-| Java (unitários e Testcontainers) | 255 aprovados | Execução de 27/11, anterior à Etapa 14 |
-| Frontend (Vitest) | 454 aprovados | Etapa 14, relatório JUnit |
-| Integração pelo gateway | 30 aprovados | Geração complementar desabilitada |
-| Build do frontend | Concluído | Aviso de pacote JavaScript acima de 500 kB |
-| Typecheck e lint | Aprovados na Etapa 14 | Sem log preservado |
+| Java (unitários e Testcontainers) | 274 aprovados | 255 |
+| Frontend (Vitest) | 507 aprovados | 454 |
+| Integração pelo gateway | 38 aprovados | 30 |
+| Cenários no navegador (aplicação real) | 25 aprovados | — |
+| Typecheck, lint, build e `nginx -t` | Aprovados | Aprovados |
 
-Contagens e casos em [testes.json](evidencias-etapa14/testes.json). A [CI](../.github/workflows/ci.yml) está configurada e **ainda não foi executada no GitHub**.
+Contagens e casos em [testes.json](evidencias-etapa14-1/testes.json) e [navegador.json](evidencias-etapa14-1/navegador.json); o histórico está em [testes.json da Etapa 14](evidencias-etapa14/testes.json). O build mantém o aviso de pacote JavaScript acima de 500 kB. A [CI](../.github/workflows/ci.yml) está configurada e **ainda não foi executada no GitHub**.
 
 ## Requisitos funcionais
+
+Os cinco fluxos foram repetidos na Etapa 14.1 pela interface, com autenticação por sessão. As avaliações e os limites abaixo não mudaram com a migração.
 
 | Requisito | Implementado e demonstrado | Limitações |
 |---|---|---|
@@ -56,9 +58,70 @@ Redação do enunciado: “Permitir que agentes de IA coordenem atividades de or
 
 ## RNF01 — Carga de classificação
 
-**Não atendido no ambiente testado.** Já com 50 usuários, apenas 15,88% dos POSTs terminaram em até 2 s. Com 300 usuários houve 2 POSTs na primeira rodada, ambos sem resposta, e nenhum na repetição: a amostra é insuficiente para calcular o p95.
+**Atendido nas condições testadas** (28/11/2026), depois da migração de HTTP Basic para sessões autenticadas. Com 300 usuários e 300 sessões independentes, as 17.826 interações iniciadas na janela de 120 s terminaram com classificação válida em até 2 s. Na arquitetura anterior, a meta não era atendida.
 
-### Metodologia e resultados
+| Indicador em 300 usuários | Resultado | Meta |
+|---|---:|---:|
+| Oficial: classificações válidas em até 2 s | 100% | 95% |
+| Complementar: interações completas (sessão, CSRF e POST) válidas em até 2 s | 100% | 95% |
+| p95 da classificação (POST) | 33 ms | 2.000 ms |
+| p95 da interação completa | 42 ms | 2.000 ms |
+| Classificações por segundo | 148,55 | — |
+| Falhas e tempos limite | 0 | — |
+
+### Decisão de migração
+
+O [diagnóstico original](#diagnóstico-original) apontou a verificação BCrypt em cada requisição autenticada como o principal trabalho repetido. A senha passou a ser verificada **somente no login**, com sessão no servidor, mantendo o custo 12, o CSRF e a consulta de consentimento a cada operação. A decisão e as alternativas estão no [ADR 002](arquitetura-af.md#adr-002--sessões-no-servidor-no-lugar-de-http-basic). Um teste Java conta uma execução do BCrypt no login e nenhuma nas operações seguintes.
+
+### Resultados com sessões
+
+| Usuários / sessões | Interações válidas | POST/s | POST p50 / p90 / p95 / p99 (ms) | Interação p95 (ms) | Em até 2 s |
+|---:|---:|---:|---|---:|---:|
+| 10 / 10 | 599 / 599 | 4,99 | 13 / 16 / 18 / 22 | 26 | 100% |
+| 50 / 50 | 2.972 / 2.972 | 24,77 | 10 / 14 / 16 / 23 | 22 | 100% |
+| 100 / 100 | 5.954 / 5.954 | 49,61 | 9 / 14 / 16 / 21 | 21 | 100% |
+| 200 / 200 | 11.923 / 11.923 | 99,36 | 9 / 16 / 21 / 40 | 25 | 100% |
+| 300 / 300 | 17.826 / 17.826 | 148,55 | 12 / 26 / 33 / 54 | 42 | 100% |
+
+Nenhum patamar teve falha de login (inclusive 429), de sessão ou de CSRF, tempo limite ou resposta 4xx/5xx no gateway. Relatório completo, JSON e CSV em [incremento-d](evidencias-etapa14-1/incremento-d/README.md).
+
+### Antes e depois
+
+| Usuários | p95 do POST | Redução do p95 | Em até 2 s | POST/s | Pico de CPU Java (núcleos) | Pico de RAM (MiB) |
+|---:|---|---:|---|---|---|---|
+| 10 | 453 → 18 ms | 96,0% | 100% → 100% | 3,58 → 4,99 | 3,08 → 0,28 | 946 → 910 |
+| 50 | 4.339 → 16 ms | 99,6% | 15,88% → 100% | 6,51 → 24,77 | 7,72 → 0,94 | 999 → 966 |
+| 100 | 8.156 → 16 ms | 99,8% | 0,25% → 100% | 6,77 → 49,61 | 7,73 → 1,79 | 1.071 → 1.005 |
+| 200 | 16.505 → 21 ms | 99,9% | 0,14% → 100% | 5,87 → 99,36 | 7,93 → 3,50 | 1.187 → 1.099 |
+| 300 | sem amostra válida → 33 ms | não calculada | sem amostra válida → 100% | 0,02 → 148,55 | 7,72 → 5,25 | 1.258 → 1.198 |
+
+Não há redução percentual para 300 usuários: a rodada anterior teve apenas 2 POSTs, sem resposta. Os picos de CPU e RAM consideram a execução inteira; com sessões, o pico do Java ocorre na subida, durante os logins. Dentro da janela de 300 usuários, as médias foram: Java 0,61, FastAPI 0,57, gateway 0,51 e PostgreSQL 0,07 núcleo.
+
+### Diferenças metodológicas
+
+- Sessão no lugar de HTTP Basic: o BCrypt sai de todas as requisições medidas.
+- O login acontece durante a subida, **fora da janela medida**, em média 10 por segundo.
+- `GET /api/csrf` passou a ser público; continua havendo um GET antes de cada POST.
+- Cada requisição leva o cabeçalho de contexto da sessão.
+- O POST é enviado mesmo que o CSRF termine após a janela, e há um critério complementar por interação.
+
+Mantidos: patamares, janelas, pausas de 1 a 3 s, notas, tempos limite, limites de segurança, hardware, recursos do Docker, consentimento e BCrypt custo 12. Condições: Mac Intel i5 de 4 núcleos, 16 GB, Docker com 8 CPUs virtuais e 7,75 GiB, k6 no mesmo host, Ollama desligado, limite de login padrão, revisão `676ad62`.
+
+### Limitações da conclusão
+
+- Uma rodada por patamar, com janela de 120 s, sem medida de variação.
+- Ambiente local, uma instância por serviço, HTTP em loopback. Não se extrapola para outro ambiente.
+- Sessões em memória: reiniciar o Java encerra todas, e escalar horizontalmente exigiria outra solução.
+- Os logins foram distribuídos na subida. Entrada em massa esbarraria no limite do gateway e no custo do BCrypt.
+- Carga de ciclo fechado: a vazão é limitada pelas pausas. A capacidade máxima é desconhecida.
+- Sem ensaio prolongado.
+- O host tinha navegador e IDEs abertos durante a medição.
+
+### Histórico: HTTP Basic (Etapa 14)
+
+**Não atendido naquela arquitetura.** Já com 50 usuários, apenas 15,88% dos POSTs terminaram em até 2 s. Com 300 usuários houve 2 POSTs na primeira rodada, ambos sem resposta, e nenhum na repetição: a amostra era insuficiente para calcular o p95. Os resultados abaixo são preservados como medidos.
+
+#### Metodologia e resultados
 
 Em 27/11/2026, o k6 1.8.2 usou o gateway do projeto descartável no Mac Intel,
 com 16 GB no host e Docker com 8 CPUs virtuais e 7,75 GiB. O provisionamento de
@@ -81,14 +144,14 @@ CSRF usam a janela de início de cada operação; por isso podem divergir nas
 bordas da janela. Arquivos agregados: [JSON](evidencias-etapa14/rnf01.json)
 e [CSV](evidencias-etapa14/rnf01.csv).
 
-### Diagnóstico
+#### Diagnóstico original
 
-**Fatos confirmados no código**
+**Fatos confirmados no código da época** (tag `checkpoint-etapa14`, commit `13264b4`; os arquivos citados mudaram depois)
 
-- A API usa HTTP Basic sem sessão (`STATELESS`) e um `DaoAuthenticationProvider` sem cache ([SegurancaConfig](../backend/src/main/java/br/edu/facens/afdevops/seguranca/SegurancaConfig.java)). A senha é verificada com BCrypt em toda requisição autenticada.
-- O custo BCrypt é 12 nas contas individuais e nas contas de demonstração geradas ([ContasDemonstracao](../backend/src/main/java/br/edu/facens/afdevops/seguranca/ContasDemonstracao.java), [gerar-env.sh](../scripts/gerar-env.sh)).
-- Cada interação do teste faz um GET `/api/csrf` e um POST de classificação, ambos autenticados: **duas verificações BCrypt por interação** ([roteiro k6](../integration-tests/carga/classificacoes.js)).
-- O POST ainda consulta a conta e o consentimento no PostgreSQL e chama o FastAPI. O GET de CSRF não chama o serviço de IA nem consulta o consentimento.
+- A API usava HTTP Basic sem sessão (`STATELESS`) e um `DaoAuthenticationProvider` sem cache (`SegurancaConfig`). A senha era verificada com BCrypt em toda requisição autenticada.
+- O custo BCrypt era (e continua) 12 nas contas individuais e nas contas de demonstração geradas (`ContasDemonstracao` e `gerar-env.sh`).
+- Cada interação do teste fazia um GET `/api/csrf` e um POST de classificação, ambos autenticados: **duas verificações BCrypt por interação** (roteiro k6 da Etapa 14).
+- O POST ainda consultava a conta e o consentimento no PostgreSQL e chamava o FastAPI. O GET de CSRF não chamava o serviço de IA nem consultava o consentimento.
 
 **Fatos observados nas métricas**
 
@@ -119,10 +182,6 @@ e [CSV](evidencias-etapa14/rnf01.csv).
 
 **Limitações do ambiente:** Mac Intel Core i5 com 4 núcleos físicos a 2 GHz, 16 GB de RAM e Docker com 8 CPUs virtuais e 7,75 GiB. O k6 disputou o mesmo host com os serviços. Os resultados não se generalizam para outro hardware.
 
-### Evolução proposta (não implementada)
-
-Autenticação baseada em sessão, com BCrypt apenas no login e cookie `HttpOnly` e `SameSite`. Exige expiração, logout, proteção contra fixação de sessão, CSRF vinculado à sessão, invalidação na troca ou desativação de conta e mudanças no frontend, nos contratos e nos testes; o consentimento continuaria verificado a cada chamada. A proposta remove o principal custo repetido, mas **não há garantia de que atenda à meta**: é preciso repetir o roteiro, separando o login da janela medida e declarando a mudança no perfil das requisições. Uma execução em hardware de referência ajudaria a separar o limite da VM do limite da aplicação. Reduzir o custo BCrypt ou desligar controles de segurança não é a solução adotada.
-
 ## RNF02 — Disponibilidade do treinamento
 
 **Atendido no cenário executado, com o FastAPI temporariamente indisponível.** O Java continuou
@@ -137,23 +196,28 @@ HTTP 200 e a saúde do Java indicou `DOWN` devido à dependência indisponível.
 O teste confirma o comportamento de cada falha. O modelo atual de publicação
 tem uma fronteira de confirmação entre banco e broker, descrita no [ADR](arquitetura-af.md#e-adr--monólito-modular-híbrido). Dados em [rnf02-rnf04.json](evidencias-etapa14/rnf02-rnf04.json).
 
+Na Etapa 14.1, as duas falhas foram repetidas com sessões e tiveram o mesmo comportamento ([resultados](evidencias-etapa14-1/rnf02-rnf04.json)).
+
 ## RNF03 — Proteção de dados
 
 | Controle | Evidência e limite |
 |---|---|
-| Perfis, identidade, CSRF e consentimento | Testes do Java e [testes do gateway](../integration-tests/test_gateway.py) cobrem Basic, erro 401 sem desafio nativo, CSRF, cookie HttpOnly/SameSite e papel administrativo. As etapas anteriores também demonstraram revogação nas três rotas de IA e isolamento por sessão, inclusive descarte entre abas ao retornar. A revogação bloqueia novas chamadas e não encerra o processamento já iniciado no servidor. |
+| Autenticação e sessão | Login com BCrypt custo 12; cookie `HttpOnly` e `SameSite=Strict` (`Secure` com HTTPS); troca do ID no login; logout invalida a sessão; expiração por inatividade; principal sem senha nem hash. [Testes de sessão](../backend/src/test/java/br/edu/facens/afdevops/SessaoIntegrationTests.java) e [do gateway](../integration-tests/test_gateway.py). HTTP Basic não autentica mais. |
+| Perfis, CSRF e consentimento | Perfis e regras inalterados; CSRF no login, no logout e nas escritas; consentimento consultado antes de cada operação de IA, sem cache. A revogação bloqueia novas chamadas e não encerra o processamento já iniciado. |
+| Abas e identidade | O contexto da sessão impede que uma aba antiga aja como outro usuário; logout sem confirmação não é restaurado em silêncio ([cenários no navegador](evidencias-etapa14-1/navegador.json)). |
+| Abuso do login | Limite por IP no gateway (10 r/s, rajada 50). Contém rajadas; não impede tentativas lentas, e não há bloqueio por conta. |
 | Fronteira de rede | O Compose padrão publica apenas o Nginx em loopback. O gateway devolve 404 nos caminhos internos e manipulados. O perfil explícito de diagnóstico cria portas adicionais em loopback; a execução local normal usa o Compose padrão. |
 | Dados enviados ao modelo | [O teste do adaptador](../backend/src/test/java/br/edu/facens/afdevops/ia/OllamaConfiguracaoTests.java) verifica o payload de geração e ausência de ferramentas. O FastAPI recebe competências e, na orientação, pergunta e identificador por rota interna autenticada. O Ollama recebe instruções fixas e o nível. |
 | Limites do agente | [Testes do agente](../ai-service/tests/test_agent.py) verificam ferramentas permitidas e rejeição de ferramenta desconhecida. O agente Python segue uma sequência fixa de três leituras com dados da própria requisição e do acervo de cursos. |
-| CSP e credenciais | Na validação anterior no Chromium, o tema e os diálogos funcionaram com a CSP, usando hash do script e JIT do Zod desabilitado. Senhas de demonstração e tokens ficam no `.env` local, ignorado pelo Git. A inspeção dos arquivos versionáveis desta etapa não encontrou padrões de chaves privadas, tokens de provedores ou hashes BCrypt literais. A preparação preserva o arquivo existente. |
-| Transporte e escopo | HTTP Basic em loopback foi demonstrado. HTTPS é obrigatório para acesso externo. A evidência local não certifica conformidade legal ou segurança operacional de uma implantação externa. |
+| CSP e credenciais | A CSP usa o hash do script do tema e JIT do Zod desabilitado; a validação da Etapa 14.1 no navegador não registrou violações. Senhas de demonstração e tokens ficam no `.env` local, ignorado pelo Git. A inspeção dos arquivos versionáveis não encontrou padrões de chaves privadas, tokens de provedores ou hashes BCrypt literais. A preparação preserva o arquivo existente. |
+| Transporte e escopo | Demonstração em HTTP no loopback. Implantação externa exige HTTPS e `SESSION_COOKIE_SECURE=true`. A rota interna do worker usa Bearer próprio e não aceita sessão. A evidência local não certifica conformidade legal ou segurança operacional. |
 
 **Avaliação:** atendido no recorte local demonstrado. A implantação externa
 precisa de validação com HTTPS e configuração operacional própria.
 
 ## RNF04 — Evolução independente do serviço de IA
 
-**Atendido no cenário executado.** Com o FastAPI parado, colaboradores e
+**Atendido no cenário executado.** A repetição da Etapa 14.1 confirmou o comportamento, com o FastAPI recuperado em 4,21 s sem reiniciar o Java ([resultados](evidencias-etapa14-1/rnf02-rnf04.json)). Com o FastAPI parado, colaboradores e
 cursos responderam HTTP 200 na listagem, 201 no cadastro e 200 na consulta
 dos registros recém-criados. Classificação, recomendações e orientação
 responderam HTTP 503 `IA_INDISPONIVEL`. Após recriar somente o FastAPI, as três
@@ -181,5 +245,7 @@ ambiente preservado e a imagem do gerador.
 
 Para calcular energia, medir a potência do host durante uma janela definida, registrar duração e integrar potência pelo tempo em kWh. Essa medição não foi realizada. Tarifas e tempo de operação seriam necessários para converter o consumo em custo monetário. A inferência local dispensa cobrança por chamada, mas usa CPU, armazenamento e energia. Essa configuração é adequada como demonstração acadêmica; capacidade de produção exige medições e orçamento próprios.
 
+Na carga da Etapa 14.1, pilha e k6 atingiram 1.197,7 MiB amostrados com 300 usuários. A migração não acrescentou serviços: as sessões ficam na memória do Java.
+
 **Avaliação:** evidência favorável para o perfil de demonstração local.
-O custo de operação sob a carga do RNF01 permanece sem comprovação.
+Energia e custo monetário de operação, inclusive sob carga, permanecem sem medição.

@@ -1,0 +1,63 @@
+{
+  "etapa": "14.1, incremento C",
+  "java": {
+    "tests": 274,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "react": {
+    "tests": 507,
+    "failures": 0,
+    "errors": 0
+  },
+  "integrados": {
+    "tests": 38,
+    "aprovados": 38,
+    "casos": [
+      "integration-tests/test_gateway.py::test_build_spa_e_csp",
+      "integration-tests/test_gateway.py::test_nao_serve_spa_em_rotas_bloqueadas[/api]",
+      "integration-tests/test_gateway.py::test_nao_serve_spa_em_rotas_bloqueadas[/api/desconhecida]",
+      "integration-tests/test_gateway.py::test_nao_serve_spa_em_rotas_bloqueadas[/api//me]",
+      "integration-tests/test_gateway.py::test_nao_serve_spa_em_rotas_bloqueadas[/api/a/./me]",
+      "integration-tests/test_gateway.py::test_nao_serve_spa_em_rotas_bloqueadas[/api/a/../me]",
+      "integration-tests/test_gateway.py::test_nao_serve_spa_em_rotas_bloqueadas[/api\\\\me]",
+      "integration-tests/test_gateway.py::test_nao_serve_spa_em_rotas_bloqueadas[/api/%6de]",
+      "integration-tests/test_gateway.py::test_nao_serve_spa_em_rotas_bloqueadas[/api%2Fme]",
+      "integration-tests/test_gateway.py::test_nao_serve_spa_em_rotas_bloqueadas[/api%5Cme]",
+      "integration-tests/test_gateway.py::test_nao_serve_spa_em_rotas_bloqueadas[/api/%252fme]",
+      "integration-tests/test_gateway.py::test_nao_serve_spa_em_rotas_bloqueadas[/api/../entrar]",
+      "integration-tests/test_gateway.py::test_nao_serve_spa_em_rotas_bloqueadas[/internal/treinamentos/1/status]",
+      "integration-tests/test_gateway.py::test_nao_serve_spa_em_rotas_bloqueadas[/actuator/health]",
+      "integration-tests/test_gateway.py::test_nao_serve_spa_em_rotas_bloqueadas[/docs]",
+      "integration-tests/test_gateway.py::test_nao_serve_spa_em_rotas_bloqueadas[/assets/ausente-12345678.js]",
+      "integration-tests/test_gateway.py::test_rota_interna_do_worker_nao_passa_pelo_gateway",
+      "integration-tests/test_gateway.py::test_sessao_e_csrf_passam_pelo_gateway",
+      "integration-tests/test_gateway.py::test_basic_nao_autentica_pelo_gateway",
+      "integration-tests/test_gateway.py::test_login_e_logout_aceitam_somente_post[GET-/api/login]",
+      "integration-tests/test_gateway.py::test_login_e_logout_aceitam_somente_post[PUT-/api/login]",
+      "integration-tests/test_gateway.py::test_login_e_logout_aceitam_somente_post[GET-/api/logout]",
+      "integration-tests/test_gateway.py::test_login_e_logout_aceitam_somente_post[POST-/api/login/outro]",
+      "integration-tests/test_gateway.py::test_contexto_logout_e_reuso_de_cookie",
+      "integration-tests/test_gateway.py::test_rota_interna_continua_bloqueada_com_sessao",
+      "integration-tests/test_gateway.py::test_zz_login_limitado_por_taxa_sem_afetar_outras_rotas",
+      "integration-tests/test_infraestrutura.py::test_backend_saudavel_incluindo_rabbitmq",
+      "integration-tests/test_infraestrutura.py::test_ai_service_saudavel",
+      "integration-tests/test_infraestrutura.py::test_exchange_direta_duravel",
+      "integration-tests/test_infraestrutura.py::test_filas_duraveis_com_politicas",
+      "integration-tests/test_infraestrutura.py::test_binding_da_routing_key",
+      "integration-tests/test_infraestrutura.py::test_worker_consumindo_a_fila",
+      "integration-tests/test_treinamento.py::test_solicitacao_de_treinamento_e_concluida_pelo_worker",
+      "integration-tests/test_treinamento.py::test_varias_solicitacoes_sao_processadas_em_sequencia",
+      "integration-tests/test_treinamento.py::test_colaborador_nao_solicita_nem_acompanha",
+      "integration-tests/test_treinamento.py::test_rota_interna_exige_token_compartilhado",
+      "integration-tests/test_treinamento.py::test_mensagem_invalida_vai_para_dead_letter",
+      "integration-tests/test_treinamento.py::test_ai_service_responde_pela_rede_do_compose"
+    ]
+  },
+  "typecheck": "aprovado",
+  "lint": "aprovado",
+  "build": "aprovado",
+  "nginx_t": "aprovado",
+  "carga": "não executada"
+}

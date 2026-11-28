@@ -22,8 +22,8 @@ import org.springframework.test.context.DynamicPropertySource;
 import tools.jackson.databind.json.JsonMapper;
 
 import static br.edu.facens.afdevops.SegurancaHttpTeste.admin;
-import static br.edu.facens.afdevops.SegurancaHttpTeste.basic;
 import static br.edu.facens.afdevops.SegurancaHttpTeste.colaborador;
+import static br.edu.facens.afdevops.SegurancaHttpTeste.conta;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
@@ -85,7 +85,7 @@ class IaIntegrationTests {
     }
 
     @Test
-    void exigeBasicContaIndividualECsrfSemChamarFastApi() throws Exception {
+    void exigeSessaoDeContaIndividualECsrfSemChamarFastApi() throws Exception {
         var conta = novaConta();
         var csrf = http.obterCsrf(porta, conta.credencial());
         int antes = CHAMADAS.get();
@@ -145,7 +145,7 @@ class IaIntegrationTests {
         var cadastro = JSON.writeValueAsString(Map.of("nomeUsuario", nome, "senhaInicial", senha));
         assertThat(http.post(porta, "/api/colaboradores/" + id + "/conta", cadastro, admin(), http.obterCsrf(porta))
                 .statusCode()).isEqualTo(201);
-        return new Conta(id, basic(nome, senha));
+        return new Conta(id, conta(nome, senha));
     }
 
     private HttpResponse<String> post(String rota, String json, String credencial, SegurancaHttpTeste.TokenCsrf csrf)

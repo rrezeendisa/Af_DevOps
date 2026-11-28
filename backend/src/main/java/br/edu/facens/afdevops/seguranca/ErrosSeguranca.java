@@ -29,7 +29,6 @@ final class ErrosSeguranca {
             return;
         }
 
-        resposta.setHeader(HttpHeaders.WWW_AUTHENTICATE, "Basic realm=\"AF-DevOps\"");
         escrever(resposta, HttpStatus.UNAUTHORIZED, "Autenticação necessária",
                 "Informe credenciais válidas para acessar este recurso.", "AUTENTICACAO_NECESSARIA");
     }
@@ -48,6 +47,16 @@ final class ErrosSeguranca {
 
         escrever(resposta, HttpStatus.FORBIDDEN, "Acesso negado",
                 "Seu perfil não tem permissão para acessar este recurso.", "ACESSO_NEGADO");
+    }
+
+    void sessaoSubstituida(HttpServletResponse resposta) throws IOException {
+        escrever(resposta, HttpStatus.UNAUTHORIZED, "Sessão alterada",
+                "A sessão deste navegador mudou. Entre novamente.", "SESSAO_SUBSTITUIDA");
+    }
+
+    void loginInvalido(HttpServletResponse resposta) throws IOException {
+        escrever(resposta, HttpStatus.BAD_REQUEST, "Dados inválidos",
+                "Envie as credenciais somente no corpo da requisição.", "DADOS_INVALIDOS");
     }
 
     private boolean responderActuatorBloqueado(HttpServletRequest pedido, HttpServletResponse resposta) {

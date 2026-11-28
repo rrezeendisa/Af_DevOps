@@ -1,0 +1,2 @@
+# Limite de POST /api/login por endereço de origem. Ver infra/README.md.
+limit_req_zone $binary_remote_addr zone=login:1m rate=${LOGIN_RATE};

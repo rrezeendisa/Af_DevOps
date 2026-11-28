@@ -1,0 +1,6 @@
+usuarios,janela_s,situacao,sessoes,interacoes,interacoes_validas,interacao_no_prazo_pct,interacao_p50_ms,interacao_p90_ms,interacao_p95_ms,interacao_p99_ms,posts,posts_por_s,post_p50_ms,post_p90_ms,post_p95_ms,post_p99_ms,post_validos_pct,post_no_prazo_pct,falhas_sessao,falhas_csrf,login_falhas,login_429,post_sem_resposta,pico_voo,ram_pico_mib
+10,120,medido,10,599,599,100,18,24,26,31,599,4.99,13,16,18,22,100,100,0,0,0,0,0,4,909.5
+50,120,medido,50,2972,2972,100,14,19,22,32.289999999999964,2972,24.77,10,14,16,23,100,100,0,0,0,0,0,5,966.0
+100,120,medido,100,5954,5954,100,12,19,21,27,5953,49.61,9,14,16,21,100,100,0,0,0,0,0,11,1005.1
+200,120,medido,200,11923,11923,100,12,20,25,47,11923,99.36,9,16,20.899999999999636,40,100,100,0,0,0,0,0,26,1099.1
+300,120,atendido,300,17826,17826,100,15,33,42,69,17826,148.55,12,26,33,54,100,100,0,0,0,0,0,26,1197.7

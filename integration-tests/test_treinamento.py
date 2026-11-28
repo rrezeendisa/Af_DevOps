@@ -8,25 +8,25 @@ FILA = "ml.training.requests"
 DLQ = "ml.training.requests.dead-letter"
 
 
-def _solicitar(http, ambiente: Ambiente, csrf) -> dict:
-    resposta = http.post(f"{ambiente.backend}/api/treinamentos", auth=ambiente.admin, headers=csrf())
+def _solicitar(admin) -> dict:
+    resposta = admin.post("/api/treinamentos")
     assert resposta.status_code == 202, resposta.text
     return resposta.json()
 
 
-def _consultar(http, ambiente: Ambiente, solicitacao_id: int) -> dict:
-    resposta = http.get(f"{ambiente.backend}/api/treinamentos/{solicitacao_id}", auth=ambiente.admin)
+def _consultar(admin, solicitacao_id: int) -> dict:
+    resposta = admin.get(f"/api/treinamentos/{solicitacao_id}")
     assert resposta.status_code == 200, resposta.text
     return resposta.json()
 
 
-def test_solicitacao_de_treinamento_e_concluida_pelo_worker(http, ambiente: Ambiente, csrf):
-    criada = _solicitar(http, ambiente, csrf)
+def test_solicitacao_de_treinamento_e_concluida_pelo_worker(ambiente: Ambiente, admin):
+    criada = _solicitar(admin)
     assert criada["status"] == "PENDENTE"
     assert criada["solicitadoPor"] == ambiente.admin[0]
 
     final = aguardar(
-        lambda: (s := _consultar(http, ambiente, criada["id"]))["status"] != "PENDENTE" and s,
+        lambda: (s := _consultar(admin, criada["id"]))["status"] != "PENDENTE" and s,
         timeout=90,
     )
 
@@ -35,34 +35,39 @@ def test_solicitacao_de_treinamento_e_concluida_pelo_worker(http, ambiente: Ambi
     assert final["atualizadoEm"] >= final["criadoEm"]
 
 
-def test_varias_solicitacoes_sao_processadas_em_sequencia(http, ambiente: Ambiente, csrf):
-    ids = [_solicitar(http, ambiente, csrf)["id"] for _ in range(3)]
+def test_varias_solicitacoes_sao_processadas_em_sequencia(admin):
+    ids = [_solicitar(admin)["id"] for _ in range(3)]
 
     def todas_finalizadas():
-        status = [_consultar(http, ambiente, i)["status"] for i in ids]
+        status = [_consultar(admin, i)["status"] for i in ids]
         return "PENDENTE" not in status and status
 
     assert aguardar(todas_finalizadas, timeout=120) == ["CONCLUIDO"] * 3
-    listadas = http.get(f"{ambiente.backend}/api/treinamentos", auth=ambiente.admin).json()
+    listadas = admin.get("/api/treinamentos").json()
     assert set(ids) <= {s["id"] for s in listadas}
 
 
-def test_colaborador_nao_solicita_nem_acompanha(http, ambiente: Ambiente, csrf):
-    tentativa = http.post(f"{ambiente.backend}/api/treinamentos", auth=ambiente.colaborador, headers=csrf())
+def test_colaborador_nao_solicita_nem_acompanha(colaborador):
+    tentativa = colaborador.post("/api/treinamentos")
     assert tentativa.status_code == 403
     assert tentativa.json()["codigo"] == "ACESSO_NEGADO"
-    consulta = http.get(f"{ambiente.backend}/api/treinamentos", auth=ambiente.colaborador)
+    consulta = colaborador.get("/api/treinamentos")
     assert consulta.status_code == 403
 
 
-def test_rota_interna_exige_token_compartilhado(http, ambiente: Ambiente, csrf):
-    criada = _solicitar(http, ambiente, csrf)
+def test_rota_interna_exige_token_compartilhado(http, ambiente: Ambiente, admin):
+    criada = _solicitar(admin)
     url = f"{ambiente.backend}/internal/treinamentos/{criada['id']}/status"
     corpo = {"status": "FALHOU", "mensagem": "tentativa sem token"}
 
     assert http.patch(url, json=corpo).status_code == 401
     assert http.patch(url, json=corpo, headers={"Authorization": f"Bearer {uuid.uuid4()}"}).status_code == 401
     assert http.patch(url, json=corpo, auth=ambiente.admin).status_code == 401
+    # A sessão autenticada do ADMIN também não concede acesso à rota interna.
+    assert admin.escrever("PATCH", url.removeprefix(ambiente.backend), json=corpo).status_code == 401
+    # E o token interno não dá acesso à API pública.
+    publica = http.get(f"{ambiente.backend}/api/cursos", headers={"Authorization": f"Bearer {ambiente.token_interno}"})
+    assert publica.status_code == 401
 
     inexistente = http.patch(
         f"{ambiente.backend}/internal/treinamentos/999999999/status",

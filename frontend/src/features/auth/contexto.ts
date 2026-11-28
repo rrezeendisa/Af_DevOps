@@ -4,8 +4,15 @@ import type { Credenciais } from '@/lib/api/credenciais'
 import type { Identidade, TipoConta } from './identidade'
 
 export type EstadoAuth =
-  | { status: 'anonimo'; motivo: 'inicial' | 'logout' | 'sessao-expirada' }
+  /** Consultando se o navegador já tem uma sessão válida. */
+  | { status: 'verificando' }
+  | { status: 'anonimo'; motivo: 'inicial' | 'logout' | 'sessao-expirada' | 'sessao-substituida' }
   | { status: 'autenticando' }
+  | { status: 'saindo' }
+  /** O servidor não confirmou o logout: nada privado é exibido nem restaurado. */
+  | { status: 'saida-pendente' }
+  /** Sem armazenamento local, restaurar uma sessão exige confirmação. */
+  | { status: 'confirmar'; identidade: Identidade }
   | {
       status: 'autenticado'
       identidade: Identidade
@@ -15,16 +22,23 @@ export type EstadoAuth =
       geracao: number
     }
 
-export type MotivoFalhaLogin = 'credenciais-invalidas' | 'servico-indisponivel' | 'resposta-invalida' | 'cancelado'
+export type MotivoFalhaLogin =
+  | 'credenciais-invalidas'
+  | 'muitas-tentativas'
+  | 'servico-indisponivel'
+  | 'resposta-invalida'
+  | 'cancelado'
 
 export type ResultadoLogin = { ok: true } | { ok: false; motivo: MotivoFalhaLogin }
 
 export type ValorAuth = {
   estado: EstadoAuth
-  /** Autentica via `GET /api/me`. Nunca lança erro e nunca repete a tentativa. */
+  /** Encerra a sessão anterior e autentica. Nunca lança erro e nunca repete a tentativa. */
   entrar(credenciais: Credenciais): Promise<ResultadoLogin>
-  /** Cancela as requisições, encerra a sessão e limpa o cache. */
+  /** Descarta o estado local e pede o logout ao servidor. Em `saida-pendente`, tenta de novo. */
   sair(): void
+  /** Aceita a sessão mostrada no estado `confirmar`. */
+  continuar(): void
 }
 
 export const AuthContext = createContext<ValorAuth | null>(null)

@@ -82,19 +82,81 @@ def rabbit(ambiente: Ambiente) -> httpx.Client:
         yield cliente
 
 
-@pytest.fixture
-def csrf(http: httpx.Client, ambiente: Ambiente) -> Callable[[], dict[str, str]]:
-    """Obtém token CSRF e devolve os cabeçalhos para um POST autenticado como ADMIN."""
+CONTEXTO = "X-Evolia-Contexto"
+COOKIE_SESSAO = "EVOLIA_SESSAO"
 
-    def obter() -> dict[str, str]:
-        resposta = http.get(f"{ambiente.backend}/api/csrf", auth=ambiente.admin)
-        assert resposta.status_code == 200, resposta.text
+
+class SessaoApi:
+    """Um usuário com cookies próprios, como um navegador independente."""
+
+    def __init__(self, base: str, usuario: str, senha: str) -> None:
+        self.cliente = httpx.Client(base_url=base, timeout=15.0)
+        self.usuario = usuario
+        self.senha = senha
+        self.contexto: str | None = None
+
+    def cabecalhos(self) -> dict[str, str]:
+        return {} if self.contexto is None else {CONTEXTO: self.contexto}
+
+    def csrf(self) -> dict[str, str]:
+        resposta = self.cliente.get("/api/csrf", headers=self.cabecalhos())
+        assert resposta.status_code == 200, resposta.status_code
         corpo = resposta.json()
-        cookie = resposta.cookies.get("XSRF-TOKEN")
-        assert cookie, "Cookie XSRF-TOKEN ausente"
-        return {corpo["headerName"]: corpo["token"], "Cookie": f"XSRF-TOKEN={cookie}"}
+        return {corpo["headerName"]: corpo["token"]}
 
-    return obter
+    def login(self, senha: str | None = None) -> httpx.Response:
+        return self.cliente.post(
+            "/api/login",
+            data={"username": self.usuario, "password": senha or self.senha},
+            headers=self.csrf(),
+        )
+
+    def entrar(self) -> SessaoApi:
+        """Falha imediatamente se o login ou a identidade não funcionarem."""
+        self.contexto = None
+        resposta = self.login()
+        assert resposta.status_code == 204, resposta.status_code
+        identidade = self.cliente.get("/api/me")
+        assert identidade.status_code == 200, identidade.status_code
+        self.contexto = identidade.headers[CONTEXTO]
+        return self
+
+    def get(self, rota: str, **opcoes) -> httpx.Response:
+        return self.cliente.get(rota, headers=self.cabecalhos(), **opcoes)
+
+    def escrever(self, metodo: str, rota: str, **opcoes) -> httpx.Response:
+        return self.cliente.request(metodo, rota, headers={**self.cabecalhos(), **self.csrf()}, **opcoes)
+
+    def post(self, rota: str, **opcoes) -> httpx.Response:
+        return self.escrever("POST", rota, **opcoes)
+
+    def sair(self) -> httpx.Response:
+        return self.post("/api/logout")
+
+
+@pytest.fixture
+def abrir_sessao():
+    """Cria sessões independentes e fecha os clientes ao final do teste."""
+    criadas: list[SessaoApi] = []
+
+    def abrir(base: str, credenciais: tuple[str, str], entrar: bool = True) -> SessaoApi:
+        sessao = SessaoApi(base, *credenciais)
+        criadas.append(sessao)
+        return sessao.entrar() if entrar else sessao
+
+    yield abrir
+    for sessao in criadas:
+        sessao.cliente.close()
+
+
+@pytest.fixture
+def admin(abrir_sessao, ambiente: Ambiente) -> SessaoApi:
+    return abrir_sessao(ambiente.backend, ambiente.admin)
+
+
+@pytest.fixture
+def colaborador(abrir_sessao, ambiente: Ambiente) -> SessaoApi:
+    return abrir_sessao(ambiente.backend, ambiente.colaborador)
 
 
 def aguardar(condicao: Callable[[], object], timeout: float = 60.0, intervalo: float = 1.0):

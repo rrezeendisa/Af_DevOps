@@ -55,8 +55,11 @@ class IdentidadeController {
                 .anyMatch(papel -> "ROLE_ADMIN".equals(papel.getAuthority())) ? "ADMIN" : "COLABORADOR";
         Long colaboradorId = autenticacao.getPrincipal() instanceof ContaAutenticada conta
                 ? conta.colaboradorId() : null;
-        return ResponseEntity.ok().cacheControl(CacheControl.noStore())
-                .body(new IdentidadeResponse(autenticacao.getName(), perfil, colaboradorId));
+        var resposta = ResponseEntity.ok().cacheControl(CacheControl.noStore());
+        if (autenticacao.getDetails() instanceof ContextoSessao contexto) {
+            resposta.header(ContextoSessao.CABECALHO, contexto.id());
+        }
+        return resposta.body(new IdentidadeResponse(autenticacao.getName(), perfil, colaboradorId));
     }
 
     @JsonInclude(JsonInclude.Include.NON_NULL)

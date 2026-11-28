@@ -61,6 +61,7 @@ def patamar(args, imagem, ids, reinicios, memoria_vm, nivel, segundos):
         return resultado
     altos_desde = None
     degradado_desde = None
+    inicio_patamar = time.time()
     cpu_anterior = {}
     with (pasta / "k6.log").open("w") as log, (pasta / "recursos.jsonl").open("w") as recursos:
         processo = subprocess.Popen(comando, stdout=log, stderr=subprocess.STDOUT)
@@ -81,7 +82,7 @@ def patamar(args, imagem, ids, reinicios, memoria_vm, nivel, segundos):
                     linha.pop("ID", None)
                     linha.pop("Container", None)
                 cpu_cgroup = {}
-                for servico in ("backend", "ai-service", "gateway"):
+                for servico in ("backend", "ai-service", "gateway", "postgres"):
                     try:
                         cgroup = docker("exec", ids[servico], "cat", "/sys/fs/cgroup/cpu.stat")
                         uso = int(re.search(r"usage_usec\s+(\d+)", cgroup)[1])
@@ -145,14 +146,47 @@ def patamar(args, imagem, ids, reinicios, memoria_vm, nivel, segundos):
         resultado["pico_posts_em_voo"] = pico
     taxa = metricas.get("classificacao_no_prazo", {}).get("rate", 0)
     inicializados = metricas.get("vus_max", {}).get("value", 0)
-    if motivo or processo.returncode not in (0, 99) or inicializados != nivel or sessoes != nivel or contagem < 300:
+    estabelecidas = metricas.get("sessoes_estabelecidas", {}).get("count", 0)
+    por_interacao = metricas.get("interacao_no_prazo", {}).get("rate", 0)
+    if (motivo or processo.returncode not in (0, 99) or inicializados != nivel or sessoes != nivel
+            or estabelecidas != nivel or contagem < 300):
         resultado["situacao"] = "inconclusivo"
         resultado["motivo"] = motivo or "carga, sessões ou amostra incompleta"
+    elif nivel == 300:
+        resultado["indicador_oficial"] = "atendido" if taxa >= 0.95 else "reprovado"
+        resultado["indicador_complementar"] = "atendido" if por_interacao >= 0.95 else "reprovado"
+        resultado["situacao"] = "atendido" if min(taxa, por_interacao) >= 0.95 else "reprovado"
     else:
-        resultado["situacao"] = ("atendido" if taxa >= 0.95 else "reprovado") if nivel == 300 else "medido"
+        resultado["situacao"] = "medido"
     resultado["interrompido"] = bool(motivo)
+    resultado["inicio_epoch_s"] = inicio_patamar
+    final = json.loads(docker("inspect", *ids.values()))
+    resultado["saude_final"] = {
+        item["Config"]["Labels"]["com.docker.compose.service"]: {
+            "estado": item["State"]["Status"],
+            "saude": item["State"].get("Health", {}).get("Status", "sem healthcheck"),
+            "reinicios": item["RestartCount"] - reinicios[item["Id"]],
+            "oom": item["State"]["OOMKilled"],
+        } for item in final}
     (pasta / "resumo.json").write_text(json.dumps(resultado, indent=2) + "\n")
     return resultado
+
+
+def configuracao_efetiva(ids):
+    """Somente valores sem segredo, lidos dos containers em execução."""
+    def ambiente(servico, nomes):
+        linhas = json.loads(docker("inspect", "-f", "{{json .Config.Env}}", ids[servico]))
+        valores = dict(linha.split("=", 1) for linha in linhas)
+        return {nome: valores.get(nome) for nome in nomes}
+
+    custos = docker("exec", ids["postgres"], "sh", "-c",
+                    'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -tAc '
+                    '"SELECT DISTINCT substr(senha_hash, 5, 2) FROM contas_colaborador"').split()
+    return {
+        **ambiente("gateway", ["LOGIN_RATE", "LOGIN_BURST"]),
+        **ambiente("backend", ["IA_GENERATIVA_HABILITADA", "SESSION_TIMEOUT", "SESSION_COOKIE_SECURE"]),
+        "bcrypt_custo_das_contas": custos,
+    }
 
 
 def main():
@@ -173,10 +207,17 @@ def main():
     reinicios = {item["Id"]: item["RestartCount"] for item in detalhes}
     info = json.loads(docker("info", "--format", "{{json .}}"))
     revisao = subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip()
+    if subprocess.check_output(["git", "status", "--porcelain"], text=True).strip():
+        parser.error("a medição exige uma árvore Git limpa")
+    configuracao = configuracao_efetiva(ids)
     script_hash = hashlib.sha256(Path(__file__).with_name("classificacoes.js").read_bytes()).hexdigest()
     metadata = {"projeto": args.projeto, "revisao_git": revisao, "script_k6_sha256": script_hash,
                 "host": platform.platform(), "imagem_k6": IMAGEM, "vm_ram_bytes": info["MemTotal"],
-                "vm_cpus": info["NCPU"], "inicio_epoch_s": time.time(),
+                "vm_cpus": info["NCPU"], "inicio_epoch_s": time.time(), "arvore_git_limpa": True,
+                "configuracao": configuracao, "carga_do_host_no_inicio": os.getloadavg(),
+                "containers_em_execucao_fora_do_projeto": [
+                    nome for nome in docker("ps", "--format", "{{.Names}}").splitlines()
+                    if not nome.startswith(args.projeto)],
                 "imagens": {item["Config"]["Labels"]["com.docker.compose.service"]: item["Image"]
                             for item in detalhes}}
     (args.saida / "metadados.json").write_text(json.dumps(metadata, indent=2) + "\n")
@@ -198,6 +239,9 @@ def imprimir(resultado):
                       "motivo": resultado.get("motivo"), "post_por_s": resultado.get("post_por_s"),
                       "p95_ms": metricas.get("classificacao_ms", {}).get("p(95)"),
                       "no_prazo": metricas.get("classificacao_no_prazo", {}).get("rate"),
+                      "interacao_no_prazo": metricas.get("interacao_no_prazo", {}).get("rate"),
+                      "sessoes": metricas.get("sessoes_estabelecidas", {}).get("count", 0),
+                      "login_falhas": metricas.get("login_falhas", {}).get("count", 0),
                       "amostras": metricas.get("classificacoes", {}).get("count")}), flush=True)
 
 

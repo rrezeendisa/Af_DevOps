@@ -16,7 +16,7 @@ const negado = () => screen.queryByText('Seu perfil não tem acesso a esta área
 
 describe('proteção das rotas', () => {
   it('anônimo em / vai para a tela de entrada', async () => {
-    criarFetch()
+    criarFetch().mockResolvedValue(new Response(null, { status: 401 }))
     renderizarApp('/')
     expect(await screen.findByRole('heading', { level: 1, name: 'Entrar' })).toBeInTheDocument()
   })

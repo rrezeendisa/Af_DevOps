@@ -9,7 +9,7 @@ import { ProvedorTema } from '@/components/tema/ProvedorTema'
 import { AuthContext, type ValorAuth } from '@/features/auth/contexto'
 import { lerIdentidade } from '@/features/auth/identidade'
 import { criarSessaoApi, TEMPOS_LIMITE_MS, type SessaoApi } from '@/lib/api/cliente'
-import { chamadas, corpoEnviado, criarFetch, json, ME, problema, renderizarAutenticado, rotear, type RotasSimuladas } from '@/test/app'
+import { chamadas, corpoEnviado, criarFetch, json, ME, problema, renderizarAutenticado, rotear, type RotasSimuladas, sessaoComContexto } from '@/test/app'
 import { orientar } from './api'
 
 // Respostas simuladas existem somente nestes testes.
@@ -266,11 +266,12 @@ describe('revogação e sessão', () => {
         status: 'autenticado',
         identidade: lerIdentidade(ME.COLABORADOR_INDIVIDUAL),
         tipoConta: 'COLABORADOR_INDIVIDUAL',
-        api: criarSessaoApi({ nomeUsuario: 'ana', senha: 'senha-de-teste-1' }),
+        api: criarSessaoApi(),
         geracao,
       },
       entrar: vi.fn(),
       sair: vi.fn(),
+      continuar: vi.fn(),
     })
     const arvore = (v: ValorAuth) => (
       <ProvedorTema>
@@ -298,28 +299,31 @@ describe('revogação e sessão', () => {
   it('a releitura de um usuário não autoriza a jornada de outro usuário', async () => {
     const anterior = adiado<Response>()
     const fetchMock = criarFetch()
-    const authAna = 'Basic ' + btoa('ana:senha-de-teste-1')
-    const authBruno = 'Basic ' + btoa('bruno:senha-de-teste-2')
     let leiturasAna = 0
     rotear(fetchMock, {
       'GET /api/me/consentimento': (init) => {
-        const cabecalho = new Headers(init?.headers).get('Authorization')
-        if (cabecalho === authAna) return ++leiturasAna === 1 ? json(AUTORIZADO) : anterior.promessa
-        expect(cabecalho).toBe(authBruno)
+        const cabecalho = new Headers(init?.headers).get('X-Evolia-Contexto')
+        if (cabecalho === 'contexto-ana') return ++leiturasAna === 1 ? json(AUTORIZADO) : anterior.promessa
+        expect(cabecalho).toBe('contexto-bruno')
         return json({ autorizado: false, decididoEm: null })
       },
     })
     const queryClient = criarQueryClient()
-    const valor = (nomeUsuario: string, senha: string, geracao: number): ValorAuth => ({
+    const apis = {
+      ana: await sessaoComContexto(fetchMock, 'contexto-ana'),
+      bruno: await sessaoComContexto(fetchMock, 'contexto-bruno'),
+    }
+    const valor = (nomeUsuario: keyof typeof apis, geracao: number): ValorAuth => ({
       estado: {
         status: 'autenticado',
         identidade: lerIdentidade({ nomeUsuario, perfil: 'COLABORADOR', colaboradorId: geracao }),
         tipoConta: 'COLABORADOR_INDIVIDUAL',
-        api: criarSessaoApi({ nomeUsuario, senha }),
+        api: apis[nomeUsuario],
         geracao,
       },
       entrar: vi.fn(),
       sair: vi.fn(),
+      continuar: vi.fn(),
     })
     const arvore = (v: ValorAuth) => (
       <ProvedorTema>
@@ -332,12 +336,12 @@ describe('revogação e sessão', () => {
         </QueryClientProvider>
       </ProvedorTema>
     )
-    const { rerender } = render(arvore(valor('ana', 'senha-de-teste-1', 1)))
+    const { rerender } = render(arvore(valor('ana', 1)))
     await screen.findByText('Faça a avaliação primeiro')
     fireEvent(document, new Event('visibilitychange', { bubbles: true }))
     await screen.findByText('Verificando sua autorização para o uso da IA…')
 
-    rerender(arvore(valor('bruno', 'senha-de-teste-2', 2)))
+    rerender(arvore(valor('bruno', 2)))
     expect(await screen.findByRole('heading', { name: 'Autorização necessária' })).toBeInTheDocument()
     await act(async () => {
       anterior.resolver(json(AUTORIZADO))

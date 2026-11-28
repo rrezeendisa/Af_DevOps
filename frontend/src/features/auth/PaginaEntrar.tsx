@@ -30,12 +30,22 @@ type Falha = Exclude<MotivoFalhaLogin, 'cancelado'>
 
 const MENSAGENS: Record<Falha, { titulo: string; texto: string }> = {
   'credenciais-invalidas': { titulo: 'Não foi possível entrar', texto: 'Usuário ou senha incorretos.' },
+  'muitas-tentativas': {
+    titulo: 'Muitas tentativas',
+    texto: 'Aguarde um momento antes de tentar entrar novamente.',
+  },
   'servico-indisponivel': {
     titulo: 'Serviço indisponível',
     texto: 'Não foi possível conectar à Evolia agora. Tente novamente em instantes.',
   },
   'resposta-invalida': { titulo: 'Algo não saiu como esperado', texto: 'Não foi possível concluir a entrada. Tente novamente.' },
 }
+
+const AVISOS = {
+  logout: { titulo: 'Até logo', texto: 'Você saiu da Evolia.' },
+  'sessao-expirada': { titulo: 'Sessão encerrada', texto: 'Sua sessão foi encerrada. Entre novamente.' },
+  'sessao-substituida': { titulo: 'Sessão alterada', texto: 'A sessão deste navegador mudou. Entre novamente.' },
+} as const
 
 const PILARES = [
   { rotulo: 'Conexão', cor: 'bg-white dark:bg-secondary' },
@@ -46,7 +56,7 @@ const PILARES = [
 
 /** Tela de entrada. Credenciais seguem direto para `entrar()` e o campo de senha é limpo em seguida. */
 export function PaginaEntrar() {
-  const { estado, entrar } = useAuth()
+  const { estado, entrar, sair, continuar } = useAuth()
   const location = useLocation()
   const [falha, setFalha] = useState<Falha | null>(null)
   const [senhaVisivel, setSenhaVisivel] = useState(false)
@@ -85,8 +95,7 @@ export function PaginaEntrar() {
     enviandoRef.current = true
     setFalha(null)
     try {
-      // `entrar` codifica as credenciais de forma síncrona, antes do primeiro await.
-      // O campo pode ser limpo logo em seguida, sem esperar a resposta.
+      // `entrar` já recebeu as credenciais; o campo é limpo sem esperar a resposta.
       const pendente = entrar({ nomeUsuario, senha })
       setValue('senha', '')
       const resultado = await pendente
@@ -99,15 +108,11 @@ export function PaginaEntrar() {
   }
 
   const aviso =
-    falha === null && estado.status === 'anonimo' && estado.motivo !== 'inicial'
-      ? estado.motivo === 'sessao-expirada'
-        ? { titulo: 'Sessão encerrada', texto: 'Sua sessão foi encerrada. Entre novamente.' }
-        : { titulo: 'Até logo', texto: 'Você saiu da Evolia.' }
-      : null
+    falha === null && estado.status === 'anonimo' && estado.motivo !== 'inicial' ? AVISOS[estado.motivo] : null
 
   const erroUsuario = errors.nomeUsuario?.message
   const erroSenha = errors.senha?.message
-  const ocupado = isSubmitting || estado.status === 'autenticando'
+  const ocupado = isSubmitting || estado.status === 'autenticando' || estado.status === 'saindo'
 
   return (
     <div className="relative min-h-svh bg-background lg:grid lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)]">
@@ -168,6 +173,30 @@ export function PaginaEntrar() {
             {falha !== null && (
               <MensagemErro ref={mensagemRef} titulo={MENSAGENS[falha].titulo}>
                 {MENSAGENS[falha].texto}
+              </MensagemErro>
+            )}
+            {estado.status === 'saida-pendente' && (
+              <MensagemErro tom="aviso" titulo="Saída não confirmada">
+                <p>O servidor não confirmou o encerramento. A sessão pode continuar ativa neste navegador.</p>
+                <Button type="button" variant="outline" size="sm" className="mt-2" onClick={sair}>
+                  Tentar sair novamente
+                </Button>
+              </MensagemErro>
+            )}
+            {estado.status === 'confirmar' && (
+              <MensagemErro tom="aviso" titulo="Há uma sessão ativa">
+                <p>
+                  Este navegador não permite confirmar se a última saída foi concluída. Continuar como{' '}
+                  <strong>{estado.identidade.nomeUsuario}</strong>?
+                </p>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  <Button type="button" size="sm" onClick={continuar}>
+                    Continuar
+                  </Button>
+                  <Button type="button" variant="outline" size="sm" onClick={sair}>
+                    Sair
+                  </Button>
+                </div>
               </MensagemErro>
             )}
             {aviso !== null && (

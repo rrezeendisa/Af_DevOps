@@ -64,6 +64,17 @@ afdevops:
 server:
   address: "${SERVER_ADDRESS:127.0.0.1}"
   port: 8080
+  servlet:
+    session:
+      # Sessões em memória, com expiração por inatividade. Reiniciar o backend encerra todas.
+      timeout: "${SESSION_TIMEOUT:30m}"
+      tracking-modes: cookie
+      cookie:
+        name: EVOLIA_SESSAO
+        http-only: true
+        same-site: strict
+        # true quando o acesso for por HTTPS; false para a demonstração em loopback.
+        secure: ${SESSION_COOKIE_SECURE:false}
 
 management:
   health:

@@ -22,7 +22,9 @@ import tools.jackson.databind.json.JsonMapper;
 
 import static br.edu.facens.afdevops.SegurancaHttpTeste.admin;
 import static br.edu.facens.afdevops.SegurancaHttpTeste.colaborador;
-import static br.edu.facens.afdevops.SegurancaHttpTeste.senhaErrada;
+import static br.edu.facens.afdevops.SegurancaHttpTeste.basic;
+import static br.edu.facens.afdevops.SegurancaHttpTeste.conta;
+import static br.edu.facens.afdevops.SegurancaHttpTeste.nomeAdmin;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
@@ -44,22 +46,23 @@ class SegurancaIntegrationTests {
     private final SegurancaHttpTeste http = new SegurancaHttpTeste();
 
     @ParameterizedTest
-    @ValueSource(strings = {CURSOS, CURSOS + "/-1", COLABORADORES, COLABORADORES + "/-1", "/api/csrf"})
+    @ValueSource(strings = {CURSOS, CURSOS + "/-1", COLABORADORES, COLABORADORES + "/-1", "/api/me"})
     void consultasProtegidasExigemAutenticacao(String rota) throws Exception {
         assertProblema(http.get(porta, rota, null), 401, "AUTENTICACAO_NECESSARIA");
     }
 
     @Test
-    void senhaInvalidaRecebeDesafioBasic() throws Exception {
-        assertProblema(http.get(porta, CURSOS, senhaErrada()), 401, "AUTENTICACAO_NECESSARIA");
+    void senhaInvalidaERecusadaNoLoginSemDesafioBasic() throws Exception {
+        assertProblema(loginComSenhaErrada(), 401, "AUTENTICACAO_NECESSARIA");
     }
 
     @Test
     @ExtendWith(OutputCaptureExtension.class)
     void recusasNaoRevelamCredenciaisTokenOuDadosDoPedido(CapturedOutput saida) throws Exception {
         var csrf = http.obterCsrf(porta);
-        var credencialInvalida = senhaErrada();
-        var negada = http.get(porta, CURSOS, credencialInvalida);
+        var senhaInvalida = UUID.randomUUID().toString();
+        var negada = http.login(porta, conta(nomeAdmin(), senhaInvalida), null, csrf);
+        var sessao = http.sessao(porta, colaborador());
         var emailFicticio = "ficticio-" + UUID.randomUUID() + "@example.com";
         var cadastro = http.post(porta, COLABORADORES, "{\"email\":\"" + emailFicticio + "\"}",
                 colaborador(), csrf);
@@ -67,7 +70,8 @@ class SegurancaIntegrationTests {
         assertProblema(cadastro, 403, "ACESSO_NEGADO");
 
         String conteudo = negada.body() + cadastro.body() + saida.getAll();
-        for (String valor : new String[] {credencialInvalida, colaborador(), csrf.token(), csrf.cookie(), emailFicticio}) {
+        for (String valor : new String[] {senhaInvalida, SegurancaHttpTeste.senha(colaborador()), sessao.cookie(),
+                sessao.contexto(), csrf.token(), csrf.cookie(), emailFicticio}) {
             assertThat(conteudo.contains(valor)).isFalse();
         }
     }
@@ -101,18 +105,16 @@ class SegurancaIntegrationTests {
     }
 
     @Test
-    void autenticacaoNaoPersisteEntreRequisicoes() throws Exception {
-        var autenticada = http.get(porta, CURSOS, colaborador());
-        assertThat(autenticada.statusCode()).isEqualTo(200);
-        assertQueNaoHouveSessao(autenticada);
+    void requisicoesAnonimasNaoCriamSessao() throws Exception {
         var anonima = http.get(porta, CURSOS, null);
         assertProblema(anonima, 401, "AUTENTICACAO_NECESSARIA");
         assertQueNaoHouveSessao(anonima);
+        assertQueNaoHouveSessao(http.get(porta, "/actuator/health", null));
     }
 
     @Test
     void csrfForneceTokenMascaradoEmRespostaSemCache() throws Exception {
-        var resposta = http.get(porta, "/api/csrf", admin());
+        var resposta = http.get(porta, "/api/csrf", null);
         assertThat(resposta.statusCode()).isEqualTo(200);
         assertThat(resposta.headers().firstValue("Cache-Control")).hasValue("no-store");
         var cookie = resposta.headers().allValues("Set-Cookie").stream()
@@ -122,6 +124,7 @@ class SegurancaIntegrationTests {
         var corpo = JSON.readTree(resposta.body());
         assertThat(corpo.get("headerName").asString()).isEqualTo("X-XSRF-TOKEN");
         assertThat(cookie.startsWith("XSRF-TOKEN=" + corpo.get("token").asString() + ";")).isFalse();
+        assertThat(corpo.size()).isEqualTo(2);
         assertQueNaoHouveSessao(resposta);
     }
 
@@ -148,7 +151,9 @@ class SegurancaIntegrationTests {
         Integer antesColaboradores = jdbc.queryForObject("SELECT count(*) FROM colaboradores", Integer.class);
         var csrf = http.obterCsrf(porta);
         assertProblema(http.post(porta, CURSOS, DADOS_CURSO, null, csrf), 401, "AUTENTICACAO_NECESSARIA");
-        assertProblema(http.post(porta, CURSOS, DADOS_CURSO, senhaErrada(), csrf), 401, "AUTENTICACAO_NECESSARIA");
+        assertProblema(loginComSenhaErrada(), 401, "AUTENTICACAO_NECESSARIA");
+        assertProblema(http.post(porta, CURSOS, DADOS_CURSO, basic(nomeAdmin(), "qualquer-senha"), csrf),
+                401, "AUTENTICACAO_NECESSARIA");
         assertProblema(http.post(porta, CURSOS, DADOS_CURSO, colaborador(), csrf), 403, "ACESSO_NEGADO");
         assertProblema(http.post(porta, COLABORADORES, "{}", colaborador(), csrf), 403, "ACESSO_NEGADO");
         assertThat(quantidadeCursos()).isEqualTo(antesCursos);
@@ -158,6 +163,7 @@ class SegurancaIntegrationTests {
 
     @Test
     void adminComCookieTokenECredenciaisPodeCadastrar() throws Exception {
+        http.sessao(porta, admin());
         var resposta = http.post(porta, CURSOS, DADOS_CURSO, admin(), http.obterCsrf(porta));
         assertThat(resposta.statusCode()).isEqualTo(201);
         long id = JSON.readTree(resposta.body()).get("id").asLong();
@@ -172,7 +178,7 @@ class SegurancaIntegrationTests {
     @ParameterizedTest
     @MethodSource("rotasActuatorBloqueadas")
     void actuatorNaoAutorizadoRetorna404(String metodo, String rota) throws Exception {
-        for (String credencial : new String[] {null, admin(), colaborador(), senhaErrada()}) {
+        for (String credencial : new String[] {null, admin(), colaborador(), basic(nomeAdmin(), "qualquer-senha")}) {
             var resposta = http.enviar(http.request(porta, rota, credencial)
                     .method(metodo, HttpRequest.BodyPublishers.noBody()).build());
             assertThat(resposta.statusCode()).isEqualTo(404);
@@ -197,13 +203,18 @@ class SegurancaIntegrationTests {
         assertProblema(http.enviar(pedido), 403, "ACESSO_NEGADO");
     }
 
+    private HttpResponse<String> loginComSenhaErrada() throws Exception {
+        return http.login(porta, conta(nomeAdmin(), UUID.randomUUID().toString()), null, http.obterCsrf(porta, (String) null));
+    }
+
     private Integer quantidadeCursos() {
         return jdbc.queryForObject("SELECT count(*) FROM cursos", Integer.class);
     }
 
     private static void assertQueNaoHouveSessao(HttpResponse<String> resposta) {
         assertThat(resposta.headers().allValues("Set-Cookie").stream()
-                .anyMatch(cookie -> cookie.startsWith("JSESSIONID="))).isFalse();
+                .anyMatch(cookie -> cookie.startsWith(SegurancaHttpTeste.COOKIE_SESSAO + "=")
+                        || cookie.startsWith("JSESSIONID="))).isFalse();
     }
 
     private static void assertProblema(HttpResponse<String> resposta, int status, String codigo) throws Exception {
@@ -213,10 +224,6 @@ class SegurancaIntegrationTests {
         var corpo = JSON.readTree(resposta.body());
         assertThat(corpo.get("status").asInt()).isEqualTo(status);
         assertThat(corpo.get("codigo").asString()).isEqualTo(codigo);
-        if (status == 401) {
-            assertThat(resposta.headers().firstValue("WWW-Authenticate")).hasValue("Basic realm=\"AF-DevOps\"");
-        } else {
-            assertThat(resposta.headers().firstValue("WWW-Authenticate")).isEmpty();
-        }
+        assertThat(resposta.headers().firstValue("WWW-Authenticate")).isEmpty();
     }
 }

@@ -5,7 +5,16 @@ import { ApiError } from './erros'
 // Respostas simuladas existem somente nestes testes.
 
 const CREDENCIAIS = { nomeUsuario: 'ana', senha: 'senha-secreta-çã€1' }
-const BASIC_ANA = 'Basic YW5hOnNlbmhhLXNlY3JldGEtw6fDo+KCrDE='
+const CONTEXTO = 'contexto-da-ana'
+const me = (contexto = CONTEXTO) =>
+  new Response('{"nomeUsuario":"ana"}', { headers: { 'Content-Type': 'application/json', 'X-Evolia-Contexto': contexto } })
+
+/** Faz a sessão adotar um contexto, como acontece ao entrar, sem deixar chamadas registradas. */
+async function comContexto(alvo: SessaoApi, contexto = CONTEXTO) {
+  fetchMock.mockImplementationOnce(() => Promise.resolve(me(contexto)))
+  await alvo.retomar((dados) => dados)
+  fetchMock.mockClear()
+}
 const TOKEN = 'tokenCsrfMascarado_123-abc'
 
 type Chamada = { url: string; metodo: string; cabecalhos: Headers; corpo: unknown }
@@ -97,7 +106,7 @@ let sessao: SessaoApi
 beforeEach(() => {
   fetchMock.mockReset()
   vi.stubGlobal('fetch', fetchMock)
-  sessao = criarSessaoApi(CREDENCIAIS)
+  sessao = criarSessaoApi()
 })
 
 afterEach(() => {
@@ -107,7 +116,8 @@ afterEach(() => {
 })
 
 describe('leituras', () => {
-  it('envia GET relativo com Basic UTF-8 e opções seguras', async () => {
+  it('envia GET relativo com o contexto, sem Authorization, e opções seguras', async () => {
+    await comContexto(sessao)
     fetchMock.mockResolvedValueOnce(json({ nomeUsuario: 'ana', perfil: 'COLABORADOR', colaboradorId: 7 }))
 
     await expect(sessao.obter('/api/me', aceitarQualquer)).resolves.toEqual({
@@ -121,7 +131,8 @@ describe('leituras', () => {
     expect(init).toMatchObject({ method: 'GET', credentials: 'same-origin', cache: 'no-store', redirect: 'error' })
     expect(init?.body).toBeUndefined()
     const cabecalhos = new Headers(init?.headers)
-    expect(cabecalhos.get('Authorization')).toBe(BASIC_ANA)
+    expect(cabecalhos.has('Authorization')).toBe(false)
+    expect(cabecalhos.get('X-Evolia-Contexto')).toBe(CONTEXTO)
     expect(cabecalhos.get('Accept')).toBe('application/json, application/problem+json')
     expect(cabecalhos.has('Content-Type')).toBe(false)
     expect(cabecalhos.has('X-XSRF-TOKEN')).toBe(false)
@@ -456,6 +467,7 @@ describe('cancelamento e encerramento', () => {
 
 describe('escritas com CSRF', () => {
   it('obtém o CSRF e envia a escrita com o token do JSON', async () => {
+    await comContexto(sessao)
     fetchMock.mockResolvedValueOnce(csrf()).mockResolvedValueOnce(json({ id: 1 }, 201))
 
     await expect(sessao.enviar('/api/cursos', { nome: 'Lógica', cargaHoraria: 8 }, aceitarQualquer)).resolves.toEqual({
@@ -463,10 +475,11 @@ describe('escritas com CSRF', () => {
     })
 
     expect(rotas()).toEqual(['GET /api/csrf', 'POST /api/cursos'])
-    expect(chamada(0).cabecalhos.get('Authorization')).toBe(BASIC_ANA)
+    expect(chamada(0).cabecalhos.get('X-Evolia-Contexto')).toBe(CONTEXTO)
     expect(chamada(0).cabecalhos.has('X-XSRF-TOKEN')).toBe(false)
     const escrita = chamada(1)
-    expect(escrita.cabecalhos.get('Authorization')).toBe(BASIC_ANA)
+    expect(escrita.cabecalhos.has('Authorization')).toBe(false)
+    expect(escrita.cabecalhos.get('X-Evolia-Contexto')).toBe(CONTEXTO)
     expect(escrita.cabecalhos.get('X-XSRF-TOKEN')).toBe(TOKEN)
     expect(escrita.cabecalhos.get('Content-Type')).toBe('application/json')
     expect(escrita.corpo).toBe('{"nome":"Lógica","cargaHoraria":8}')
@@ -575,11 +588,12 @@ describe('escritas com CSRF', () => {
 
 describe('isolamento e privacidade', () => {
   it('isola duas sessões de usuários diferentes', async () => {
-    const outra = criarSessaoApi({ nomeUsuario: 'bruno', senha: 'outra-senha-123' })
+    const outra = criarSessaoApi()
+    await comContexto(sessao)
+    await comContexto(outra, 'contexto-do-bruno')
     const csrfAna = adiado<Response>()
     fetchMock.mockImplementation((_url, init) => {
-      const autorizacao = new Headers(init?.headers).get('Authorization')
-      if (autorizacao === BASIC_ANA) return csrfAna.promessa
+      if (new Headers(init?.headers).get('X-Evolia-Contexto') === CONTEXTO) return csrfAna.promessa
       return Promise.resolve(String(_url) === '/api/csrf' ? csrf('tokenBruno') : json({ ok: true }, 201))
     })
 
@@ -595,8 +609,8 @@ describe('isolamento e privacidade', () => {
     await expect(outra.obter('/api/me', aceitarQualquer)).resolves.toEqual({ ok: true })
     expect(outra.encerrada).toBe(false)
 
-    const autorizacoes = new Set(chamadas().map((c) => c.cabecalhos.get('Authorization')))
-    expect(autorizacoes).toEqual(new Set([BASIC_ANA, 'Basic YnJ1bm86b3V0cmEtc2VuaGEtMTIz']))
+    const contextos = new Set(chamadas().map((c) => c.cabecalhos.get('X-Evolia-Contexto')))
+    expect(contextos).toEqual(new Set([CONTEXTO, 'contexto-do-bruno']))
     outra.encerrar()
   })
 
@@ -620,7 +634,7 @@ describe('isolamento e privacidade', () => {
     expect(localStorage.length).toBe(0)
     expect(sessionStorage.length).toBe(0)
     const exposto = `${String(erro)} ${JSON.stringify(erro)} ${(erro as Error).stack ?? ''}`
-    for (const segredo of [CREDENCIAIS.senha, BASIC_ANA, TOKEN]) {
+    for (const segredo of [CREDENCIAIS.senha, CONTEXTO, TOKEN]) {
       expect(exposto).not.toContain(segredo)
     }
   })
@@ -629,7 +643,7 @@ describe('isolamento e privacidade', () => {
 describe('aoNaoAutenticado', () => {
   function sessaoComAviso() {
     const aviso = vi.fn()
-    return { aviso, sessao: criarSessaoApi(CREDENCIAIS, { aoNaoAutenticado: aviso }) }
+    return { aviso, sessao: criarSessaoApi({ aoNaoAutenticado: aviso }) }
   }
 
   it('avisa em 401 de leitura e preserva o erro HTTP original', async () => {
@@ -665,7 +679,7 @@ describe('aoNaoAutenticado', () => {
 
   it('preserva o 401 mesmo quando o callback encerra a sessão', async () => {
     const aviso = vi.fn(() => comAviso.encerrar())
-    const comAviso = criarSessaoApi(CREDENCIAIS, { aoNaoAutenticado: aviso })
+    const comAviso = criarSessaoApi({ aoNaoAutenticado: aviso })
     fetchMock.mockResolvedValueOnce(problema(401, { codigo: 'AUTENTICACAO_NECESSARIA' }))
     esperarApiError(await falha(comAviso.obter('/api/cursos', aceitarQualquer)), { tipo: 'http', status: 401 })
     expect(comAviso.encerrada).toBe(true)
@@ -696,13 +710,112 @@ describe('aoNaoAutenticado', () => {
   })
 
   it('ignora falhas do próprio callback', async () => {
-    const comAviso = criarSessaoApi(CREDENCIAIS, {
+    const comAviso = criarSessaoApi({
       aoNaoAutenticado: () => {
         throw new Error('falha no callback')
       },
     })
     fetchMock.mockResolvedValueOnce(problema(401, { codigo: 'AUTENTICACAO_NECESSARIA' }))
     esperarApiError(await falha(comAviso.obter('/api/cursos', aceitarQualquer)), { tipo: 'http', status: 401 })
+    comAviso.encerrar()
+  })
+})
+
+describe('login, restauração e logout', () => {
+  const autenticar = () => sessao.autenticar(CREDENCIAIS, aceitarQualquer)
+
+  it('faz CSRF, POST /api/login em formulário e /api/me, nesta ordem', async () => {
+    fetchMock
+      .mockResolvedValueOnce(csrf())
+      .mockResolvedValueOnce(new Response(null, { status: 204 }))
+      .mockResolvedValueOnce(me())
+      .mockResolvedValueOnce(json([]))
+
+    await expect(autenticar()).resolves.toEqual({ nomeUsuario: 'ana' })
+    await sessao.obter('/api/cursos', aceitarQualquer)
+
+    expect(rotas()).toEqual(['GET /api/csrf', 'POST /api/login', 'GET /api/me', 'GET /api/cursos'])
+    expect(chamada(1).cabecalhos.get('Content-Type')).toBe('application/x-www-form-urlencoded;charset=UTF-8')
+    expect(chamada(1).cabecalhos.get('X-XSRF-TOKEN')).toBe(TOKEN)
+    expect(new URLSearchParams(String(chamada(1).corpo)).get('password')).toBe(CREDENCIAIS.senha)
+    expect(chamadas().filter((c) => String(c.corpo ?? '').includes('password'))).toHaveLength(1)
+    expect(chamada(2).cabecalhos.has('X-Evolia-Contexto')).toBe(false)
+    expect(chamada(3).cabecalhos.get('X-Evolia-Contexto')).toBe(CONTEXTO)
+    for (const c of chamadas()) expect(c.cabecalhos.has('Authorization')).toBe(false)
+  })
+
+  it.each([401, 403, 429, 503])('não repete o login recusado com %i nem consulta a identidade', async (status) => {
+    fetchMock.mockResolvedValueOnce(csrf()).mockResolvedValueOnce(new Response(null, { status }))
+    esperarApiError(await falha(autenticar()), { tipo: 'http', status })
+    expect(rotas()).toEqual(['GET /api/csrf', 'POST /api/login'])
+  })
+
+  it('não interrompe um login já enviado quando a sessão local é encerrada', async () => {
+    const resposta = adiado<Response>()
+    fetchMock.mockResolvedValueOnce(csrf()).mockReturnValueOnce(resposta.promessa).mockResolvedValueOnce(me())
+    const pendente = autenticar()
+    await esperarChamadas(2)
+
+    sessao.encerrar()
+
+    expect(fetchMock.mock.calls[1]?.[1]?.signal?.aborted).toBe(false)
+    resposta.resolver(new Response(null, { status: 204 }))
+    await expect(pendente).resolves.toEqual({ nomeUsuario: 'ana' })
+  })
+
+  it.each([
+    ['sem cabeçalho de contexto', () => json({})],
+    ['contexto com caracteres inválidos', () => me('a b')],
+  ])('rejeita /api/me %s', async (_caso, resposta) => {
+    fetchMock.mockResolvedValueOnce(resposta())
+    esperarApiError(await falha(sessao.retomar(aceitarQualquer)), { tipo: 'resposta-invalida' })
+  })
+
+  it('logout envia CSRF e contexto, aborta o que estava pendente e não espera a fila', async () => {
+    await comContexto(sessao)
+    fetchMock
+      .mockResolvedValueOnce(csrf())
+      .mockImplementationOnce(nunca)
+      .mockResolvedValueOnce(csrf('tokenDoLogout'))
+      .mockResolvedValueOnce(new Response(null, { status: 204 }))
+    const longa = falha(sessao.enviar('/api/ia/orientacoes', {}, aceitarQualquer, { tempoLimiteMs: 90_000 }))
+    await esperarChamadas(2)
+
+    await expect(sessao.encerrarNoServidor()).resolves.toBe('encerrada')
+
+    esperarApiError(await longa, { tipo: 'cancelado' })
+    expect(rotas().slice(2)).toEqual(['GET /api/csrf', 'POST /api/logout'])
+    expect(chamada(3).cabecalhos.get('X-XSRF-TOKEN')).toBe('tokenDoLogout')
+    expect(chamada(3).cabecalhos.get('X-Evolia-Contexto')).toBe(CONTEXTO)
+    expect(sessao.encerrada).toBe(true)
+  })
+
+  it.each([
+    ['SESSAO_SUBSTITUIDA', 'substituida'],
+    ['AUTENTICACAO_NECESSARIA', 'encerrada'],
+  ] as const)('logout com 401 %s resulta em %s', async (codigo, resultado) => {
+    await comContexto(sessao)
+    fetchMock.mockResolvedValueOnce(csrf()).mockResolvedValueOnce(problema(401, { codigo }))
+    await expect(sessao.encerrarNoServidor()).resolves.toBe(resultado)
+  })
+
+  it.each([
+    ['403 CSRF_INVALIDO', () => Promise.resolve(problema(403, { codigo: 'CSRF_INVALIDO' }))],
+    ['503', () => Promise.resolve(new Response(null, { status: 503 }))],
+    ['falha de rede', () => Promise.reject(new TypeError('Failed to fetch'))],
+  ])('logout sem confirmação (%s) rejeita e não repete', async (_caso, resposta) => {
+    await comContexto(sessao)
+    fetchMock.mockResolvedValueOnce(csrf()).mockImplementationOnce(resposta)
+    expect(await falha(sessao.encerrarNoServidor())).toBeInstanceOf(ApiError)
+    expect(rotas()).toEqual(['GET /api/csrf', 'POST /api/logout'])
+  })
+
+  it('informa ao aviso o código recebido', async () => {
+    const aviso = vi.fn()
+    const comAviso = criarSessaoApi({ aoNaoAutenticado: aviso })
+    fetchMock.mockResolvedValueOnce(problema(401, { codigo: 'SESSAO_SUBSTITUIDA' }))
+    await falha(comAviso.obter('/api/cursos', aceitarQualquer))
+    expect(aviso).toHaveBeenCalledWith('SESSAO_SUBSTITUIDA')
     comAviso.encerrar()
   })
 })
