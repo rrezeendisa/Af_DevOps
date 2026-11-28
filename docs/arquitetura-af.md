@@ -72,7 +72,7 @@ O padrão é aplicado **somente nessas integrações**. A publicação no Rabbit
 ```text
 frontend/src/
 ├── app/          rotas, providers e cache de consultas
-├── features/     auth, colaboradores, consentimento, contas, cursos, ia, painel, treinamentos
+├── features/     auth, colaboradores, consentimento, contas, cursos, ia, landing, painel, treinamentos
 ├── components/   interface compartilhada
 └── lib/api/      cliente HTTP, sessão e contexto, CSRF e erros
 ```

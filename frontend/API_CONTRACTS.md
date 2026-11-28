@@ -110,7 +110,8 @@ Transcrito de `SegurancaConfig.java`. Qualquer outra rota ou método é negado (
 
 | Método e rota | Perfil |
 | --- | --- |
-| `GET /api/me`, `GET /api/csrf` | ADMIN, COLABORADOR |
+| `GET /api/csrf` | Público |
+| `GET /api/me` | ADMIN, COLABORADOR |
 | `GET /api/cursos`, `GET /api/cursos/{id}` | ADMIN, COLABORADOR |
 | `POST /api/cursos` | ADMIN |
 | `GET /api/colaboradores`, `GET /api/colaboradores/{id}`, `POST /api/colaboradores` | ADMIN |

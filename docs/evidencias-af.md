@@ -19,7 +19,12 @@ Referência: enunciado oficial da AF (Estudo de Caso 1, DevOps e QA, 01/12/2026,
 
 ## Testes e CI
 
-| Verificação | Resultado atual (Etapa 14.1) | Histórico (Etapa 14) |
+> **Leia antes:** a tabela abaixo e os cenários descritos neste documento são da Etapa 14.1, **anteriores
+> ao redesenho da interface**. A verificação da versão atual está em
+> [Versão atual](#versão-atual-design-20-28112026). As medições de desempenho não foram repetidas.
+
+
+| Verificação | Etapa 14.1 | Histórico (Etapa 14) |
 |---|---|---|
 | Java (unitários e Testcontainers) | 274 aprovados | 255 |
 | Frontend (Vitest) | 507 aprovados | 454 |
@@ -27,7 +32,25 @@ Referência: enunciado oficial da AF (Estudo de Caso 1, DevOps e QA, 01/12/2026,
 | Cenários no navegador (aplicação real) | 25 aprovados | — |
 | Typecheck, lint, build e `nginx -t` | Aprovados | Aprovados |
 
-Contagens e casos em [testes.json](evidencias-etapa14-1/testes.json) e [navegador.json](evidencias-etapa14-1/navegador.json); o histórico está em [testes.json da Etapa 14](evidencias-etapa14/testes.json). O build mantém o aviso de pacote JavaScript acima de 500 kB. A [CI](../.github/workflows/ci.yml) está configurada e **ainda não foi executada no GitHub**.
+Contagens e casos em [testes.json](evidencias-etapa14-1/testes.json) e [navegador.json](evidencias-etapa14-1/navegador.json); o histórico está em [testes.json da Etapa 14](evidencias-etapa14/testes.json). O build mantém o aviso de pacote JavaScript acima de 500 kB. A [CI](../.github/workflows/ci.yml) rodou no GitHub em 27/11/2026 sobre revisões anteriores e **falhou na `main`** (a última execução, `23ea620`, no teste do consumidor da fila); ela **não rodou sobre a versão atual**, ainda não publicada.
+
+### Versão atual (Design 2.0, 28/11/2026)
+
+| Verificação | Resultado |
+|---|---|
+| Java, unitários e Testcontainers | 274 aprovados |
+| Python, `ai-service` | 40 aprovados (uma asserção atualizada de 9 para 12 documentos) |
+| Frontend: typecheck, lint, build e Vitest | 574 aprovados |
+| Integração pelo gateway, projeto Compose isolado | 55 aprovados |
+| Fluxos reais no navegador, três perfis, pilha isolada sem Ollama | 39 passos aprovados (o passo de cadastro de curso foi repetido após corrigir um erro do roteiro automatizado) |
+| `nginx -t`; violações de CSP nos fluxos | Aprovado; nenhuma |
+
+Fluxos exercidos: login válido e inválido, logout, restauração e troca de sessão, cadastro e consulta de
+colaboradores e cursos, criação de conta, autorização e revogação, classificação, recomendações com
+fontes, orientação, IA indisponível, treinamento até `CONCLUIDO` e bloqueios por perfil.
+
+**Não verificado nesta versão:** carga (RNF01), a geração pelo Ollama pela interface, os cenários de falha
+do RNF02 e RNF04 e a CI no GitHub. O roteiro automatizado do navegador não está versionado.
 
 ## Requisitos funcionais
 
@@ -44,7 +67,7 @@ Os cinco fluxos foram repetidos na Etapa 14.1 pela interface, com autenticação
 Redação do enunciado: “Recomendar cursos utilizando informações recuperadas de documentos institucionais por RAG.”
 
 - **Implementado:** o [serviço de recomendação](../ai-service/app/recommendation_service.py) recupera documentos Markdown por TF-IDF e similaridade de cosseno ([base documental](../ai-service/app/knowledge_base.py)), filtra por nível e competência, retorna até três cursos com justificativa montada a partir do texto recuperado e informa a fonte de cada um.
-- **Atendimento:** atendido com ressalva. Os nove documentos são fictícios porque o cenário é um estudo de caso; eles fazem o papel do acervo institucional, e isso por si só não reduz o atendimento.
+- **Atendimento:** atendido com ressalva. Os documentos (nove na época das evidências, doze na versão atual) são fictícios porque o cenário é um estudo de caso; eles fazem o papel do acervo institucional, e isso por si só não reduz o atendimento.
 - **Ressalva:** a etapa de geração é determinística. Nenhum modelo de linguagem redige a resposta a partir dos trechos recuperados; o Ollama recebe apenas o nível. Quem exigir RAG com geração por LLM pode considerar o atendimento parcial.
 - **Outros limites:** a seleção depende muito dos metadados (nível e competência), e a base documental é independente do catálogo de cursos cadastrado no Java.
 

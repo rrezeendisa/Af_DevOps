@@ -214,8 +214,10 @@ token interno, DLQ e acesso ao ai-service pela rede do Compose.
 A suíte do gateway e do treinamento inicia apenas os serviços necessários,
 sem baixar o modelo generativo. Carga e falhas controladas têm um
 [roteiro separado](../integration-tests/carga/README.md), executado localmente
-em 27 e 28/11/2026 ([resultados atuais](../docs/evidencias-etapa14-1/README.md)). A pipeline
-ainda não foi executada no GitHub.
+em 27 e 28/11/2026 ([resultados atuais](../docs/evidencias-etapa14-1/README.md)). A pipeline já
+rodou no GitHub: as execuções de 27/11/2026 na `main` falharam (a última, `23ea620`, porque o teste do
+worker consultava a fila antes de o consumidor se conectar; o teste passou a aguardar). Ela ainda não
+rodou sobre as revisões desta versão, que não foram publicadas.
 
 ## Problemas comuns
 

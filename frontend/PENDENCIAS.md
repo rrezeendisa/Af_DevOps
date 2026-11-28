@@ -51,3 +51,14 @@ prazo de produção mudou. `vi.waitFor` e o limite por teste (5 s) seguem no pad
 
 **Depois:** cinco execuções completas seguidas, 542 de 542, entre 25 e 28 s. Sob carga muito maior
 que a dessas execuções, o problema ainda pode reaparecer.
+
+## Design 2.0 concluído (28/11/2026): pendências
+
+- **Instabilidade sob carga:** além dos casos acima, `RotaProtegida.test.tsx` → “redireciona anônimo de
+  /admin para /entrar” falhou algumas vezes na suíte completa e passou 6 de 6 isolado. Teste e
+  componente não foram alterados; causa não comprovada. Em uma execução com a máquina carregada, quatro
+  testes estouraram o limite de 5 s.
+- **Assets não fornecidos:** anéis de vidro e escudo 3D dos mockups; pose “preocupada” do mascote.
+- **Pacote principal** acima de 500 kB (aviso do build).
+- **`public/favicon.svg`** não é mais referenciado pela página; o Nginx ainda o serve.
+- **RAG e catálogo** são independentes; a IA não informa qual fonte sustenta cada curso.

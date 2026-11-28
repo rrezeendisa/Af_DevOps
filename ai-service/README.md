@@ -117,7 +117,7 @@ A acurácia é a fração de acertos no holdout; as métricas macro calculam a m
 
 ## Recomendações com recuperação documental
 
-A base `knowledge/courses/` contém nove documentos Markdown fictícios: três competências (`logica`, `comunicacao`, `tecnologia`) em três níveis. O catálogo CRUD do backend Java existe, mas não há carga inicial de cursos nem integração de catálogo para IA. Por isso os IDs `CURSO-001` a `CURSO-009` são provisórios. O backend usa IDs numéricos e `BASICO`, enquanto o contrato de classificação usa `INICIANTE`; os responsáveis das Frentes A e B precisam alinhar um mapeamento antes da integração.
+A base `knowledge/courses/` contém doze documentos institucionais **fictícios**, criados para a demonstração acadêmica: três competências (`logica`, `comunicacao`, `tecnologia`) em três níveis, com um segundo documento em três das nove combinações. Os identificadores `CURSO-001` a `CURSO-012` são do acervo documental e **não** correspondem aos IDs numéricos do catálogo cadastrado no backend Java; não há ligação entre os dois. Cada arquivo segue o mesmo formato (título, `ID`, `Competência`, `Nível recomendado`, `Pré-requisitos`, `Descrição`, `Objetivos de aprendizagem`) e a seção `Observação`, ignorada pela leitura. O acervo é copiado para a imagem: depois de alterá-lo, reconstrua o `ai-service`.
 
 `app/knowledge_base.py` carrega os Markdown, cria vetores TF-IDF em memória e recupera conteúdo por similaridade de cosseno. `POST /recomendacoes` usa as competências com nota até 3 (ou a menor nota, se todas forem altas), filtra os documentos recuperados pelo nível recebido e devolve os cursos e nomes dos arquivos fonte. As justificativas usam descrição e pré-requisitos dos documentos.
 
@@ -204,20 +204,13 @@ Execute a partir de `ai-service/`, separado da API:
 .\.venv\Scripts\python.exe -m worker.consumer
 ```
 
-O worker usa Pika `BlockingConnection`, exchange direta durável `ml.training`, routing key `training.requested` e fila durável `ml.training.requests`. O formato provisório da mensagem é `{"solicitacao_id":"treinamento-123"}`. Há ACK manual; o ACK ocorre depois do artefato atômico, do registro idempotente local e da resposta HTTP 2xx do backend.
+O worker usa Pika `BlockingConnection`, exchange direta durável `ml.training`, routing key `training.requested` e fila durável `ml.training.requests`. O formato da mensagem é `{"solicitacao_id":"treinamento-123"}`. Há ACK manual; o ACK ocorre depois do artefato atômico, do registro idempotente local e da resposta HTTP 2xx do backend.
 
-Falhas transitórias são reenviadas com contador limitado (`MAX_MESSAGE_RETRIES`, padrão 3). Mensagens inválidas e solicitações que excedem o limite são encaminhadas à fila provisória `ml.training.requests.dead-letter`. O ledger local `ml/artifacts/training-results.json` permite repetir o PATCH após falha sem treinar novamente; IDs de solicitação devem ser únicos. Configure armazenamento persistente para o diretório do artefato se a idempotência precisar sobreviver à recriação do container.
+Falhas transitórias são reenviadas com contador limitado (`MAX_MESSAGE_RETRIES`, padrão 3). Mensagens inválidas e solicitações que excedem o limite são encaminhadas à fila `ml.training.requests.dead-letter`. O ledger local `ml/artifacts/training-results.json` permite repetir o PATCH após falha sem treinar novamente; IDs de solicitação devem ser únicos. Configure armazenamento persistente para o diretório do artefato se a idempotência precisar sobreviver à recriação do container.
 
-### Contrato Java ainda provisório
+### Integração com o backend Java
 
-O código Java encontrado só expõe CRUD de colaboradores e cursos. Não há `PATCH /internal/treinamentos/{id}/status`, autenticação interna, mensagens de treinamento, infraestrutura RabbitMQ ou configuração da Frente C versionada no repositório. O worker usa provisoriamente:
-
-- `PATCH {JAVA_BACKEND_URL}/internal/treinamentos/{solicitacao_id}/status`;
-- token bearer `INTERNAL_API_TOKEN`;
-- corpo de sucesso `{"status":"CONCLUIDO","versaoModelo":"1.0.0","mensagem":"..."}` e corpo de falha com `status: "FALHOU"`;
-- exchange direta, fila e routing key listados acima; DLQ `ml.training.requests.dead-letter`.
-
-A resposta HTTP é verificada e tem timeout de cinco segundos. Esses nomes, campos e estados precisam ser alinhados com A/C antes de uma integração real. Os testes atuais simulam backend e broker; não provam integração ponta a ponta. O serviço Python não altera o código Java nem cria configuração de infraestrutura.
+O worker informa o resultado em `PATCH {JAVA_BACKEND_URL}/internal/treinamentos/{id}/status`, com `Authorization: Bearer INTERNAL_API_TOKEN` e corpo `{"status":"CONCLUIDO","versaoModelo":"…","mensagem":"…"}` (ou `status: "FALHOU"`). Exchange, filas e DLQ são declarados pela topologia em `infra/rabbitmq/`. A integração é exercitada por `integration-tests/test_treinamento.py` com a pilha do Docker Compose; os testes unitários desta pasta usam backend e broker simulados.
 
 ## Testes
 
@@ -235,14 +228,11 @@ A suíte cobre validação B1–B3, avaliação holdout, documentos e recuperaç
 2. Rode a avaliação para exibir as métricas holdout.
 3. Em um terminal, inicie `python -m uvicorn app.main:app --reload` e demonstre `/health`, `/classificacoes` e `/recomendacoes` pelo Swagger.
 4. Configure `INTERNAL_API_TOKEN` e envie-o no header bearer para demonstrar `/orientacoes`.
-5. Para o worker, configure URL RabbitMQ e backend com o contrato acordado, inicie `python -m worker.consumer` e publique uma mensagem de treinamento compatível.
+5. Para o worker, prefira a pilha do Docker Compose (ver o README da raiz), que já configura RabbitMQ e backend.
 
-## Limitações e pendências de integração
+## Limitações
 
-- Dados e cursos são fictícios; IDs e níveis de curso precisam ser mapeados para o catálogo real.
-- As métricas são de uma única divisão holdout pequena e artificial; não medem eficácia profissional.
-- RAG atual significa recuperação TF-IDF e montagem determinística, sem LLM generativo.
-- Autorização depende de implementação e configuração compartilhada no backend; não há autenticação Java hoje.
-- O PATCH de treinamento, payloads, status, fila, exchange, DLQ e persistência do ledger requerem alinhamento com A/C.
-- A API precisa reiniciar para carregar um artefato novo.
-- Não foi possível testar RabbitMQ ou o backend real por falta dessas integrações no monorepo.
+- Dados de treino, documentos e contas são fictícios; as métricas vêm de uma única divisão holdout pequena e artificial e não medem eficácia profissional.
+- A recuperação é TF-IDF com montagem determinística das justificativas: não há LLM redigindo a partir dos trechos.
+- O acervo documental é independente do catálogo de cursos do backend.
+- A API precisa reiniciar para carregar um artefato de modelo novo.

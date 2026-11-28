@@ -339,6 +339,11 @@ Em `forced-colors`, o gradiente é removido. As fichas `.vidro` têm opacidade d
   mascote comemorando. “Limpar” descarta notas e resultados.
 - **Recomendações:** cartões horizontais, um por linha. Foto ilustrativa escolhida por palavras do nome;
   sem categoria, nível, carga horária ou fonte por curso, que a API não informa.
+- **Catálogo e detalhe:** cartões com capa ilustrativa (`features/cursos/capas.ts`: o nome decide temas
+  específicos, depois a categoria; sem correspondência, foto de estudo), categoria, nome, nível e carga.
+- **Administração:** tabelas em cartão de 24 px com cabeçalho lilás claro; iniciais só visuais (CSS);
+  contagens por status nos treinamentos, sempre derivadas da lista.
+- **Privacidade e IA:** mesma ilustração com ou sem autorização, para não induzir a escolha.
 - **Tela de entrada:** um cartão central (28 px, até 1200 px), formulário à esquerda em superfície
   quase opaca e painel visual à direita a partir de `lg`. Botão principal em gradiente
   `primary` → `neon-violet` com texto escuro (5,1:1 no extremo violeta). Sem recursos que não existem
