@@ -29,12 +29,12 @@ Os tokens ficam em `frontend/src/styles` como variáveis CSS, consumidas pelo Ta
 
 | Token | Light | Dark | Uso |
 | --- | --- | --- | --- |
-| `--background` | `#FAF8F5` | `#17131B` | Fundo da página |
+| `--background` | `#FDFCFF` | `#17131B` | Fundo da página |
 | `--surface` | `#FFFFFF` | `#211D25` | Cards, tabelas, painéis |
 | `--surface-2` | `#F8EDFE` | `#2A2630` | Superfície elevada ou alternada (light: lilás bem claro) |
 | `--foreground` | `#211C26` | `#F4F1F6` | Texto principal |
 | `--muted-foreground` | `#625A69` | `#B9B2BF` | Texto secundário, legendas |
-| `--border` | `#E8E2EC` | `#332E39` | Divisórias **decorativas** |
+| `--border` | `#EDE7F3` | `#332E39` | Divisórias **decorativas** |
 | `--input-border` | `#8A8290` | `#7A7381` | Contorno de campos e controles (exige 3:1) |
 | `--primary` | `#F170C3` | `#F170C3` | Botão e ação principal |
 | `--primary-foreground` | `#211C26` | `#211C26` | Texto sobre o primary |
@@ -67,21 +67,21 @@ componentes de interface e foco 3:1.
 | Primeiro plano | Fundo | Razão | Resultado |
 | --- | --- | --- | --- |
 | `#211C26` texto | `#FFFFFF` surface | 16,68 | ✅ |
-| `#211C26` texto | `#FAF8F5` background | 15,74 | ✅ |
+| `#211C26` texto | `#FDFCFF` background | 16,32 | ✅ |
 | `#211C26` texto | `#F170C3` primary | 6,23 | ✅ **botão primário** |
 | `#211C26` texto | `#EFD2FE` lilac | 12,17 | ✅ |
 | `#211C26` texto | `#E2E585` lime | 12,54 | ✅ |
 | `#211C26` texto | `#F8EDFE` surface-2 | 14,73 | ✅ |
-| `#625A69` secundário | `#FFFFFF` / `#FAF8F5` / `#EFD2FE` | 6,59 / 6,22 / 4,81 | ✅ |
-| `#521256` plum | `#FFFFFF` / `#FAF8F5` | 13,29 / 12,54 | ✅ foco e ícones |
+| `#625A69` secundário | `#FFFFFF` / `#FDFCFF` / `#EFD2FE` | 6,59 / 6,45 / 4,81 | ✅ |
+| `#521256` plum | `#FFFFFF` / `#FDFCFF` | 13,29 / 13,01 | ✅ foco e ícones |
 | `#521256` plum | `#EFD2FE` / `#E2E585` / `#F170C3` | 9,70 / 9,99 / 4,97 | ✅ |
-| `#8A8290` input-border | `#FFFFFF` / `#FAF8F5` | 3,70 / 3,49 | ✅ (3:1) |
-| `#B42318` destructive | `#FFFFFF` / `#FAF8F5` | 6,57 / 6,20 | ✅ |
+| `#8A8290` input-border | `#FFFFFF` / `#FDFCFF` | 3,70 / 3,62 | ✅ (3:1) |
+| `#B42318` destructive | `#FFFFFF` / `#FDFCFF` | 6,57 / 6,43 | ✅ |
 | `#FFFFFF` texto | `#B42318` destructive | 6,57 | ✅ |
-| `#2F6B2F` success | `#FFFFFF` / `#FAF8F5` | 6,43 / 6,07 | ✅ |
-| `#8A5A00` warning | `#FFFFFF` / `#FAF8F5` | 5,93 / 5,59 | ✅ |
+| `#2F6B2F` success | `#FFFFFF` / `#FDFCFF` | 6,43 / 6,29 | ✅ |
+| `#8A5A00` warning | `#FFFFFF` / `#FDFCFF` | 5,93 / 5,80 | ✅ |
 | `#FFFFFF` texto | `#F170C3` | 2,68 | ❌ **proibido** |
-| `#F170C3` como texto ou borda | `#FFFFFF` / `#FAF8F5` | 2,68 / 2,52 | ❌ **proibido** como texto, ícone isolado ou único indicador de estado |
+| `#F170C3` como texto ou borda | `#FFFFFF` / `#FDFCFF` | 2,68 / 2,62 | ❌ **proibido** como texto, ícone isolado ou único indicador de estado |
 | `#E2E585` ou `#EFD2FE` como texto | `#FFFFFF` | 1,33 / 1,37 | ❌ **proibido** (só como fundo com texto escuro) |
 
 ### Dark
@@ -134,38 +134,27 @@ Use valores numéricos tabulares (`font-variant-numeric: tabular-nums`) em tabel
 
 ## 6. Marca
 
-- **Símbolo:** quatro pétalas orgânicas ao redor de um centro comum, representando conexão,
-  conhecimento, crescimento e evolução contínua. É um SVG inline (`src/assets`), com `aria-hidden`
-  quando acompanhado do nome.
-- **Versão colorida** (`SimboloEvolia`, também no favicon): quatro pétalas com três cantos arredondados
-  e a ponta voltada para o centro, separadas por um respiro fino. Lilás no alto à esquerda, rosa no alto
-  à direita, lima embaixo à direita e plum embaixo à esquerda. No escuro, a pétala plum vira off-white
-  (`--simbolo-detalhe`), porque plum sobre grafite fica em 1,38:1.
+- **Símbolo:** quatro pétalas ao redor de um centro comum, representando conexão, conhecimento,
+  crescimento e evolução contínua. Cada pétala tem três cantos arredondados e a ponta voltada para o
+  centro.
+- **Versão da assinatura** (`SimboloMarca`, imagem local): vidro iridescente, visto de frente. Lilás no
+  alto à esquerda, rosa no alto à direita, lima embaixo à direita e off-white embaixo à esquerda.
+  Sempre inteiro, sem rotação e sem distorção. Decorativo, porque o nome “Evolia” segue em texto.
+- **Versão em SVG** (`SimboloEvolia`): reserva se a imagem falhar. Mantém o plum na quarta pétala
+  (off-white no escuro, `--simbolo-detalhe`), porque plum sobre grafite fica em 1,38:1.
 - **Versão monocromática:** `currentColor`.
+- **Favicon:** PNG de 16, 32 e 48 px do símbolo em vidro (`src/assets/marca/`), publicados em `/assets/`.
+  `public/favicon.svg` não é mais referenciado pela página.
+- **Mascote** (`MascoteEvolia`): robô oficial da Evolia IA, só com as imagens oficiais (`marca/poses.ts`:
+  acenando e comemorando), levitação discreta e descrição acessível.
 - **Logotipo** (`MarcaEvolia`): símbolo + “Evolia” em **Fraunces 600**, com *tracking* levemente
-  fechado. O slogan, em Inter, aparece na tela de entrada e no cartão institucional do início.
-- **Formas orgânicas** (`FormasOrganicas`): um círculo rosa e um círculo lima sobreposto, **sempre inteiros**, nunca recortados pelo contêiner.
-  É a assinatura gráfica da marca, usada **somente** no banner do início e no painel do login, sempre com
-  `aria-hidden`. No banner, somem em telas estreitas; no login, aparecem menores na faixa de marca.
+  fechado. O slogan, em Inter, aparece na tela de entrada e no rodapé da página inicial.
 - **Área de respiro** mínima igual à largura de uma pétala. Tamanho mínimo do símbolo: 24 px.
 
 ## 7. Layout e componentes
 
-- **Shell** (`AppShell`):
-  - Sidebar clara de 280 px (`--surface`), com a marca no topo, o rótulo de seção “PLATAFORMA” em
-    maiúsculas pequenas e esmaecidas, os itens gerados da tabela de rotas e “Sair” no rodapé.
-  - O item ativo é uma **pílula** `--selected` (lilás no claro, `#342C3B` no escuro), com
-    `aria-current="page"`. Os ícones da navegação usam `--brand-detail` (plum no claro, lilás no escuro).
-  - Abaixo de `lg`, a sidebar vira um painel lateral (`Sheet`) aberto pelo botão “Abrir menu”.
-  - Cabeçalho: breadcrumbs “Evolia / Página”, alternador de tema e avatar circular lilás que abre o
-    menu do usuário (nome, tipo de conta e Sair).
-  - Nunca usar sidebar escura ou plum.
-- **Início:**
-  - Banner lilás (no escuro, `--surface-2` com borda lilás fina), com título em Fraunces Bold e
-    subtítulo em Inter, por tipo de conta.
-  - “Acesso rápido”: cartões brancos com ladrilho colorido (rosa, lima ou lilás) e ícone escuro,
-    gerados da tabela de rotas. As telas pendentes levam o badge “Em desenvolvimento”.
-  - Cartão institucional com o slogan.
+- **Shell e início:** ver “Telas internas” na seção 11. Item ativo com `--selected` e
+  `aria-current="page"`; nunca usar sidebar escura ou plum.
 - **Telas pendentes:** cabeçalho, badge “Em desenvolvimento” e estado vazio explicativo, sem nenhum dado simulado.
 - **Cartão de curso** (`CartaoCurso`):
   - Cartão branco com *chip* de categoria em `--surface-2` e badge de nível (Básico em lilás,
@@ -192,12 +181,9 @@ Use valores numéricos tabulares (`font-variant-numeric: tabular-nums`) em tabel
   | Falhou | contorno de erro | `CircleX` |
 
   Enquanto houver pendentes, um texto discreto avisa que a lista se atualiza sozinha.
-- **Panorama do ADMIN:**
-  - Três indicadores com o total real em Inter 600, ícone em `--brand-detail` e link para a tela.
-    Cada indicador tem o próprio carregamento e o próprio erro.
-  - A distribuição por status é uma barra empilhada fina (lilás, lima e o tom de erro), apenas
-    decorativa. **Os números absolutos e percentuais ficam sempre em texto.**
-  - Sem gráficos adicionais, tendências ou métricas que a API não fornece.
+- **Panorama do ADMIN:** três indicadores com o total real (cada um com o próprio carregamento e erro);
+  contagem por status em texto, sem percentuais, e tabela das cinco solicitações mais recentes. Sem
+  tendências ou métricas que a API não fornece.
 - **Funcionalidades de IA do colaborador:**
   - **Escala de notas:**
     - `fieldset` com cinco rádios nativos estilizados como pílulas de 48 px. A opção escolhida fica rosa com texto escuro.
@@ -214,8 +200,8 @@ Use valores numéricos tabulares (`font-variant-numeric: tabular-nums`) em tabel
     - Códigos do acervo em `<code>` e fontes como lista de texto.
     - Os próximos passos ficam num bloco lilás (grafite no escuro) com o selo rosa “Gerado por IA”, só quando existem.
     - O processamento mostra “pode levar até 90 segundos” e o botão “Cancelar espera”.
-- **Painel do colaborador:** cartões “Uso da IA” (estado real do servidor) e “Sua classificação”
-  (apenas a estimativa desta sessão).
+- **Painel do colaborador:** “Sua privacidade” (estado real do servidor) e “Sua classificação” (apenas
+  a estimativa desta sessão).
 - **Botões:**
   - Primário: `--primary` com texto `--primary-foreground`
   - Secundário: `--accent` com texto escuro
@@ -290,15 +276,77 @@ Use valores numéricos tabulares (`font-variant-numeric: tabular-nums`) em tabel
   O frontend configura o Zod antes de carregar os esquemas para evitar a
   compilação dinâmica via `eval`. As regras de validação continuam as mesmas.
 
-## 11. Design 2.0: fundamentos (“Quatro pétalas”)
+## 11. Design 2.0: “Soft Neon Futurism”
 
-- **Contenção:** no máximo um momento de pétala por dobra. Cartões, botões e campos seguem retangulares.
-- **Tokens** (`styles/index.css`): lavagens `lavagem-{lilas,rosa,lima}` (grafite tingido no escuro),
-  elevações `shadow-{baixa,media,alta}`, escala `text-{display,titulo,subtitulo,rotulo}`, `py-secao`,
-  curva `ease-suave` e animações `respirar`, `flutuar`, `tracar` (sempre com `motion-safe:`).
-  Utilitários: `.textura-grao` e `.rotulo-editorial`.
-- **Componentes** (`components/arte`): `MascaraPetala`, `Foto` (com fallback), `CapaTematica` e
-  `CapaArte`, `RetratoArte` (fallback vertical), `Ilustracoes`, `SeloFlutuante`, `TracoJornada`, `PetalasVivas`. Em
-  `components/motion`: `Revelar`.
-- **Fotografias:** locais, AVIF ou WebP, registradas em `src/assets/CREDITOS.md`.
+Tecnologia, inteligência artificial, criatividade e acolhimento: futurista, luminoso e elegante, sem
+estética de jogo, *cyberpunk* ou painel administrativo genérico.
+
+### Onde cada intensidade vale
+
+- **Landing e login:** composições livres, com fundos luminosos e objetos 3D.
+- **Telas internas (tema claro):** fundo predominantemente branco, superfícies brancas, bordas sutis,
+  sombras suaves, detalhes neon e ilustrações pontuais. Nada de painéis inteiros lilás ou rosa.
+- **Tema escuro:** base grafite neutra; a cor fica nos acentos.
+- **Deep Plum:** só em pequenos detalhes. Em versões grandes do símbolo, a quarta pétala recebe um
+  tom decorativo (`--simbolo-detalhe` sobrescrito no local).
+
+### Tokens decorativos
+
+| Token | Valor | Uso |
+| --- | --- | --- |
+| `neon-violet` | `#A66CFF` | Halos, linhas, sombras |
+| `neon-pink` | `#FF48DD` | Brilhos |
+| `neon-lime` | `#DFFF45` | Anéis luminosos |
+| `electric-lilac` | `#CE9AFF` | Volume e gradientes |
+
+**Somente decoração.** Não servem para texto de leitura, ícone isolado, contorno de controle nem
+indicador de estado. A paleta oficial (seção 1) não mudou.
+
+A única exceção em texto é `.texto-neon`, gradiente para uma palavra de **título grande** (meta 3:1):
+
+| Extremo | Light sobre `#FDFCFF` | Dark sobre `#17131B` |
+| --- | --- | --- |
+| início | `#8F52F0`: 4,43 | `#CE9AFF`: 8,46 |
+| fim | `#CC35B4`: 4,34 | `#FF74E4`: 7,74 |
+
+Em `forced-colors`, o gradiente é removido. As fichas `.vidro` têm opacidade de 0,74 (claro) e 0,88
+(escuro), calculada para manter o texto secundário em pelo menos 4,5:1 sobre as cores que passam atrás.
+
+### Utilitários (`styles/index.css`)
+
+- `.fundo-neon` (brilhos em cartões) e `.fundo-neon-aberto` (seções inteiras, sem aresta nas bordas), `.texto-neon`, `.vidro` (poucas fichas, nunca em tudo).
+- Elevações `shadow-{baixa,media,alta,neon}`, lavagens `lavagem-{lilas,rosa,lima}`, escala
+  `text-{display,titulo,subtitulo,rotulo}`, `py-secao`, curva `ease-suave`, animações `respirar` e
+  `flutuar` (sempre com `motion-safe:`), `.textura-grao` e `.rotulo-editorial`.
+
+### Componentes e imagens
+
+- **Telas internas:** base branca (claro) ou grafite (escuro); cor concentrada em banners, item ativo e
+  ações principais.
+  - **Barra lateral:** 256 px, cartão com cantos de 24 px; recolhe para 88 px (só em memória). Grupos
+    “Aprendizagem”/“Administração” e “Preferências”, vindos de `rotas.ts`. Decoração recortada na base,
+    identificação e “Sair” no rodapé. No celular, painel lateral.
+  - **Cabeçalho:** trilha (“Minha área” ou “Administração” / página) e tema.
+  - **Início:** `Banner` (`.banner-colaborador`, `.banner-admin`), áreas com as fotografias da landing,
+    cartões de orientador e privacidade (conta individual), indicadores, treinamentos e ações rápidas
+    (ADMIN). Atalhos só navegam; erro de consulta nunca vira zero.
+- **Orientador:** coluna central de até 768 px. Sem conversa, mascote, título, três sugestões (só
+  preenchem) e campo arredondado, centralizados com um único halo. Com conversa, só a pergunta e a
+  resposta atuais, e o campo fixo na base. Mascote: acenando nas boas-vindas e na resposta, pensativo no
+  processamento; erro sem mascote.
+- **Tela de entrada:** um cartão central (28 px, até 1200 px), formulário à esquerda em superfície
+  quase opaca e painel visual à direita a partir de `lg`. Botão principal em gradiente
+  `primary` → `neon-violet` com texto escuro (5,1:1 no extremo violeta). Sem recursos que não existem
+  (cadastro, recuperação de senha, login social, “lembrar-me”).
+- **Decoração flutuante** (`Decorativo`): `animate-flutuar`, `derivar` e `balancar`, sempre com
+  `motion-safe:`; nunca sobre texto ou campos.
+- **Fotografias com texto** (cartões das áreas): a foto é uma camada do cartão e se dissolve na
+  superfície por véus na cor `--surface` (`.veu-base`, `.veu-lateral`, `.veu-canto`), que acompanham o
+  tema. Sob o texto, o contraste medido é de pelo menos 5:1. Sem desfoque nem filtro sobre rostos.
+- `Foto` aceita `ajuste="conter"` para objetos com fundo transparente. Objetos 3D entram só como imagem:
+  não se desenham com ícones, CSS ou SVG.
+- Outros: `MascaraPetala`, `CapaTematica`, `CapaArte`, `RetratoArte`, `Ilustracoes`, `SeloFlutuante`,
+  `TracoJornada`, `PetalasVivas` e `motion/Revelar`.
+- Imagens locais, AVIF ou WebP, especificadas e registradas em `src/assets/CREDITOS.md`.
+- Símbolo das quatro pétalas, Fraunces e Inter permanecem.
 - **CSP:** `assetsInlineLimit: 0` (nada vira `data:`) e SVG sem atributo `style`.
