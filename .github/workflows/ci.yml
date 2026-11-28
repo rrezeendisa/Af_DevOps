@@ -2,8 +2,9 @@
 #
 # 1. backend     -> compila e roda os testes Java (unitários + Testcontainers)
 # 2. ai-service  -> roda os testes Python da Frente B
-# 3. docker      -> valida o Compose e constrói as imagens
-# 4. integracao  -> sobe o ambiente completo e executa os testes ponta a ponta
+# 3. frontend    -> verifica tipos, lint, testes e build da Evolia
+# 4. docker      -> valida o Compose e constrói as imagens
+# 5. integracao  -> testa gateway, serviços internos e treinamento
 #
 # Nenhum segredo é necessário: o job de integração gera um .env descartável.
 name: CI
@@ -90,18 +91,50 @@ jobs:
           AFDEVOPS_ADMIN_PASSWORD_HASH: validacao
           AFDEVOPS_COLABORADOR_USERNAME: colaborador
           AFDEVOPS_COLABORADOR_PASSWORD_HASH: validacao
-        run: docker compose --env-file .env.example config --quiet
+        run: |
+          docker compose --env-file .env.example config --quiet
+          docker compose --env-file .env.example -f docker-compose.yml -f compose.diagnostico.yml config --quiet
+          docker compose --env-file .env.example -f docker-compose.yml -f compose.ollama-nativo.yml config --quiet
 
       - name: Construir imagens
         run: |
           docker build -t afdevops-backend:ci backend
           docker build -t afdevops-ai-service:ci ai-service
+          docker build -t evolia-gateway:ci frontend
+
+  frontend:
+    name: Frontend (Node 24)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "24.22.1"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm run lint
+      - run: npm test -- --reporter=default --reporter=junit --outputFile.junit="$RUNNER_TEMP/vitest-junit.xml"
+      - run: npm run build
+      - name: Publicar relatório do frontend
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-vitest-junit
+          path: ${{ runner.temp }}/vitest-junit.xml
+          if-no-files-found: ignore
+          retention-days: 7
 
   integracao:
     name: Testes integrados (Docker Compose)
     runs-on: ubuntu-latest
     timeout-minutes: 30
-    needs: [backend, ai-service, docker]
+    needs: [backend, ai-service, frontend, docker]
     steps:
       - uses: actions/checkout@v4
 
@@ -113,4 +146,6 @@ jobs:
         run: ./scripts/gerar-env.sh
 
       - name: Subir ambiente e executar testes ponta a ponta
+        env:
+          IA_GENERATIVA_HABILITADA: "false"
         run: ./scripts/testes-integrados.sh --down
