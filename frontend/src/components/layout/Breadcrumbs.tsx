@@ -9,7 +9,7 @@ type Props = { itens: readonly ItemTrilha[]; /** Nome da área do perfil. */ rai
 const ESTILO_LINK =
   'rounded-sm underline-offset-4 outline-none hover:text-foreground hover:underline focus-visible:ring-2 focus-visible:ring-ring'
 
-/** “Área / Seção / Página”. O último item é a página atual; os anteriores com caminho viram links. */
+/** Em telas estreitas, os níveis intermediários somem para o atual não se sobrepor. “Área / Seção / Página”. O último item é a página atual; os anteriores com caminho viram links. */
 export function Breadcrumbs({ itens, raiz }: Props) {
   const noInicio = itens.length === 1 && itens[0]?.caminho === ROTA_INICIO
   return (
@@ -28,7 +28,7 @@ export function Breadcrumbs({ itens, raiz }: Props) {
         {itens.map((item, indice) => {
           const atual = indice === itens.length - 1
           return (
-            <li key={`${item.titulo}-${indice}`} className="flex min-w-0 items-center gap-2">
+            <li key={`${item.titulo}-${indice}`} className={atual ? 'flex min-w-0 items-center gap-2' : 'hidden shrink-0 items-center gap-2 sm:flex'}>
               <span aria-hidden="true">/</span>
               {atual || !item.caminho ? (
                 <span aria-current={atual ? 'page' : undefined} className={atual ? 'truncate font-semibold text-brand-detail' : 'truncate'}>

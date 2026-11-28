@@ -65,8 +65,8 @@ apenas conversão para WebP. O enquadramento e os véus são do código (`featur
 Guardados e **não usados**: `Robô Evolia com Tablet Luminoso.png` e `Mascote Robô Iridescente Acenando.png` (desenho diferente do
 oficial).
 
-**Mascote:** o principal é o da seção de IA. Hoje aparece só na landing; o componente `MascoteEvolia` está
-pronto para reutilizá-lo no Orientador (boas-vindas, vazio, processamento e resposta). A pose comemorando é do mesmo personagem.
+**Mascote:** aparece na landing, no início do colaborador, no Orientador (boas-vindas, processamento e
+resposta) e no resultado da avaliação. A pose comemorando é do mesmo personagem.
 
 ## Elementos decorativos reutilizáveis
 

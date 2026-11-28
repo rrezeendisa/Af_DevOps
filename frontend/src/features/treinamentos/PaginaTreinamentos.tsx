@@ -15,6 +15,12 @@ import { BadgeStatusTreinamento } from './BadgeStatusTreinamento'
 
 type Retorno = { tom: 'sucesso' | 'erro'; titulo: string; texto: string }
 
+const RESUMO = [
+  { status: 'PENDENTE', rotulo: 'Pendentes', tom: 'bg-lavagem-lilas' },
+  { status: 'CONCLUIDO', rotulo: 'Concluídas', tom: 'bg-lavagem-lima' },
+  { status: 'FALHOU', rotulo: 'Com falha', tom: 'bg-lavagem-rosa' },
+] as const
+
 export default function PaginaTreinamentos() {
   const consulta = useTreinamentos()
   const solicitar = useSolicitarTreinamento()
@@ -68,6 +74,15 @@ export default function PaginaTreinamentos() {
         />
       ) : (
         <section aria-labelledby="titulo-solicitacoes" className="grid gap-3">
+          {/* Contagens derivadas somente da lista recebida. */}
+          <ul aria-label="Resumo por status" className="grid gap-3 sm:grid-cols-3">
+            {RESUMO.map(({ status, rotulo, tom }) => (
+              <li key={status} className={`flex items-baseline justify-between gap-3 rounded-2xl border border-border px-5 py-4 ${tom}`}>
+                <span className="text-sm font-medium">{rotulo}</span>
+                <strong className="text-2xl font-semibold tabular-nums">{solicitacoes.filter((s) => s.status === status).length}</strong>
+              </li>
+            ))}
+          </ul>
           <div className="flex flex-wrap items-baseline justify-between gap-2">
             <h2 id="titulo-solicitacoes" className="font-sans text-lg font-semibold">
               Solicitações
@@ -78,10 +93,10 @@ export default function PaginaTreinamentos() {
               </p>
             )}
           </div>
-          <div className="overflow-x-auto rounded-2xl border border-border bg-surface">
+          <div className="overflow-x-auto rounded-3xl border border-border bg-surface shadow-baixa">
             <table className="w-full min-w-[52rem] text-left text-sm">
               <caption className="sr-only">Solicitações de treinamento, da mais recente para a mais antiga</caption>
-              <thead className="border-b border-border bg-surface-2 text-xs tracking-[0.04em] text-muted-foreground uppercase">
+              <thead className="border-b border-border bg-lavagem-lilas text-xs tracking-[0.04em] text-muted-foreground uppercase">
                 <tr>
                   <th scope="col" className="px-5 py-3 font-medium">Nº</th>
                   <th scope="col" className="px-5 py-3 font-medium">Status</th>

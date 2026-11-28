@@ -78,7 +78,7 @@ export default function PaginaConsentimento() {
   const ocupado = decidir.isPending
 
   return (
-    <div className="grid gap-8 pt-2">
+    <div className="grid max-w-4xl gap-6 pt-2">
       <CabecalhoPagina
         titulo="Consentimento"
         descricao="Decida se a Evolia pode usar suas notas de competências nas funcionalidades de inteligência artificial."
@@ -91,10 +91,16 @@ export default function PaginaConsentimento() {
       )}
       {!retorno && <AvisoDescarte />}
 
-      <section aria-labelledby="titulo-estado" className="grid gap-5 rounded-2xl border border-border bg-surface p-6">
-        <h2 id="titulo-estado" className="font-sans text-lg font-semibold">
-          Sua decisão atual
-        </h2>
+      <section aria-labelledby="titulo-estado" className="grid gap-5 rounded-3xl border border-border bg-surface shadow-baixa p-6">
+        <div className="flex items-center gap-4">
+          {/* Ilustração neutra: igual com ou sem autorização, para não induzir a escolha. */}
+          <span aria-hidden="true" className="flex size-14 shrink-0 items-center justify-center rounded-2xl bg-lavagem-lilas text-brand-detail">
+            <ShieldCheck className="size-7" strokeWidth={1.5} />
+          </span>
+          <h2 id="titulo-estado" className="font-sans text-lg font-semibold">
+            Sua decisão atual
+          </h2>
+        </div>
         {decidir.isPending ? (
           <EstadoCarregando texto="Enviando sua decisão ao servidor…" linhas={1} />
         ) : consulta.isPending ? (
@@ -140,7 +146,7 @@ export default function PaginaConsentimento() {
       </section>
 
       <section aria-labelledby="titulo-uso" className="grid gap-6 lg:grid-cols-2">
-        <div className="grid content-start gap-3 rounded-2xl bg-surface-2 p-6">
+        <div className="grid content-start gap-3 rounded-3xl border border-border bg-lavagem-lilas p-6">
           <h2 id="titulo-uso" className="font-sans text-lg font-semibold">
             O que depende da autorização
           </h2>
@@ -154,7 +160,7 @@ export default function PaginaConsentimento() {
           </ul>
           <p className="text-sm text-muted-foreground">O catálogo de cursos continua disponível sem autorização.</p>
         </div>
-        <div className="grid content-start gap-3 rounded-2xl border border-border bg-surface p-6 text-sm text-muted-foreground">
+        <div className="grid content-start gap-3 rounded-3xl border border-border bg-surface shadow-baixa p-6 text-sm text-muted-foreground">
           <h2 className="font-sans text-lg font-semibold text-foreground">Como funciona</h2>
           <p>A autorização nunca é concedida automaticamente. Você pode revogá-la a qualquer momento.</p>
           <p>O servidor verifica sua decisão antes de cada solicitação de IA. O registro representa sua decisão atual, não um histórico.</p>

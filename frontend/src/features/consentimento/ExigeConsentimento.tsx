@@ -53,7 +53,7 @@ export function ExigeConsentimento({ children }: { children: ReactNode }) {
   return (
     <div className="grid gap-4">
       <AvisoDescarte />
-      <section className="flex flex-col items-start gap-4 rounded-2xl border border-border bg-surface p-6 sm:flex-row sm:items-center">
+      <section className="flex flex-col items-start gap-4 rounded-3xl border border-border bg-surface shadow-baixa p-6 sm:flex-row sm:items-center">
         <span className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-accent text-accent-foreground">
           <ShieldAlert aria-hidden="true" className="size-5" />
         </span>

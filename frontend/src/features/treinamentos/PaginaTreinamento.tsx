@@ -49,7 +49,7 @@ export default function PaginaTreinamento({ id }: { id: number }) {
         selo={<BadgeStatusTreinamento status={s.status} />}
         descricao={s.status === 'PENDENTE' ? 'Aguardando o worker de treinamento. Esta página se atualiza automaticamente.' : undefined}
       />
-      <dl className="grid gap-5 rounded-2xl border border-border bg-surface p-6 sm:grid-cols-2">
+      <dl className="grid gap-5 rounded-3xl border border-border bg-surface shadow-baixa p-6 sm:grid-cols-2">
         <div>
           <dt className="text-sm text-muted-foreground">Solicitada por</dt>
           <dd className="mt-0.5 font-semibold">{s.solicitadoPor}</dd>

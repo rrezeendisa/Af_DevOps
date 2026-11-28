@@ -12,7 +12,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { SelectNativo } from '@/components/ui/select-nativo'
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/components/ui/sheet'
-import { formatarData, normalizarBusca, valoresDistintos } from '@/lib/formatacao'
+import { formatarData, iniciais, normalizarBusca, valoresDistintos } from '@/lib/formatacao'
 import { useColaboradores, type Colaborador } from './api'
 import { FormularioColaborador } from './FormularioColaborador'
 
@@ -129,10 +129,10 @@ export default function PaginaColaboradores() {
               }
             />
           ) : (
-            <div className="overflow-x-auto rounded-2xl border border-border bg-surface">
+            <div className="overflow-x-auto rounded-3xl border border-border bg-surface shadow-baixa">
               <table className="w-full min-w-[44rem] text-left text-sm">
                 <caption className="sr-only">Colaboradores cadastrados, em ordem alfabética</caption>
-                <thead className="border-b border-border bg-surface-2 text-xs tracking-[0.04em] text-muted-foreground uppercase">
+                <thead className="border-b border-border bg-lavagem-lilas text-xs tracking-[0.04em] text-muted-foreground uppercase">
                   <tr>
                     <th scope="col" className="px-5 py-3 font-medium">Nome</th>
                     <th scope="col" className="px-5 py-3 font-medium">E-mail</th>
@@ -145,9 +145,12 @@ export default function PaginaColaboradores() {
                   {visiveis.map((colaborador) => (
                     <tr key={colaborador.id} className="hover:bg-surface-2/60">
                       <th scope="row" className="px-5 py-3.5 font-semibold">
+                        {/* Iniciais só visuais (CSS); o rótulo garante que não entrem no nome acessível. */}
                         <Link
                           to={`/admin/colaboradores/${colaborador.id}`}
-                          className="rounded-sm underline-offset-4 outline-none hover:underline focus-visible:ring-2 focus-visible:ring-ring"
+                          data-iniciais={iniciais(colaborador.nome)}
+                          aria-label={colaborador.nome}
+                          className="inline-flex items-center gap-3 rounded-full before:flex before:size-9 before:shrink-0 before:items-center before:justify-center before:rounded-full before:bg-lavagem-lilas before:text-xs before:font-semibold before:text-brand-detail before:content-[attr(data-iniciais)] underline-offset-4 outline-none hover:underline focus-visible:ring-2 focus-visible:ring-ring"
                         >
                           {colaborador.nome}
                         </Link>

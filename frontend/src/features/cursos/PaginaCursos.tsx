@@ -60,8 +60,8 @@ export default function PaginaCursos() {
   return (
     <div className="grid gap-8 pt-2">
       <CabecalhoPagina
-        titulo="Cursos"
-        descricao="Catálogo de cursos da plataforma."
+        titulo={ehAdmin ? 'Cursos' : 'Catálogo de cursos'}
+        descricao={ehAdmin ? 'Cadastro e consulta do catálogo.' : 'Explore os cursos disponíveis na Evolia.'}
         acoes={
           ehAdmin && (
             <Button

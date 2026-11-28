@@ -113,7 +113,7 @@ function FormularioNovaConta({ colaboradores, preSelecionado }: { colaboradores:
         noValidate
         onSubmit={(evento) => void handleSubmit(aoEnviar)(evento)}
         aria-busy={enviando}
-        className="grid content-start gap-5 rounded-2xl border border-border bg-surface p-6"
+        className="grid content-start gap-5 rounded-3xl border border-border bg-surface shadow-baixa p-6"
       >
         <h2 className="font-sans text-lg font-semibold">Nova conta individual</h2>
         {erroGeral && <MensagemErro titulo="Não foi possível criar a conta">{erroGeral}</MensagemErro>}

@@ -33,3 +33,10 @@ export function normalizarBusca(texto: string): string {
 export function valoresDistintos(valores: readonly string[]): string[] {
   return [...new Set(valores)].sort((a, b) => a.localeCompare(b, 'pt-BR'))
 }
+
+/** Primeira letra do primeiro e do último nome, para avatares. */
+export function iniciais(nome: string): string {
+  const partes = nome.trim().split(/\s+/).filter(Boolean)
+  const letras = partes.length > 1 ? [partes[0], partes[partes.length - 1]] : [partes[0]]
+  return letras.map((parte) => [...(parte ?? '')][0] ?? '').join('').toLocaleUpperCase('pt-BR')
+}

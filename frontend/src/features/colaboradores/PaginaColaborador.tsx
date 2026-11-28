@@ -6,7 +6,7 @@ import { EstadoVazio } from '@/components/feedback/EstadoVazio'
 import { CabecalhoPagina } from '@/components/layout/CabecalhoPagina'
 import { Button } from '@/components/ui/button'
 import { ehNaoEncontrado } from '@/lib/api/mensagens'
-import { formatarDataHora } from '@/lib/formatacao'
+import { formatarDataHora, iniciais } from '@/lib/formatacao'
 import { useColaborador } from './api'
 
 function Voltar() {
@@ -50,6 +50,9 @@ export default function PaginaColaborador({ id }: { id: number }) {
   return (
     <div className="grid gap-8 pt-2">
       <Voltar />
+      <span aria-hidden="true" className="-mb-4 flex size-16 items-center justify-center rounded-full bg-lavagem-lilas text-xl font-semibold text-brand-detail">
+        {iniciais(colaborador.nome)}
+      </span>
       <CabecalhoPagina
         titulo={colaborador.nome}
         descricao={`${colaborador.cargo} · ${colaborador.departamento}`}
@@ -62,7 +65,7 @@ export default function PaginaColaborador({ id }: { id: number }) {
           </Button>
         }
       />
-      <dl className="grid gap-5 rounded-2xl border border-border bg-surface p-6 sm:grid-cols-2">
+      <dl className="grid gap-5 rounded-3xl border border-border bg-surface shadow-baixa p-6 sm:grid-cols-2">
         {campos.map(([rotulo, valor]) => (
           <div key={rotulo}>
             <dt className="text-sm text-muted-foreground">{rotulo}</dt>
