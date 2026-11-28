@@ -39,7 +39,11 @@ def test_build_spa_e_csp(http):
     assert asset.headers["cache-control"] == "public, max-age=31536000, immutable"
 
 
-@pytest.mark.parametrize("caminho", ["/", "/inicio", "/inicio/", "/entrar", "/cursos/1", "/consentimento"])
+@pytest.mark.parametrize("caminho", [
+    "/", "/inicio", "/inicio/", "/entrar", "/cursos", "/cursos/1", "/competencias", "/recomendacoes",
+    "/orientacao", "/consentimento", "/admin/colaboradores", "/admin/colaboradores/1", "/admin/contas",
+    "/admin/treinamentos",
+])
 def test_serve_spa_somente_nas_rotas_conhecidas(http, caminho):
     pagina = http.get(f"{endereco()}{caminho}")
     assert pagina.status_code == 200
