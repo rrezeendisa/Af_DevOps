@@ -289,3 +289,16 @@ Use valores numéricos tabulares (`font-variant-numeric: tabular-nums`) em tabel
   mobile. Atributos de estilo inline e scripts inline sem hash ficam bloqueados.
   O frontend configura o Zod antes de carregar os esquemas para evitar a
   compilação dinâmica via `eval`. As regras de validação continuam as mesmas.
+
+## 11. Design 2.0: fundamentos (“Quatro pétalas”)
+
+- **Contenção:** no máximo um momento de pétala por dobra. Cartões, botões e campos seguem retangulares.
+- **Tokens** (`styles/index.css`): lavagens `lavagem-{lilas,rosa,lima}` (grafite tingido no escuro),
+  elevações `shadow-{baixa,media,alta}`, escala `text-{display,titulo,subtitulo,rotulo}`, `py-secao`,
+  curva `ease-suave` e animações `respirar`, `flutuar`, `tracar` (sempre com `motion-safe:`).
+  Utilitários: `.textura-grao` e `.rotulo-editorial`.
+- **Componentes** (`components/arte`): `MascaraPetala`, `Foto` (com fallback), `CapaTematica` e
+  `CapaArte`, `RetratoArte` (fallback vertical), `Ilustracoes`, `SeloFlutuante`, `TracoJornada`, `PetalasVivas`. Em
+  `components/motion`: `Revelar`.
+- **Fotografias:** locais, AVIF ou WebP, registradas em `src/assets/CREDITOS.md`.
+- **CSP:** `assetsInlineLimit: 0` (nada vira `data:`) e SVG sem atributo `style`.

@@ -60,6 +60,53 @@
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) * 1.5);
   --radius-2xl: calc(var(--radius) * 2);
+  --radius-3xl: calc(var(--radius) * 3);
+  --radius-4xl: calc(var(--radius) * 4);
+
+  /* Design 2.0: lavagens para composição (sempre com texto --foreground). */
+  --color-lavagem-lilas: var(--lavagem-lilas);
+  --color-lavagem-rosa: var(--lavagem-rosa);
+  --color-lavagem-lima: var(--lavagem-lima);
+
+  /* Elevação: sombras difusas, levemente quentes. No escuro quase desaparecem. */
+  --shadow-baixa: var(--sombra-baixa);
+  --shadow-media: var(--sombra-media);
+  --shadow-alta: var(--sombra-alta);
+
+  /* Escala editorial (Fraunces). */
+  --text-display: clamp(2.5rem, 1.4rem + 4.6vw, 5.25rem);
+  --text-display--line-height: 1.02;
+  --text-display--letter-spacing: -0.025em;
+  --text-titulo: clamp(1.875rem, 1.35rem + 2.1vw, 3.25rem);
+  --text-titulo--line-height: 1.08;
+  --text-titulo--letter-spacing: -0.018em;
+  --text-subtitulo: clamp(1.0625rem, 0.98rem + 0.35vw, 1.3125rem);
+  --text-subtitulo--line-height: 1.55;
+  --text-rotulo: 0.75rem;
+  --text-rotulo--line-height: 1.2;
+  --text-rotulo--letter-spacing: 0.12em;
+
+  /* Ritmo vertical entre seções. */
+  --spacing-secao: clamp(4rem, 2rem + 8vw, 8rem);
+
+  /* Motion. */
+  --ease-suave: cubic-bezier(0.22, 1, 0.36, 1);
+  --animate-respirar: respirar 7s ease-in-out infinite;
+  --animate-flutuar: flutuar 8s ease-in-out infinite;
+  --animate-tracar: tracar 1.2s var(--ease-suave) both;
+
+  @keyframes respirar {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.06); }
+  }
+  @keyframes flutuar {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-0.5rem); }
+  }
+  @keyframes tracar {
+    from { stroke-dashoffset: 1; }
+    to { stroke-dashoffset: 0; }
+  }
 }
 
 :root {
@@ -85,6 +132,14 @@
   --brand-detail: #521256;
   --simbolo-detalhe: #521256;
   --selected: #EFD2FE;
+
+  --lavagem-lilas: #F6E6FE;
+  --lavagem-rosa: #FCE4F3;
+  --lavagem-lima: #F4F5CF;
+
+  --sombra-baixa: 0 1px 2px rgb(33 28 38 / 0.05), 0 2px 8px rgb(82 18 86 / 0.04);
+  --sombra-media: 0 2px 6px rgb(33 28 38 / 0.05), 0 14px 32px -8px rgb(82 18 86 / 0.12);
+  --sombra-alta: 0 8px 20px rgb(33 28 38 / 0.07), 0 32px 64px -16px rgb(82 18 86 / 0.18);
 
   --destructive: #B42318;
   --destructive-foreground: #FFFFFF;
@@ -139,6 +194,15 @@
   --simbolo-detalhe: #F4F1F6;
   --selected: #342C3B;
 
+  /* No escuro as lavagens são grafite com um toque de cor: nada de grandes áreas roxas. */
+  --lavagem-lilas: #29232E;
+  --lavagem-rosa: #2D222A;
+  --lavagem-lima: #27271F;
+
+  --sombra-baixa: 0 1px 2px rgb(0 0 0 / 0.3);
+  --sombra-media: 0 10px 28px -10px rgb(0 0 0 / 0.55);
+  --sombra-alta: 0 28px 60px -18px rgb(0 0 0 / 0.65);
+
   --destructive: #FF8A80;
   --destructive-foreground: #211C26;
   --success: #8FD18F;
@@ -185,5 +249,37 @@
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
+  }
+}
+
+@layer components {
+  /* Grão sutil, em arquivo local (a CSP bloqueia data:). Usar em superfícies amplas. */
+  .textura-grao {
+    position: relative;
+    isolation: isolate;
+  }
+  .textura-grao::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    border-radius: inherit;
+    pointer-events: none;
+    background-image: url('../assets/ilustracoes/grao.svg');
+    background-size: 160px 160px;
+    opacity: 0.35;
+  }
+  .dark .textura-grao::before {
+    opacity: 0.18;
+  }
+
+  /* Rótulo curto em caixa alta, acima de títulos. */
+  .rotulo-editorial {
+    font-size: var(--text-rotulo);
+    line-height: var(--text-rotulo--line-height);
+    letter-spacing: var(--text-rotulo--letter-spacing);
+    font-weight: 600;
+    text-transform: uppercase;
+    color: var(--muted-foreground);
   }
 }

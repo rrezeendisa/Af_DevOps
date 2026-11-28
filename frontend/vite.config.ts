@@ -18,6 +18,8 @@ export default defineConfig(({ mode }) => {
     resolve: {
       alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) },
     },
+    // A CSP usa img-src/font-src 'self': nenhum asset pode virar data: URI.
+    build: { assetsInlineLimit: 0 },
     server: {
       proxy: {
         '/api': {
