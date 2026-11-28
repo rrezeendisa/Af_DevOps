@@ -1,45 +1,47 @@
-import { ArrowRight } from 'lucide-react'
 import { useEffect } from 'react'
-import { Link } from 'react-router'
-import { ROTA_INICIO } from '@/app/rotas'
-import { MarcaEvolia, SLOGAN } from '@/components/marca/MarcaEvolia'
-import { AlternadorTema } from '@/components/tema/AlternadorTema'
-import { Button } from '@/components/ui/button'
-import { useAuth } from '@/features/auth/contexto'
-import { ROTA_ENTRAR } from '@/features/auth/destino'
+import { Aprendizagem } from './secoes/Aprendizagem'
+import { Areas } from './secoes/Areas'
+import { Cabecalho } from './secoes/Cabecalho'
+import { ComoFunciona } from './secoes/ComoFunciona'
+import { Chamada, Rodape } from './secoes/Encerramento'
+import { Hero } from './secoes/Hero'
+import { Inteligencia } from './secoes/Inteligencia'
+import { UsoResponsavel } from './secoes/UsoResponsavel'
 
 /**
- * Landing pública **provisória** (a definitiva é o Incremento 2 do Design 2.0). Aparece sem esperar a
- * verificação de sessão e não faz chamadas próprias: só o texto do acesso muda quando há sessão.
+ * Landing institucional pública. Aparece sem esperar a verificação de sessão, não faz chamadas
+ * próprias e não exibe dados de ninguém: só o texto do acesso muda quando há sessão.
  */
 export default function PaginaLanding() {
-  const { estado } = useAuth()
-  const autenticado = estado.status === 'autenticado'
-
   useEffect(() => {
     document.title = 'Evolia · Inteligência que desenvolve pessoas'
+    const raiz = document.documentElement
+    raiz.classList.add('motion-safe:scroll-smooth')
+    // A página é carregada sob demanda: uma âncora no endereço é aplicada depois de montar.
+    const id = window.location.hash.slice(1)
+    if (id) document.getElementById(id)?.scrollIntoView?.()
+    return () => raiz.classList.remove('motion-safe:scroll-smooth')
   }, [])
 
   return (
-    <div className="textura-grao flex min-h-svh flex-col">
-      <header className="mx-auto flex w-full max-w-6xl items-center justify-between gap-4 px-5 py-5 sm:px-8">
-        <MarcaEvolia />
-        <AlternadorTema />
-      </header>
-      <main className="mx-auto grid w-full max-w-6xl flex-1 content-center gap-6 px-5 pb-secao sm:px-8">
-        <p className="rotulo-editorial">Educação corporativa</p>
-        <h1 className="max-w-3xl text-display font-bold">{SLOGAN}</h1>
-        <p className="max-w-xl text-subtitulo text-muted-foreground">
-          Conectamos conhecimento, tecnologia e desenvolvimento profissional para transformar a aprendizagem
-          corporativa.
-        </p>
-        <Button asChild size="lg" className="justify-self-start">
-          <Link to={autenticado ? ROTA_INICIO : ROTA_ENTRAR}>
-            {autenticado ? 'Ir para minha área' : 'Acessar plataforma'}
-            <ArrowRight aria-hidden="true" />
-          </Link>
-        </Button>
+    <div className="overflow-x-clip">
+      <a
+        href="#conteudo"
+        className="sr-only z-50 rounded-[10px] bg-primary px-4 py-2 font-semibold text-primary-foreground focus:not-sr-only focus:fixed focus:top-3 focus:left-3"
+      >
+        Ir para o conteúdo
+      </a>
+      <Cabecalho />
+      <main id="conteudo" tabIndex={-1} className="isolate outline-none">
+        <Hero />
+        <Areas />
+        <ComoFunciona />
+        <Aprendizagem />
+        <Inteligencia />
+        <UsoResponsavel />
+        <Chamada />
       </main>
+      <Rodape />
     </div>
   )
 }
