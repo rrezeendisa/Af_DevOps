@@ -34,7 +34,9 @@ describe('tabela de rotas', () => {
 
   it('início e catálogo valem para todos', () => {
     for (const tipo of TIPOS) {
-      expect(podeAcessar('/', tipo)).toBe(true)
+      expect(podeAcessar('/inicio', tipo)).toBe(true)
+      // A landing pública não faz parte da tabela de rotas autenticadas.
+      expect(podeAcessar('/', tipo)).toBe(false)
       expect(podeAcessar('/cursos', tipo)).toBe(true)
     }
   })
@@ -69,8 +71,9 @@ describe('tabela de rotas', () => {
 
   it('destino após login aceita detalhe permitido e recusa o proibido', () => {
     expect(destinoAposLogin('/admin/treinamentos/3', 'ADMIN', podeAcessar)).toBe('/admin/treinamentos/3')
-    expect(destinoAposLogin('/admin/treinamentos/3', 'COLABORADOR_INDIVIDUAL', podeAcessar)).toBe('/')
-    expect(destinoAposLogin('/cursos/0', 'ADMIN', podeAcessar)).toBe('/')
+    expect(destinoAposLogin('/admin/treinamentos/3', 'COLABORADOR_INDIVIDUAL', podeAcessar)).toBe('/inicio')
+    expect(destinoAposLogin('/cursos/0', 'ADMIN', podeAcessar)).toBe('/inicio')
+    expect(destinoAposLogin('/', 'ADMIN', podeAcessar)).toBe('/inicio')
   })
 
   it('caminhos são únicos e começam com /', () => {

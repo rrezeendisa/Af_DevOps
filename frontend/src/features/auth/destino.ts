@@ -1,7 +1,8 @@
 import type { TipoConta } from './identidade'
 
 export const ROTA_ENTRAR = '/entrar'
-export const ROTA_INICIAL = '/'
+/** Destino padrão após o login. */
+export const ROTA_INICIAL = '/inicio'
 
 /** Indica se o tipo de conta pode abrir o caminho. Definido junto com as rotas da aplicação. */
 export type PodeAcessar = (caminho: string, tipoConta: TipoConta) => boolean

@@ -10,6 +10,7 @@ import { PaginaPendente } from './paginas/PaginaPendente'
 import { ROTAS, ROTA_INICIO, type Rota } from './rotas'
 import { useIdDaRota } from './useIdDaRota'
 
+const PaginaLanding = lazy(() => import('@/features/landing/PaginaLanding'))
 const AppShell = lazy(() => import('@/components/layout/AppShell').then(({ AppShell }) => ({ default: AppShell })))
 
 /**
@@ -71,6 +72,14 @@ function Detalhe({ Componente }: { Componente: ComponentType<{ id: number }> }) 
 export function AppRotas() {
   return (
     <Routes>
+      <Route
+        path="/"
+        element={
+          <Carregando>
+            <PaginaLanding />
+          </Carregando>
+        }
+      />
       <Route path={ROTA_ENTRAR} element={<PaginaEntrar />} />
       <Route
         element={

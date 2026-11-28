@@ -80,7 +80,7 @@ export function corpoEnviado(fetchMock: ReturnType<typeof criarFetch>, chamada: 
  */
 export function renderizarAutenticado(
   tipoConta: TipoConta,
-  caminho = '/',
+  caminho = '/inicio',
   rotas: RotasSimuladas = {},
   /** Elemento a montar no lugar das rotas (útil com fake timers, sem lazy loading). */
   elemento?: ReactNode,

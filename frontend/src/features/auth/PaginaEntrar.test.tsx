@@ -198,7 +198,7 @@ describe('resultado do login', () => {
       { status: 'autenticado', identidade: { nomeUsuario: 'admin', perfil: 'ADMIN' }, tipoConta: 'ADMIN', api, geracao: 1 },
       { de: '//outra.origem/admin' },
     )
-    expect(screen.getByTestId('local').textContent).toBe('/')
+    expect(screen.getByTestId('local').textContent).toBe('/inicio')
     expect(fetchMock).not.toHaveBeenCalled()
     api.encerrar()
   })

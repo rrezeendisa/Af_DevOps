@@ -41,7 +41,7 @@ const panorama = () => screen.findByRole('region', { name: 'Panorama' })
 
 describe('painel do ADMIN', () => {
   it('mostra os totais reais das três listas', async () => {
-    renderizarAutenticado('ADMIN', '/', {
+    renderizarAutenticado('ADMIN', '/inicio', {
       'GET /api/colaboradores': () => json(COLABORADORES),
       'GET /api/cursos': () => json(CURSOS),
       'GET /api/treinamentos': () => json(TREINAMENTOS),
@@ -53,7 +53,7 @@ describe('painel do ADMIN', () => {
   })
 
   it('mostra a distribuição real por status, com números e percentuais em texto', async () => {
-    renderizarAutenticado('ADMIN', '/', {
+    renderizarAutenticado('ADMIN', '/inicio', {
       'GET /api/colaboradores': () => json([]),
       'GET /api/cursos': () => json([]),
       'GET /api/treinamentos': () => json(TREINAMENTOS),
@@ -66,7 +66,7 @@ describe('painel do ADMIN', () => {
   })
 
   it('sem solicitações, informa que não há dados em vez de mostrar uma barra vazia', async () => {
-    renderizarAutenticado('ADMIN', '/', {
+    renderizarAutenticado('ADMIN', '/inicio', {
       'GET /api/colaboradores': () => json([]),
       'GET /api/cursos': () => json([]),
       'GET /api/treinamentos': () => json([]),
@@ -78,7 +78,7 @@ describe('painel do ADMIN', () => {
 
   it('o erro em um indicador não derruba os outros e permite tentar novamente', async () => {
     let tentativas = 0
-    const { usuario } = renderizarAutenticado('ADMIN', '/', {
+    const { usuario } = renderizarAutenticado('ADMIN', '/inicio', {
       'GET /api/colaboradores': () => json(COLABORADORES),
       'GET /api/cursos': () => (++tentativas === 1 ? new Response(null, { status: 503 }) : json(CURSOS)),
       'GET /api/treinamentos': () => json(TREINAMENTOS),
@@ -93,7 +93,7 @@ describe('painel do ADMIN', () => {
   })
 
   it('leva às telas de cada indicador', async () => {
-    renderizarAutenticado('ADMIN', '/', {
+    renderizarAutenticado('ADMIN', '/inicio', {
       'GET /api/colaboradores': () => json([]),
       'GET /api/cursos': () => json([]),
       'GET /api/treinamentos': () => json([]),
@@ -108,7 +108,7 @@ describe('painel do ADMIN', () => {
     ['COLABORADOR_INDIVIDUAL', ['GET /api/me/consentimento']],
     ['COLABORADOR_DEMONSTRACAO', []],
   ] as const)('%s não vê o painel administrativo nem busca dados administrativos', async (tipo, esperadas) => {
-    const { fetchMock } = renderizarAutenticado(tipo, '/')
+    const { fetchMock } = renderizarAutenticado(tipo, '/inicio')
     expect(await screen.findByRole('heading', { level: 1, name: 'Aprender é evoluir.' })).toBeInTheDocument()
     expect(screen.queryByRole('region', { name: 'Panorama' })).toBeNull()
     expect(chamadas(fetchMock)).toEqual(esperadas)

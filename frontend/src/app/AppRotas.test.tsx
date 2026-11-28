@@ -15,9 +15,9 @@ afterEach(() => {
 const negado = () => screen.queryByText('Seu perfil não tem acesso a esta área.')
 
 describe('proteção das rotas', () => {
-  it('anônimo em / vai para a tela de entrada', async () => {
+  it('anônimo em /inicio vai para a tela de entrada', async () => {
     criarFetch().mockResolvedValue(new Response(null, { status: 401 }))
-    renderizarApp('/')
+    renderizarApp('/inicio')
     expect(await screen.findByRole('heading', { level: 1, name: 'Entrar' })).toBeInTheDocument()
   })
 
@@ -108,7 +108,7 @@ describe('shell autenticado', () => {
     expect(within(sidebar).getByRole('link', { name: 'Colaboradores' })).toHaveAttribute('aria-current', 'page')
     expect(within(sidebar).getByRole('link', { name: 'Visão geral' })).not.toHaveAttribute('aria-current')
     const novaTrilha = screen.getByRole('navigation', { name: 'Trilha de navegação' })
-    expect(within(novaTrilha).getByRole('link', { name: 'Evolia' })).toHaveAttribute('href', '/')
+    expect(within(novaTrilha).getByRole('link', { name: 'Evolia' })).toHaveAttribute('href', '/inicio')
     expect(within(novaTrilha).getByText('Colaboradores')).toHaveAttribute('aria-current', 'page')
     expect(document.title).toBe('Colaboradores · Evolia')
     expect(screen.getByRole('main')).toHaveFocus()
@@ -159,7 +159,7 @@ describe('shell autenticado', () => {
   })
 
   it('menu mobile fecha em qualquer troca de rota, mesmo sem usar seus links', async () => {
-    const { usuario } = renderizarAutenticado('ADMIN', '/', {
+    const { usuario } = renderizarAutenticado('ADMIN', '/inicio', {
       'GET /api/colaboradores': () => new Response('[]', { headers: { 'Content-Type': 'application/json' } }),
       'GET /api/cursos': () => new Response('[]', { headers: { 'Content-Type': 'application/json' } }),
       'GET /api/treinamentos': () => new Response('[]', { headers: { 'Content-Type': 'application/json' } }),
@@ -176,7 +176,7 @@ describe('shell autenticado', () => {
 
   it('não move o foco nem rola ao montar sob StrictMode', async () => {
     const rolar = vi.spyOn(window, 'scrollTo')
-    renderizarAutenticado('COLABORADOR_INDIVIDUAL', '/', {}, undefined, true)
+    renderizarAutenticado('COLABORADOR_INDIVIDUAL', '/inicio', {}, undefined, true)
     expect(await screen.findByRole('main')).not.toHaveFocus()
     expect(rolar).not.toHaveBeenCalled()
   })

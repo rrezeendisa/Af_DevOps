@@ -56,7 +56,7 @@ describe('Início', () => {
       renderizar(tipo)
       const secao = screen.getByRole('region', { name: 'Acesso rápido' })
       const links = within(secao).getAllByRole('link')
-      const esperadas = rotasDe(tipo).filter((rota) => rota.caminho !== '/')
+      const esperadas = rotasDe(tipo).filter((rota) => rota.caminho !== '/inicio')
       expect(links.map((link) => link.getAttribute('href'))).toEqual(esperadas.map((rota) => rota.caminho))
       esperadas.forEach((rota, indice) => {
         const marcado = links[indice]?.textContent?.includes('Em desenvolvimento')

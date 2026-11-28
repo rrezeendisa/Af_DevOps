@@ -36,7 +36,8 @@ const TODAS: readonly TipoConta[] = ['ADMIN', 'COLABORADOR_INDIVIDUAL', 'COLABOR
 const ADMIN: readonly TipoConta[] = ['ADMIN']
 const INDIVIDUAL: readonly TipoConta[] = ['COLABORADOR_INDIVIDUAL']
 
-export const ROTA_INICIO = '/'
+/** Página inicial autenticada. `/` é a landing pública e não entra nesta tabela. */
+export const ROTA_INICIO = '/inicio'
 
 /**
  * Tabela central de navegação e permissões. A ordem define a ordem da sidebar e do acesso rápido.

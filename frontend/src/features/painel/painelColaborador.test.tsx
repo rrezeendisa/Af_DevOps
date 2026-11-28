@@ -24,7 +24,7 @@ async function classificarEAbrirPainel(usuario: ReturnType<typeof renderizarAute
 
 describe('painel do colaborador', () => {
   it('mostra o consentimento real e indica que ainda não há avaliação na sessão', async () => {
-    renderizarAutenticado('COLABORADOR_INDIVIDUAL', '/', { 'GET /api/me/consentimento': () => json(AUTORIZADO) })
+    renderizarAutenticado('COLABORADOR_INDIVIDUAL', '/inicio', { 'GET /api/me/consentimento': () => json(AUTORIZADO) })
     const ia = await screen.findByRole('region', { name: 'Uso da IA' })
     expect(await within(ia).findByText('Autorizado')).toBeInTheDocument()
     expect(within(ia).getByText(/^Desde /)).toBeInTheDocument()
@@ -36,7 +36,7 @@ describe('painel do colaborador', () => {
   })
 
   it('mostra não autorizado com orientação', async () => {
-    renderizarAutenticado('COLABORADOR_INDIVIDUAL', '/', { 'GET /api/me/consentimento': () => json({ autorizado: false, decididoEm: null }) })
+    renderizarAutenticado('COLABORADOR_INDIVIDUAL', '/inicio', { 'GET /api/me/consentimento': () => json({ autorizado: false, decididoEm: null }) })
     const ia = await screen.findByRole('region', { name: 'Uso da IA' })
     expect(await within(ia).findByText('Não autorizado')).toBeInTheDocument()
   })
@@ -85,7 +85,7 @@ describe('painel do colaborador', () => {
   })
 
   it('acesso rápido do colaborador individual não tem telas pendentes', async () => {
-    renderizarAutenticado('COLABORADOR_INDIVIDUAL', '/', { 'GET /api/me/consentimento': () => json(AUTORIZADO) })
+    renderizarAutenticado('COLABORADOR_INDIVIDUAL', '/inicio', { 'GET /api/me/consentimento': () => json(AUTORIZADO) })
     const atalhos = await screen.findByRole('region', { name: 'Acesso rápido' })
     expect(within(atalhos).queryByText('Em desenvolvimento')).toBeNull()
     expect(within(atalhos).getAllByRole('link').map((l) => l.getAttribute('href'))).toEqual([
@@ -98,7 +98,7 @@ describe('painel do colaborador', () => {
   })
 
   it('a conta de demonstração continua restrita ao início e ao catálogo', async () => {
-    const { fetchMock } = renderizarAutenticado('COLABORADOR_DEMONSTRACAO', '/')
+    const { fetchMock } = renderizarAutenticado('COLABORADOR_DEMONSTRACAO', '/inicio')
     await screen.findByRole('heading', { level: 1, name: 'Aprender é evoluir.' })
     expect(screen.queryByRole('region', { name: 'Sua situação' })).toBeNull()
     const atalhos = screen.getByRole('region', { name: 'Acesso rápido' })

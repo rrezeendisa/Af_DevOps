@@ -310,7 +310,7 @@ identidade. Sem o canal, o contexto verificado no servidor impede a troca silenc
   `sessao-substituida`. Um 403 nunca encerra.
 - O destino após o login passa por `destinoAposLogin(de, tipoConta, podeAcessar)`, que aceita só
   caminhos internos simples, fora de `/entrar` e `/api`, e permitidos para o tipo de conta. Em
-  qualquer outro caso, vai para `/`.
+  qualquer outro caso, vai para `/inicio`. A rota `/` é a landing pública (sem chamadas próprias).
 
 **Regras obrigatórias para as features:**
 

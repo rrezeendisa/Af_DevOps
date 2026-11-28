@@ -6,7 +6,7 @@ const tudoPermitido = () => true
 describe('destinoAposLogin', () => {
   it('aceita caminho interno permitido', () => {
     expect(destinoAposLogin('/admin/colaboradores', 'ADMIN', tudoPermitido)).toBe('/admin/colaboradores')
-    expect(destinoAposLogin('/', 'ADMIN', tudoPermitido)).toBe('/')
+    expect(destinoAposLogin('/inicio', 'ADMIN', tudoPermitido)).toBe('/inicio')
   })
 
   it.each([
