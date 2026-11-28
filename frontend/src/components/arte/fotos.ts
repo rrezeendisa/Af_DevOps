@@ -10,7 +10,6 @@ const arquivos = import.meta.glob<string>('../../assets/fotos/*.{avif,webp}', {
 
 export type NomeFoto =
   | 'hero-aprendizado'
-  | 'hero-colaboracao'
   | 'area-tecnologia'
   | 'area-comunicacao'
   | 'area-logica'
@@ -20,6 +19,10 @@ export type NomeFoto =
   | 'capa-seguranca'
   | 'capa-comunicacao'
   | 'capa-logica'
+  | 'petalas-3d'
+  | 'mascote-evolia'
+  | 'mascote-comemorando'
+  | 'mascote-pensativo'
 
 /** URL da fotografia, preferindo AVIF; `undefined` se não houver arquivo. */
 export function urlDaFoto(nome: NomeFoto, disponiveis: Record<string, string> = arquivos): string | undefined {

@@ -9,17 +9,20 @@ type Props = {
   ilustrativo?: boolean
   tom?: 'lilas' | 'rosa' | 'lima'
   flutuar?: boolean
+  /** Superfície translúcida em vez de opaca. */
+  vidro?: boolean
   className?: string
 }
 
 const TOM = { lilas: 'bg-accent', rosa: 'bg-primary', lima: 'bg-highlight' } as const
 
 /** Ficha sobreposta às composições. */
-export function SeloFlutuante({ icone: Icone, titulo, detalhe, ilustrativo, tom = 'lilas', flutuar, className }: Props) {
+export function SeloFlutuante({ icone: Icone, titulo, detalhe, ilustrativo, tom = 'lilas', flutuar, vidro, className }: Props) {
   return (
     <div
       className={cn(
-        'flex max-w-64 items-center gap-3 rounded-2xl bg-surface py-2.5 pr-4 pl-2.5 shadow-alta',
+        'flex max-w-64 items-center gap-3 rounded-2xl py-2.5 pr-4 pl-2.5',
+        vidro ? 'vidro shadow-neon' : 'bg-surface shadow-alta',
         flutuar && 'motion-safe:animate-flutuar',
         className,
       )}

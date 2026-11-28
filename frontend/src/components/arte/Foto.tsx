@@ -13,17 +13,19 @@ type Props = {
   /** `true` para a imagem principal da primeira dobra. */
   prioridade?: boolean
   className?: string
+  /** `conter` para objetos 3D recortados (fundo transparente); `cobrir` para imagens opacas. */
+  ajuste?: 'cobrir' | 'conter'
   /** Substitui o endereço (usado em testes). */
   src?: string
 }
 
 /** Fotografia local com dimensões declaradas, carregamento preguiçoso e fallback em SVG. */
-export function Foto({ nome, alt, fallback, largura, altura, prioridade = false, className, src = urlDaFoto(nome) }: Props) {
+export function Foto({ nome, alt, fallback, largura, altura, prioridade = false, className, ajuste = 'cobrir', src = urlDaFoto(nome) }: Props) {
   const [falhou, setFalhou] = useState(false)
 
   if (!src || falhou) {
     return (
-      <div className={cn('size-full overflow-hidden', className)} data-foto-fallback={nome}>
+      <div className={cn('size-full', ajuste === 'cobrir' && 'overflow-hidden', className)} data-foto-fallback={nome}>
         {fallback}
       </div>
     )
@@ -35,9 +37,10 @@ export function Foto({ nome, alt, fallback, largura, altura, prioridade = false,
       width={largura}
       height={altura}
       loading={prioridade ? 'eager' : 'lazy'}
+      fetchPriority={prioridade ? 'high' : 'auto'}
       decoding="async"
       onError={() => setFalhou(true)}
-      className={cn('size-full object-cover', className)}
+      className={cn('size-full', ajuste === 'conter' ? 'object-contain' : 'object-cover', className)}
     />
   )
 }

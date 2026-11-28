@@ -1,5 +1,5 @@
 import { cn } from '@/lib/utils'
-import { SimboloEvolia } from './SimboloEvolia'
+import { SimboloMarca } from './SimboloMarca'
 
 export const SLOGAN = 'Inteligência que desenvolve pessoas.'
 
@@ -7,7 +7,7 @@ type Props = {
   className?: string
   tamanho?: 'md' | 'lg'
   comSlogan?: boolean
-  /** Ajusta o símbolo para fundo lilás. */
+  /** Ajusta o SVG de reserva para fundo lilás. */
   sobreLilas?: boolean
 }
 
@@ -16,7 +16,7 @@ export function MarcaEvolia({ className, tamanho = 'md', comSlogan = false, sobr
   const grande = tamanho === 'lg'
   return (
     <div className={cn('flex items-center gap-3', className)}>
-      <SimboloEvolia className={grande ? 'size-12' : 'size-9'} sobreLilas={sobreLilas} />
+      <SimboloMarca className={grande ? 'size-12' : 'size-9'} sobreLilas={sobreLilas} />
       <div className="flex flex-col">
         <span
           className={cn(

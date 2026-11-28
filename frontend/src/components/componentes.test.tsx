@@ -1,10 +1,12 @@
-import { render, screen } from '@testing-library/react'
+import { fireEvent, render, screen } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 import { BadgePendente, BadgeStatus } from './feedback/BadgeStatus'
 import { EstadoCarregando } from './feedback/EstadoCarregando'
 import { EstadoVazio } from './feedback/EstadoVazio'
 import { MensagemErro } from './feedback/MensagemErro'
+import { MascoteEvolia } from './marca/MascoteEvolia'
 import { MarcaEvolia } from './marca/MarcaEvolia'
+import { DESCRICAO_MASCOTE } from './marca/poses'
 import { SimboloEvolia } from './marca/SimboloEvolia'
 import { Button } from './ui/button'
 
@@ -23,6 +25,28 @@ describe('marca', () => {
     expect(screen.queryByText('Inteligência que desenvolve pessoas.')).toBeNull()
     rerender(<MarcaEvolia comSlogan />)
     expect(screen.getByText('Inteligência que desenvolve pessoas.')).toBeInTheDocument()
+  })
+})
+
+describe('marca em imagem', () => {
+  it('usa o símbolo novo, decorativo, e volta ao SVG original se a imagem falhar', () => {
+    const { container } = render(<MarcaEvolia />)
+    const imagem = container.querySelector('img')!
+    expect(imagem).toHaveAttribute('alt', '')
+    expect(imagem.getAttribute('src')).toContain('simbolo-evolia')
+    fireEvent.error(imagem)
+    expect(container.querySelector('img')).toBeNull()
+    expect(container.querySelectorAll('svg path')).toHaveLength(4)
+    expect(screen.getByText('Evolia')).toBeInTheDocument()
+  })
+
+  it('mascote tem descrição, pode ser decorativo e pode ficar parado', () => {
+    const { container, rerender } = render(<MascoteEvolia />)
+    expect(screen.getByRole('img', { name: DESCRICAO_MASCOTE })).toHaveClass('motion-safe:animate-flutuar')
+    rerender(<MascoteEvolia decorativo flutuar={false} />)
+    const imagem = container.querySelector('img')!
+    expect(imagem).toHaveAttribute('alt', '')
+    expect(imagem).not.toHaveClass('motion-safe:animate-flutuar')
   })
 })
 

@@ -89,10 +89,28 @@
   /* Ritmo vertical entre seções. */
   --spacing-secao: clamp(4rem, 2rem + 8vw, 8rem);
 
+  /* Soft Neon Futurism: cores exclusivamente decorativas (nunca em texto corrido). */
+  --color-neon-violet: #A66CFF;
+  --color-neon-pink: #FF48DD;
+  --color-neon-lime: #DFFF45;
+  --color-electric-lilac: #CE9AFF;
+  --shadow-neon: var(--sombra-neon);
+
   /* Motion. */
   --ease-suave: cubic-bezier(0.22, 1, 0.36, 1);
   --animate-respirar: respirar 7s ease-in-out infinite;
   --animate-flutuar: flutuar 8s ease-in-out infinite;
+  --animate-derivar: derivar 13s ease-in-out infinite;
+  --animate-balancar: balancar 17s ease-in-out infinite;
+
+  @keyframes derivar {
+    0%, 100% { transform: translate(0, 0); }
+    50% { transform: translate(0.4rem, -0.75rem); }
+  }
+  @keyframes balancar {
+    0%, 100% { transform: rotate(-4deg); }
+    50% { transform: rotate(4deg); }
+  }
   --animate-tracar: tracar 1.2s var(--ease-suave) both;
 
   @keyframes respirar {
@@ -112,12 +130,13 @@
 :root {
   --radius: 0.5rem;
 
-  --background: #FAF8F5;
+  /* Telas internas predominantemente brancas. */
+  --background: #FDFCFF;
   --surface: #FFFFFF;
   --surface-2: #F8EDFE;
   --foreground: #211C26;
   --muted-foreground: #625A69;
-  --border: #E8E2EC;
+  --border: #EDE7F3;
   --input: #8A8290;
   --ring: #521256;
 
@@ -132,6 +151,17 @@
   --brand-detail: #521256;
   --simbolo-detalhe: #521256;
   --selected: #EFD2FE;
+
+  --sombra-neon: 0 2px 8px rgb(166 108 255 / 0.1), 0 24px 48px -18px rgb(166 108 255 / 0.38);
+  /* Extremos do título em gradiente: só texto grande (≥ 3:1 sobre o fundo). */
+  --texto-neon-a: #8F52F0;
+  --texto-neon-b: #CC35B4;
+  /* Intensidade das luzes difusas. */
+  --luz-violeta: rgb(206 154 255 / 0.42);
+  --luz-rosa: rgb(255 72 221 / 0.2);
+  --luz-lima: rgb(223 255 69 / 0.32);
+  --vidro: rgb(255 255 255 / 0.74);
+  --vidro-borda: rgb(255 255 255 / 0.9);
 
   --lavagem-lilas: #F6E6FE;
   --lavagem-rosa: #FCE4F3;
@@ -195,6 +225,15 @@
   --selected: #342C3B;
 
   /* No escuro as lavagens são grafite com um toque de cor: nada de grandes áreas roxas. */
+  --sombra-neon: 0 24px 56px -20px rgb(166 108 255 / 0.45);
+  --texto-neon-a: #CE9AFF;
+  --texto-neon-b: #FF74E4;
+  --luz-violeta: rgb(166 108 255 / 0.2);
+  --luz-rosa: rgb(255 72 221 / 0.13);
+  --luz-lima: rgb(223 255 69 / 0.09);
+  --vidro: rgb(42 38 48 / 0.88);
+  --vidro-borda: rgb(255 255 255 / 0.1);
+
   --lavagem-lilas: #29232E;
   --lavagem-rosa: #2D222A;
   --lavagem-lima: #27271F;
@@ -281,5 +320,103 @@
     font-weight: 600;
     text-transform: uppercase;
     color: var(--muted-foreground);
+  }
+}
+
+@layer components {
+  /* Luzes difusas de fundo (CSS puro, sem imagens). Para landing e login. */
+  .fundo-neon {
+    background-image:
+      radial-gradient(60% 55% at 82% 12%, var(--luz-violeta), transparent 70%),
+      radial-gradient(45% 45% at 8% 80%, var(--luz-rosa), transparent 70%),
+      radial-gradient(35% 35% at 62% 100%, var(--luz-lima), transparent 70%);
+  }
+
+  /* Título em gradiente. Somente em texto grande. */
+  .texto-neon {
+    background-image: linear-gradient(100deg, var(--texto-neon-a), var(--texto-neon-b));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    padding-inline-end: 0.08em;
+  }
+
+  /* Superfície translúcida: apenas em poucas fichas flutuantes. */
+  .vidro {
+    background-color: var(--vidro);
+    border: 1px solid var(--vidro-borda);
+    backdrop-filter: blur(14px);
+  }
+
+}
+
+@media (forced-colors: active) {
+  .texto-neon {
+    background: none;
+    color: CanvasText;
+  }
+}
+
+@layer components {
+  /* Brilhos de seção inteira: terminam antes das bordas de cima e de baixo, sem aresta entre seções. */
+  .fundo-neon-aberto {
+    background-image:
+      radial-gradient(ellipse 42% 48% at 82% 50%, var(--luz-violeta), transparent 100%),
+      radial-gradient(ellipse 38% 40% at 6% 58%, var(--luz-rosa), transparent 100%),
+      radial-gradient(ellipse 34% 30% at 62% 69%, var(--luz-lima), transparent 100%);
+  }
+}
+@layer components {
+  /* Véus dos cartões de área: fundem a fotografia na superfície do tema, sem aresta. */
+  .veu-base {
+    background-image: linear-gradient(to top, var(--surface) 0%, color-mix(in srgb, var(--surface) 82%, transparent) 30%, color-mix(in srgb, var(--surface) 35%, transparent) 65%, transparent 100%);
+  }
+  /* Opaco sob o texto, à esquerda; some antes do rosto, à direita. */
+  .veu-lateral {
+    background-image: linear-gradient(to right, var(--surface) 0%, var(--surface) 43%, color-mix(in srgb, var(--surface) 84%, transparent) 53%, color-mix(in srgb, var(--surface) 35%, transparent) 63%, transparent 73%);
+  }
+  /* Base e canto inferior esquerdo, onde ficam título, descrição e categorias. */
+  .veu-canto {
+    background-image:
+      radial-gradient(115% 90% at 0% 100%, var(--surface) 0%, var(--surface) 53%, color-mix(in srgb, var(--surface) 60%, transparent) 72%, transparent 89%),
+      linear-gradient(to top, var(--surface) 0%, color-mix(in srgb, var(--surface) 60%, transparent) 28%, transparent 55%);
+  }
+}
+@layer components {
+  /* Tela de entrada: brilhos localizados na página e no painel visual. */
+  .fundo-entrada {
+    background-image:
+      radial-gradient(ellipse 38% 46% at 8% 12%, var(--luz-violeta), transparent 100%),
+      radial-gradient(ellipse 34% 40% at 94% 82%, var(--luz-rosa), transparent 100%),
+      radial-gradient(ellipse 26% 30% at 70% 4%, var(--luz-lima), transparent 100%);
+  }
+  .painel-entrada {
+    background-color: var(--lavagem-lilas);
+    background-image:
+      radial-gradient(ellipse 70% 55% at 85% 8%, var(--luz-rosa), transparent 100%),
+      radial-gradient(ellipse 80% 60% at 20% 70%, var(--luz-violeta), transparent 100%),
+      radial-gradient(ellipse 55% 40% at 75% 95%, var(--luz-lima), transparent 100%);
+  }
+}
+@layer components {
+  /* Banners das páginas iniciais: cor concentrada aqui; o restante da tela segue branco/grafite. */
+  .banner-colaborador {
+    background-color: var(--lavagem-lilas);
+    background-image:
+      radial-gradient(ellipse 45% 90% at 100% 60%, var(--luz-lima), transparent 100%),
+      radial-gradient(ellipse 50% 100% at 45% 20%, var(--luz-rosa), transparent 100%),
+      radial-gradient(ellipse 40% 80% at 78% 70%, var(--luz-violeta), transparent 100%);
+  }
+  .banner-admin {
+    background-color: var(--lavagem-lilas);
+    background-image:
+      radial-gradient(ellipse 45% 100% at 85% 30%, var(--luz-rosa), transparent 100%),
+      radial-gradient(ellipse 55% 100% at 60% 90%, var(--luz-violeta), transparent 100%);
+  }
+}
+@layer components {
+  /* Orientador: um único halo lilás, muito suave, atrás das boas-vindas. */
+  .fundo-orientador {
+    background-image: radial-gradient(ellipse 46% 27% at 50% 29%, var(--luz-violeta), transparent 100%);
   }
 }
