@@ -90,7 +90,7 @@ Os dois usam a mesma imagem em containers separados e compartilham o volume do m
 
 ## b) C4 nível 2
 
-O [diagrama de contêineres está no README principal](../README.md#arquitetura-c4--contêineres), com os limites de implantação.
+O [diagrama de contêineres está no README principal](../README.md#6-item-b--arquitetura-em-c4), com os limites de implantação.
 
 **API Gateway:** o [Nginx](../frontend/nginx/evolia.conf) serve o frontend e encaminha `/api` ao Java na mesma origem. Ele aceita apenas os caminhos previstos (login e logout só por `POST`), limita as tentativas de login, não repassa `Authorization`, responde 404 às rotas internas e não registra URL nem cabeçalhos.
 

@@ -6,11 +6,14 @@ traz regras de apresentação: **confirmem duração e formato com o professor**
 A divisão abaixo segue as contribuições registradas no Git; ajustem se a equipe combinou outra. Nomes
 completos e RAs não estão no repositório.
 
-| Quem | Blocos | Tempo |
+| Quem | Passos | Tempo |
 | --- | --- | --- |
-| `mjdutil` | 1, 2, 6, 8, 11 | 6,5 min |
-| Felipe Brito | 3 (RNFs), 4, 5, 9 | 7 min |
-| `rrezeendisa` | 3 (RFs), 7, 10 | 4,5 min |
+| `mjdutil` | 1, 2, 6, 7, 12, 16 (conclusão) | 6 min |
+| Felipe Brito | 3, 4, 5, 11, 13, 14, 15 | 7 min |
+| `rrezeendisa` | 2 (requisitos), 8, 9, 10, 16 (limitações) | 5 min |
+
+Os 16 passos são os mesmos do [guia de demonstração](../README.md#15-guia-de-demonstração), que indica a
+tela, o arquivo a abrir e o requisito de cada um.
 
 ## Antes de começar (véspera e 15 minutos antes)
 
@@ -26,53 +29,51 @@ docker compose exec ollama ollama list  # modelo baixado, para os próximos pass
 - Deixar o consentimento **sem autorização**, para autorizar ao vivo.
 - Abrir três janelas ou perfis de navegador (cada um com sua sessão): admin, colaborador, demonstração.
 - Não mostrar o `.env` na tela. Fazer uma classificação de teste antes (aquece os serviços).
-- Ter à mão capturas de reserva e os documentos `docs/arquitetura-af.md` e `docs/evidencias-af.md`.
+- Fazer uma orientação de teste antes: a primeira geração do Ollama levou cerca de 34 s; depois, cerca de 4 s.
+- Ter à mão capturas de reserva, o README e `docs/evidencias-af.md`.
 
 ## Roteiro
 
-### 1. Equipe e contexto — 1 min (`mjdutil`)
-Apresentar os três integrantes e o Estudo de Caso 1: educação corporativa com avaliação, recomendações e
+### 1. Equipe e problema — 1 min (`mjdutil`)
+Os três integrantes e o Estudo de Caso 1: educação corporativa com avaliação, recomendações e
 acompanhamento, equipe reduzida e crescimento previsto.
 
-### 2. Problema e solução — 1,5 min (`mjdutil`)
-Landing em `/`. Dizer o que a Evolia faz e, já de início, que é um projeto acadêmico local.
+### 2. Visão geral — 2 min
+- `mjdutil` (1 min): página pública `/`, o que a Evolia faz, os três perfis; projeto acadêmico local.
+- `rrezeendisa` (1 min): RF01 a RF05, apontando que **RF03 tem ressalva** e **RF04 é parcial**.
 
-### 3. Requisitos — 2 min
-- `rrezeendisa`: RF01 a RF05, apontando que **RF04 é parcial** e RF03 tem ressalva.
-- Felipe: RNF01 a RNF05 e os três requisitos arquiteturalmente significativos (RNF01, RNF02, RNF03).
+### 3. Organização arquitetural e justificativas — 2 min (Felipe)
+Item A, o de maior peso. Comparar monólito modular híbrido e microsserviços nos cinco critérios; mostrar os
+pacotes do backend, `CursoService` e as duas portas de IA. Portas e adaptadores **somente** nessa
+integração; não chamar a aplicação de hexagonal.
 
-### 4. Arquitetura e C4 — 2,5 min (Felipe)
-Diagrama do README. Monólito modular híbrido: por que não microsserviços (equipe reduzida, RNF05) e por
-que a IA fica em processos separados (RNF04). Portas e adaptadores **somente** nas integrações de IA; não
-chamar a aplicação de hexagonal.
+### 4. C4 — 1 min (Felipe)
+Diagrama de contêineres, limite de implantação e os componentes internos do serviço de IA.
 
-### 5. Gateway, REST e RabbitMQ — 2 min (Felipe)
-Nginx como única porta publicada; limite de login; CSP. REST no que precisa de resposta; fila no
-treinamento. Explicar o trade-off: banco e fila não são atômicos.
+### 5. REST e RabbitMQ — 1,5 min (Felipe)
+REST quando há alguém esperando; fila no treinamento. Confirmações, DLQ, idempotência e o limite: banco e
+fila não são atômicos.
 
-### 6. Demonstração dos perfis — 2,5 min (`mjdutil`)
-1. **Admin:** início, colaboradores, cursos (catálogo preenchido), "Novo colaborador", criar conta.
-2. **Demonstração:** só início e catálogo; abrir `/orientacao` e mostrar "Acesso não permitido".
+### 6. Demonstração como administrador — 1,5 min (`mjdutil`)
+Visão geral, colaboradores, catálogo, "Novo colaborador" e criação de conta.
 
-### 7. Inteligência artificial — 3 min (`rrezeendisa`)
-Com a conta individual:
-1. Privacidade e IA → **Autorizar**.
-2. Minhas competências → Lógica 2, Comunicação 4, Tecnologia 3 → **Classificar** (modelo de ML; é
-   estimativa).
-3. Recomendações → gerar; mostrar fontes e dizer que a recuperação é TF-IDF sobre 12 documentos
-   fictícios, sem LLM redigindo.
-4. Orientador → enviar uma sugestão; mostrar próximos passos (Ollama) e explicar que sem ele a orientação
-   base continua.
+### 7. Demonstração do colaborador — 0,5 min (`mjdutil`)
+Início e catálogo. Na conta de demonstração, abrir `/orientacao` e mostrar "Acesso não permitido".
 
-### 8. Segurança e consentimento — 1 min (`mjdutil`)
-Sessão com cookie `HttpOnly`, CSRF, contexto de sessão. **Revogar** o consentimento ao vivo e mostrar que
-os resultados somem; o que já foi enviado pode ter sido processado.
+### 8. Classificação — 1 min (`rrezeendisa`)
+Conta individual: Privacidade e IA → **Autorizar**; Minhas competências → Lógica 2, Comunicação 4,
+Tecnologia 3 → **Classificar**. É uma estimativa de um modelo treinado com base sintética.
 
-### 9. Treinamento assíncrono e desempenho — 1,5 min (Felipe)
-- Admin → Treinamentos → solicitar; acompanhar `PENDENTE` → `CONCLUIDO`. O modelo novo só é carregado ao
-  reiniciar o FastAPI.
-- RNF01: antes, com HTTP Basic, a 300 usuários a amostra ficou inconclusiva (200 usuários: p95 de 16,5 s);
-  depois, com sessões, 17.826 de 17.826 no prazo e p95 de 33 ms. Medição local, revisão `676ad62`.
+### 9. Recomendações e fontes — 1 min (`rrezeendisa`)
+Gerar recomendações e mostrar as fontes. TF-IDF sobre 12 documentos fictícios, sem LLM redigindo.
+
+### 10. Orientador e consentimento — 1,5 min (`rrezeendisa`)
+Enviar uma sugestão; mostrar os próximos passos gerados (Ollama, genéricos). **Revogar** o consentimento ao
+vivo: os resultados somem; o que já foi enviado pode ter sido processado.
+
+### 11. Treinamento assíncrono — 1 min (Felipe)
+Admin → Treinamentos → solicitar; acompanhar `PENDENTE` → `CONCLUIDO`. O modelo novo só é carregado ao
+reiniciar o FastAPI.
 
 Opcional, se sobrar tempo (RNF02 e RNF04): o treinamento não depende da API de IA.
 
@@ -82,13 +83,24 @@ docker compose stop ai-service      # solicitar um treinamento: aceito, e o work
 docker compose start ai-service
 ```
 
-### 10. Limitações — 0,5 min (`rrezeendisa`)
-RF04 parcial; ambiente local sem HTTPS nem alta disponibilidade; base sintética; documentos sem ligação
-com o catálogo; sessões em memória.
+### 12. Segurança — 1 min (`mjdutil`)
+Sessão com cookie `HttpOnly`, CSRF, contexto de sessão, perfis, redes internas e CSP.
 
-### 11. Conclusão — 0,5 min (`mjdutil`)
-Retomar as decisões e o que viria depois: acompanhamento persistente, HTTPS e observabilidade, ligação
-entre acervo e catálogo.
+### 13. Desempenho — 0,5 min (Felipe)
+Antes, com HTTP Basic, a 300 usuários a amostra ficou inconclusiva (200 usuários: p95 de 16,5 s); depois,
+com sessões, 17.826 de 17.826 no prazo e p95 de 33 ms. Medição local e histórica, revisão `676ad62`.
+
+### 14. ASRs — 0,5 min (Felipe)
+RNF01, RNF02 e RNF03 e a decisão que cada um provocou.
+
+### 15. ADRs — 0,5 min (Felipe)
+Monólito modular híbrido; sessões no lugar de HTTP Basic, com os trade-offs.
+
+### 16. Limitações e conclusão — 1 min
+- `rrezeendisa` (0,5 min): RF03 e RF04, base sintética, documentos sem ligação com o catálogo, ambiente
+  local, sessões em memória.
+- `mjdutil` (0,5 min): retomar as decisões e o que viria depois: acompanhamento persistente, HTTPS e
+  observabilidade.
 
 ## Se algo falhar
 

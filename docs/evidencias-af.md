@@ -49,8 +49,29 @@ Fluxos exercidos: login válido e inválido, logout, restauração e troca de se
 colaboradores e cursos, criação de conta, autorização e revogação, classificação, recomendações com
 fontes, orientação, IA indisponível, treinamento até `CONCLUIDO` e bloqueios por perfil.
 
-**Não verificado nesta versão:** carga (RNF01), a geração pelo Ollama pela interface, os cenários de falha
-do RNF02 e RNF04 e a CI no GitHub. O roteiro automatizado do navegador não está versionado.
+Na indisponibilidade da IA, o fluxo no navegador parou o FastAPI e conferiu a mensagem de erro no
+Orientador e o catálogo ainda disponível.
+
+**Não verificado nesta versão:** carga (RNF01), o cenário de falha do RNF02, a repetição completa do
+cenário do RNF04 (cadastros com a IA parada) e a CI no GitHub. O roteiro automatizado do navegador não
+está versionado.
+
+### Geração pelo Ollama através da interface (28/11/2026)
+
+Verificação posterior aos fluxos acima, na pilha local com o Ollama ativo, usando uma conta individual de
+teste com consentimento.
+
+| Item observado | Resultado |
+|---|---|
+| Chamada ao modelo (log do Ollama) | `POST /api/chat` com HTTP 200 |
+| Backend (log `geracao_proximos_passos`) | `resultado=sucesso` |
+| Interface | Próximos passos exibidos com a marca "gerado por IA" |
+| Primeira geração (carregamento do modelo) | cerca de 34 s |
+| Geração seguinte | cerca de 4 s |
+
+É uma verificação funcional, não uma medição de desempenho: poucas execuções, em uma única máquina. Os
+próximos passos continuam **genéricos**, porque o modelo (`qwen2.5:1.5b`) recebe apenas o nível estimado;
+ele não vê a pergunta, as notas, os cursos recomendados nem os documentos.
 
 ## Requisitos funcionais
 
