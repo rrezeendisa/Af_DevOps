@@ -53,7 +53,12 @@ atender com a orientação base enquanto a geração complementar estiver indisp
 As redes entre serviços são internas. `/healthz` verifica o gateway.
 O gateway não encaminha `/actuator`, `/internal` ou caminhos diretos ao FastAPI.
 Os logs de acesso guardam método, status e duração. Fora da máquina local,
-HTTPS é obrigatório para usar HTTP Basic.
+use HTTPS e defina `SESSION_COOKIE_SECURE=true`.
+
+A autenticação é por sessão em memória no Java. `SESSION_TIMEOUT` define a
+expiração por inatividade (padrão `30m`). Reiniciar o backend encerra as
+sessões, e mais de uma instância exigiria afinidade ou armazenamento
+compartilhado. O worker continua usando `INTERNAL_API_TOKEN`.
 
 ### Diagnóstico local
 
@@ -160,8 +165,8 @@ requisição e 8,01 s e 14,33 s nas duas seguintes, com três sugestões em cada
 resposta. Ao parar o Ollama, a orientação base voltou com HTTP 200 em 31,02 s.
 O pico amostrado de RAM foi cerca de 1,64 GiB no Ollama e 2,51 GiB no projeto.
 Esses resultados são de chamadas individuais e não validam o RNF01. A carga de
-classificação foi medida separadamente e
-[não atingiu a meta](../docs/evidencias-af.md#rnf01--carga-de-classificação).
+classificação foi medida separadamente e, com sessões autenticadas,
+[atingiu a meta nas condições testadas](../docs/evidencias-af.md#rnf01--carga-de-classificação).
 
 Para usar o Ollama nativo no desenvolvimento, pare o Ollama do Compose e
 inicie o ambiente com o arquivo adicional. O Java acessa o modelo em
@@ -209,7 +214,7 @@ token interno, DLQ e acesso ao ai-service pela rede do Compose.
 A suíte do gateway e do treinamento inicia apenas os serviços necessários,
 sem baixar o modelo generativo. Carga e falhas controladas têm um
 [roteiro separado](../integration-tests/carga/README.md), executado localmente
-em 27/11/2026 ([resultados](../docs/evidencias-etapa14/README.md)). A pipeline
+em 27 e 28/11/2026 ([resultados atuais](../docs/evidencias-etapa14-1/README.md)). A pipeline
 ainda não foi executada no GitHub.
 
 ## Problemas comuns

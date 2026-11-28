@@ -1,0 +1,6 @@
+ai-worker afdevops-ai-service:carga-676ad62 sha256:7318c1565fe42743ce5534ce145ba6064120b6c0a7b41101ad9204316e962c0d sem limite de memória ou CPU no Compose
+gateway evolia-gateway:carga-676ad62 sha256:2539770ea52bd4d7dd8cb3b3b6657ea6270f98080ccb165591e3ae7b7e87ee91 sem limite de memória ou CPU no Compose
+backend afdevops-backend:carga-676ad62 sha256:fb6d6ebfc1d40f91dbca43b4ae31370feb160c4bc12cd84e5d6c65e09231ee05 sem limite de memória ou CPU no Compose
+ai-service afdevops-ai-service:carga-676ad62 sha256:7318c1565fe42743ce5534ce145ba6064120b6c0a7b41101ad9204316e962c0d sem limite de memória ou CPU no Compose
+postgres postgres:17 sha256:97fb53376be3e4fb1a8a61421daa69dcc3bf2fa39bda3259f5245f9a455af1a9 sem limite de memória ou CPU no Compose
+rabbitmq rabbitmq:4.1-management sha256:abcf6bc2eb4ff990bf041e605c485938739c5c98c513e0bc30a0ae9d0664be45 sem limite de memória ou CPU no Compose

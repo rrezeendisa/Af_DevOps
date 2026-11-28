@@ -24,6 +24,10 @@ GATEWAY_PORT="$GATEWAY_PORT" python3 -B integration-tests/carga/validar_falhas.p
 python3 -B integration-tests/carga/consolidar.py "$AREA/medicao" "$AREA/relatorio"
 ```
 
+## Resultados
+
+Com sessões, a meta foi atingida nas condições testadas ([Etapa 14.1](../../docs/evidencias-etapa14-1/incremento-d/README.md)). A medição anterior, com HTTP Basic, não a atingiu ([Etapa 14](../../docs/evidencias-etapa14/README.md)). Para reproduzir as condições, inicie o Java com `IA_GENERATIVA_HABILITADA=false`.
+
 ## Metodologia com sessão (Etapa 14.1)
 
 O k6 usa a rede de borda e o gateway, com uma conta, um cookie e um contexto por usuário virtual. Cada usuário entra na primeira iteração, durante a subida de 30 s (`GET /api/csrf`, `POST /api/login`, `GET /api/me`), e pede um token CSRF novo antes de cada classificação. Os patamares têm 30 s de subida, 30 s de aquecimento, 120 s de medição e 20 s de drenagem. As pausas variam de 1 a 3 s. Uma medição com amostra abaixo de 300 pode ser repetida uma vez com 300 s de observação. Acima dos limites de segurança, a rodada termina com os dados parciais.

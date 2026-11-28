@@ -1,7 +1,9 @@
-# Evidências da Etapa 14.1 — regressão da autenticação por sessão
+# Evidências da Etapa 14.1 — autenticação por sessão
+
+Estado atual da aplicação. Análise na [matriz de evidências](../evidencias-af.md); decisão no [ADR 002](../arquitetura-af.md#adr-002--sessões-no-servidor-no-lugar-de-http-basic).
 
 Execuções de 27–28/11/2026 em um projeto Compose isolado, pelo Nginx, com imagens e volumes próprios.
-Nenhum teste de carga foi executado. As [evidências da Etapa 14](../evidencias-etapa14/README.md) não mudaram.
+Esta regressão não incluiu carga; ela está em [incremento-d/](incremento-d/README.md). As [evidências da Etapa 14](../evidencias-etapa14/README.md) não mudaram.
 
 | Arquivo | Conteúdo |
 |---|---|

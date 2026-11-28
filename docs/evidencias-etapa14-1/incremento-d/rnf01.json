@@ -1,0 +1,1038 @@
+{
+  "metadados": {
+    "projeto": "evolia-carga141",
+    "revisao_git": "676ad62794af1f8e145ff0670deb61412d555b99",
+    "script_k6_sha256": "a227f22613b7e216f89afb847e022b05c208f0d335c64751f593d4ac84dc0264",
+    "host": "macOS-14.8.9-x86_64-i386-64bit",
+    "imagem_k6": "grafana/k6:1.8.2@sha256:00fdcebafbc86cb0137d429529b1caa401a02e09025f02fc74866fa6e2b004d8",
+    "vm_ram_bytes": 8322740224,
+    "vm_cpus": 8,
+    "inicio_epoch_s": 1795834956.291465,
+    "arvore_git_limpa": true,
+    "configuracao": {
+      "LOGIN_RATE": "10r/s",
+      "LOGIN_BURST": "50",
+      "IA_GENERATIVA_HABILITADA": "false",
+      "SESSION_TIMEOUT": "30m",
+      "SESSION_COOKIE_SECURE": "false",
+      "bcrypt_custo_das_contas": [
+        "12"
+      ]
+    },
+    "carga_do_host_no_inicio": [
+      8.353515625,
+      7.0859375,
+      8.01611328125
+    ],
+    "containers_em_execucao_fora_do_projeto": [
+      "afdevops-postgres"
+    ],
+    "imagens": {
+      "ai-worker": "sha256:7318c1565fe42743ce5534ce145ba6064120b6c0a7b41101ad9204316e962c0d",
+      "gateway": "sha256:2539770ea52bd4d7dd8cb3b3b6657ea6270f98080ccb165591e3ae7b7e87ee91",
+      "backend": "sha256:fb6d6ebfc1d40f91dbca43b4ae31370feb160c4bc12cd84e5d6c65e09231ee05",
+      "ai-service": "sha256:7318c1565fe42743ce5534ce145ba6064120b6c0a7b41101ad9204316e962c0d",
+      "postgres": "sha256:97fb53376be3e4fb1a8a61421daa69dcc3bf2fa39bda3259f5245f9a455af1a9",
+      "rabbitmq": "sha256:abcf6bc2eb4ff990bf041e605c485938739c5c98c513e0bc30a0ae9d0664be45"
+    }
+  },
+  "patamares": [
+    {
+      "usuarios": 10,
+      "segundos": 120,
+      "metricas": {
+        "classificacao_ms": {
+          "count": 599,
+          "avg": 12.984974958263773,
+          "med": 13,
+          "p(90)": 16,
+          "p(95)": 18,
+          "p(99)": 22,
+          "max": 33
+        },
+        "classificacao_valida": {
+          "rate": 1,
+          "passes": 599,
+          "fails": 0
+        },
+        "classificacao_no_prazo": {
+          "rate": 1,
+          "passes": 599,
+          "fails": 0
+        },
+        "classificacoes": {
+          "count": 599,
+          "rate": 2.993284878759935
+        },
+        "interacao_ms": {
+          "count": 599,
+          "avg": 18.467445742904843,
+          "med": 18,
+          "p(90)": 24,
+          "p(95)": 26,
+          "p(99)": 31,
+          "max": 43
+        },
+        "interacao_no_prazo": {
+          "rate": 1,
+          "passes": 599,
+          "fails": 0
+        },
+        "interacoes": {
+          "count": 599,
+          "rate": 2.993284878759935
+        },
+        "interacoes_validas": {
+          "count": 599,
+          "rate": 2.993284878759935
+        },
+        "csrf_ms": {
+          "p(90)": 8,
+          "p(95)": 9,
+          "p(99)": 11,
+          "max": 21,
+          "count": 599,
+          "avg": 5.018363939899833,
+          "med": 5
+        },
+        "sessoes_medidas": {
+          "count": 10,
+          "rate": 0.04997136692420593
+        },
+        "login_ms": {
+          "count": 10,
+          "avg": 467.4,
+          "med": 440,
+          "p(90)": 509.0999999999999,
+          "p(95)": 595.0499999999998,
+          "p(99)": 663.8100000000001,
+          "max": 681
+        },
+        "sessoes_estabelecidas": {
+          "count": 10,
+          "rate": 0.04997136692420593
+        },
+        "vus": {
+          "value": 1,
+          "min": 0,
+          "max": 10
+        },
+        "vus_max": {
+          "value": 10,
+          "min": 10,
+          "max": 10
+        },
+        "http_200": {
+          "rate": 2.993284878759935,
+          "count": 599
+        }
+      },
+      "post_por_s": 4.99,
+      "pico_posts_em_voo": 4,
+      "situacao": "medido",
+      "interrompido": false,
+      "inicio_epoch_s": 1795834956.4275541,
+      "saude_final": {
+        "ai-worker": {
+          "estado": "running",
+          "saude": "sem healthcheck",
+          "reinicios": 0,
+          "oom": false
+        },
+        "gateway": {
+          "estado": "running",
+          "saude": "healthy",
+          "reinicios": 0,
+          "oom": false
+        },
+        "backend": {
+          "estado": "running",
+          "saude": "healthy",
+          "reinicios": 0,
+          "oom": false
+        },
+        "ai-service": {
+          "estado": "running",
+          "saude": "healthy",
+          "reinicios": 0,
+          "oom": false
+        },
+        "postgres": {
+          "estado": "running",
+          "saude": "healthy",
+          "reinicios": 0,
+          "oom": false
+        },
+        "rabbitmq": {
+          "estado": "running",
+          "saude": "healthy",
+          "reinicios": 0,
+          "oom": false
+        }
+      },
+      "ram_pico_mib": 909.5,
+      "cpu_pico_nucleos_por_intervalo": {
+        "backend": 0.276,
+        "ai-service": 0.141,
+        "gateway": 0.025,
+        "postgres": 0.063
+      },
+      "janela_medida": {
+        "amostras": 13,
+        "servicos": {
+          "ai-service": {
+            "cpu_media_pct": 5.9,
+            "cpu_pico_pct": 42.2,
+            "ram_pico_mib": 96.6
+          },
+          "ai-worker": {
+            "cpu_media_pct": 0.0,
+            "cpu_pico_pct": 0.0,
+            "ram_pico_mib": 95.2
+          },
+          "backend": {
+            "cpu_media_pct": 5.9,
+            "cpu_pico_pct": 9.2,
+            "ram_pico_mib": 528.4
+          },
+          "gateway": {
+            "cpu_media_pct": 1.9,
+            "cpu_pico_pct": 5.6,
+            "ram_pico_mib": 9.8
+          },
+          "k6": {
+            "cpu_media_pct": 7.0,
+            "cpu_pico_pct": 10.9,
+            "ram_pico_mib": 26.5
+          },
+          "postgres": {
+            "cpu_media_pct": 2.5,
+            "cpu_pico_pct": 10.6,
+            "ram_pico_mib": 50.6
+          },
+          "rabbitmq": {
+            "cpu_media_pct": 1.9,
+            "cpu_pico_pct": 7.4,
+            "ram_pico_mib": 104.4
+          }
+        }
+      },
+      "cpu_janela_nucleos_media_pico": {
+        "backend": [
+          0.08,
+          0.12
+        ],
+        "ai-service": [
+          0.07,
+          0.07
+        ],
+        "gateway": [
+          0.02,
+          0.03
+        ],
+        "postgres": [
+          0.03,
+          0.04
+        ]
+      }
+    },
+    {
+      "usuarios": 50,
+      "segundos": 120,
+      "metricas": {
+        "classificacao_ms": {
+          "avg": 10.822341857335127,
+          "med": 10,
+          "p(90)": 14,
+          "p(95)": 16,
+          "p(99)": 23,
+          "max": 192,
+          "count": 2972
+        },
+        "classificacao_valida": {
+          "rate": 1,
+          "passes": 2972,
+          "fails": 0
+        },
+        "classificacao_no_prazo": {
+          "rate": 1,
+          "passes": 2972,
+          "fails": 0
+        },
+        "classificacoes": {
+          "count": 2972,
+          "rate": 14.858241879882469
+        },
+        "interacao_ms": {
+          "p(99)": 32.289999999999964,
+          "max": 205,
+          "count": 2972,
+          "avg": 14.797779273216689,
+          "med": 14,
+          "p(90)": 19,
+          "p(95)": 22
+        },
+        "interacao_no_prazo": {
+          "rate": 1,
+          "passes": 2972,
+          "fails": 0
+        },
+        "interacoes": {
+          "count": 2972,
+          "rate": 14.858241879882469
+        },
+        "interacoes_validas": {
+          "count": 2972,
+          "rate": 14.858241879882469
+        },
+        "csrf_ms": {
+          "p(90)": 5,
+          "p(95)": 6,
+          "p(99)": 9,
+          "max": 188,
+          "count": 2972,
+          "avg": 3.6002691790040378,
+          "med": 3
+        },
+        "sessoes_medidas": {
+          "count": 50,
+          "rate": 0.24997042193611152
+        },
+        "login_ms": {
+          "med": 400,
+          "p(90)": 468.40000000000003,
+          "p(95)": 501.5,
+          "p(99)": 701.5999999999992,
+          "max": 878,
+          "count": 50,
+          "avg": 422.28
+        },
+        "sessoes_estabelecidas": {
+          "rate": 0.24997042193611152,
+          "count": 50
+        },
+        "vus": {
+          "value": 1,
+          "min": 1,
+          "max": 50
+        },
+        "vus_max": {
+          "value": 50,
+          "min": 50,
+          "max": 50
+        },
+        "http_200": {
+          "count": 2972,
+          "rate": 14.858241879882469
+        }
+      },
+      "post_por_s": 24.77,
+      "pico_posts_em_voo": 5,
+      "situacao": "medido",
+      "interrompido": false,
+      "inicio_epoch_s": 1795835164.105174,
+      "saude_final": {
+        "ai-worker": {
+          "estado": "running",
+          "saude": "sem healthcheck",
+          "reinicios": 0,
+          "oom": false
+        },
+        "gateway": {
+          "estado": "running",
+          "saude": "healthy",
+          "reinicios": 0,
+          "oom": false
+        },
+        "backend": {
+          "estado": "running",
+          "saude": "healthy",
+          "reinicios": 0,
+          "oom": false
+        },
+        "ai-service": {
+          "estado": "running",
+          "saude": "healthy",
+          "reinicios": 0,
+          "oom": false
+        },
+        "postgres": {
+          "estado": "running",
+          "saude": "healthy",
+          "reinicios": 0,
+          "oom": false
+        },
+        "rabbitmq": {
+          "estado": "running",
+          "saude": "healthy",
+          "reinicios": 0,
+          "oom": false
+        }
+      },
+      "ram_pico_mib": 966.0,
+      "cpu_pico_nucleos_por_intervalo": {
+        "backend": 0.941,
+        "ai-service": 0.182,
+        "gateway": 0.105,
+        "postgres": 0.085
+      },
+      "janela_medida": {
+        "amostras": 13,
+        "servicos": {
+          "ai-service": {
+            "cpu_media_pct": 13.8,
+            "cpu_pico_pct": 43.6,
+            "ram_pico_mib": 107.6
+          },
+          "ai-worker": {
+            "cpu_media_pct": 0.0,
+            "cpu_pico_pct": 0.1,
+            "ram_pico_mib": 95.2
+          },
+          "backend": {
+            "cpu_media_pct": 19.0,
+            "cpu_pico_pct": 30.4,
+            "ram_pico_mib": 532.3
+          },
+          "gateway": {
+            "cpu_media_pct": 6.6,
+            "cpu_pico_pct": 13.8,
+            "ram_pico_mib": 10.9
+          },
+          "k6": {
+            "cpu_media_pct": 14.7,
+            "cpu_pico_pct": 18.4,
+            "ram_pico_mib": 61.6
+          },
+          "postgres": {
+            "cpu_media_pct": 2.4,
+            "cpu_pico_pct": 11.1,
+            "ram_pico_mib": 50.7
+          },
+          "rabbitmq": {
+            "cpu_media_pct": 1.6,
+            "cpu_pico_pct": 6.7,
+            "ram_pico_mib": 109.6
+          }
+        }
+      },
+      "cpu_janela_nucleos_media_pico": {
+        "backend": [
+          0.19,
+          0.23
+        ],
+        "ai-service": [
+          0.15,
+          0.18
+        ],
+        "gateway": [
+          0.06,
+          0.1
+        ],
+        "postgres": [
+          0.04,
+          0.09
+        ]
+      }
+    },
+    {
+      "usuarios": 100,
+      "segundos": 120,
+      "metricas": {
+        "classificacao_ms": {
+          "p(99)": 21,
+          "max": 78,
+          "count": 5953,
+          "avg": 9.846799932806988,
+          "med": 9,
+          "p(90)": 14,
+          "p(95)": 16
+        },
+        "classificacao_valida": {
+          "rate": 1,
+          "passes": 5953,
+          "fails": 0
+        },
+        "classificacao_no_prazo": {
+          "fails": 0,
+          "rate": 1,
+          "passes": 5953
+        },
+        "classificacoes": {
+          "count": 5953,
+          "rate": 29.63386973761468
+        },
+        "interacao_ms": {
+          "max": 108,
+          "count": 5954,
+          "avg": 13.338259993281827,
+          "med": 12,
+          "p(90)": 19,
+          "p(95)": 21,
+          "p(99)": 27
+        },
+        "interacao_no_prazo": {
+          "rate": 1,
+          "passes": 5954,
+          "fails": 0
+        },
+        "interacoes": {
+          "count": 5954,
+          "rate": 29.638847710021473
+        },
+        "interacoes_validas": {
+          "count": 5954,
+          "rate": 29.638847710021473
+        },
+        "csrf_ms": {
+          "count": 5954,
+          "avg": 3.148471615720524,
+          "med": 3,
+          "p(90)": 5,
+          "p(95)": 6,
+          "p(99)": 8,
+          "max": 28
+        },
+        "sessoes_medidas": {
+          "count": 100,
+          "rate": 0.4977972406788961
+        },
+        "login_ms": {
+          "p(95)": 504.2,
+          "p(99)": 558.1300000000001,
+          "max": 571,
+          "count": 100,
+          "avg": 419.58,
+          "med": 408.5,
+          "p(90)": 470.6
+        },
+        "sessoes_estabelecidas": {
+          "count": 100,
+          "rate": 0.4977972406788961
+        },
+        "vus": {
+          "value": 1,
+          "min": 1,
+          "max": 100
+        },
+        "vus_max": {
+          "max": 100,
+          "value": 100,
+          "min": 100
+        },
+        "http_200": {
+          "count": 5953,
+          "rate": 29.63386973761468
+        }
+      },
+      "post_por_s": 49.61,
+      "pico_posts_em_voo": 11,
+      "situacao": "medido",
+      "interrompido": false,
+      "inicio_epoch_s": 1795835366.450288,
+      "saude_final": {
+        "ai-worker": {
+          "estado": "running",
+          "saude": "sem healthcheck",
+          "reinicios": 0,
+          "oom": false
+        },
+        "gateway": {
+          "estado": "running",
+          "saude": "healthy",
+          "reinicios": 0,
+          "oom": false
+        },
+        "backend": {
+          "estado": "running",
+          "saude": "healthy",
+          "reinicios": 0,
+          "oom": false
+        },
+        "ai-service": {
+          "estado": "running",
+          "saude": "healthy",
+          "reinicios": 0,
+          "oom": false
+        },
+        "postgres": {
+          "estado": "running",
+          "saude": "healthy",
+          "reinicios": 0,
+          "oom": false
+        },
+        "rabbitmq": {
+          "estado": "running",
+          "saude": "healthy",
+          "reinicios": 0,
+          "oom": false
+        }
+      },
+      "ram_pico_mib": 1005.1,
+      "cpu_pico_nucleos_por_intervalo": {
+        "backend": 1.787,
+        "ai-service": 0.251,
+        "gateway": 0.109,
+        "postgres": 0.05
+      },
+      "janela_medida": {
+        "amostras": 13,
+        "servicos": {
+          "ai-service": {
+            "cpu_media_pct": 19.6,
+            "cpu_pico_pct": 30.5,
+            "ram_pico_mib": 104.7
+          },
+          "ai-worker": {
+            "cpu_media_pct": 0.0,
+            "cpu_pico_pct": 0.1,
+            "ram_pico_mib": 95.2
+          },
+          "backend": {
+            "cpu_media_pct": 28.1,
+            "cpu_pico_pct": 45.2,
+            "ram_pico_mib": 533.7
+          },
+          "gateway": {
+            "cpu_media_pct": 10.5,
+            "cpu_pico_pct": 12.7,
+            "ram_pico_mib": 11.6
+          },
+          "k6": {
+            "cpu_media_pct": 26.0,
+            "cpu_pico_pct": 34.9,
+            "ram_pico_mib": 103.8
+          },
+          "postgres": {
+            "cpu_media_pct": 3.8,
+            "cpu_pico_pct": 11.3,
+            "ram_pico_mib": 50.8
+          },
+          "rabbitmq": {
+            "cpu_media_pct": 1.8,
+            "cpu_pico_pct": 5.5,
+            "ram_pico_mib": 110.3
+          }
+        }
+      },
+      "cpu_janela_nucleos_media_pico": {
+        "backend": [
+          0.26,
+          0.29
+        ],
+        "ai-service": [
+          0.22,
+          0.23
+        ],
+        "gateway": [
+          0.1,
+          0.11
+        ],
+        "postgres": [
+          0.04,
+          0.04
+        ]
+      }
+    },
+    {
+      "usuarios": 200,
+      "segundos": 120,
+      "metricas": {
+        "classificacao_ms": {
+          "med": 9,
+          "p(90)": 16,
+          "p(95)": 20.899999999999636,
+          "p(99)": 40,
+          "max": 201,
+          "count": 11923,
+          "avg": 11.179401157426822
+        },
+        "classificacao_valida": {
+          "rate": 1,
+          "passes": 11923,
+          "fails": 0
+        },
+        "classificacao_no_prazo": {
+          "rate": 1,
+          "passes": 11923,
+          "fails": 0
+        },
+        "classificacoes": {
+          "count": 11923,
+          "rate": 59.416746765801335
+        },
+        "interacao_ms": {
+          "max": 219,
+          "count": 11923,
+          "avg": 14.254717772372725,
+          "med": 12,
+          "p(90)": 20,
+          "p(95)": 25,
+          "p(99)": 47
+        },
+        "interacao_no_prazo": {
+          "rate": 1,
+          "passes": 11923,
+          "fails": 0
+        },
+        "interacoes": {
+          "rate": 59.416746765801335,
+          "count": 11923
+        },
+        "interacoes_validas": {
+          "rate": 59.416746765801335,
+          "count": 11923
+        },
+        "csrf_ms": {
+          "p(95)": 5,
+          "p(99)": 10,
+          "max": 52,
+          "count": 11923,
+          "avg": 2.7784114736224104,
+          "med": 2,
+          "p(90)": 4
+        },
+        "sessoes_medidas": {
+          "count": 200,
+          "rate": 0.9966744404227348
+        },
+        "login_ms": {
+          "avg": 438.855,
+          "med": 415,
+          "p(90)": 514.2,
+          "p(95)": 592.1999999999999,
+          "p(99)": 663.1599999999999,
+          "max": 685,
+          "count": 200
+        },
+        "sessoes_estabelecidas": {
+          "rate": 0.9966744404227348,
+          "count": 200
+        },
+        "vus": {
+          "min": 0,
+          "max": 200,
+          "value": 0
+        },
+        "vus_max": {
+          "min": 200,
+          "max": 200,
+          "value": 200
+        },
+        "http_200": {
+          "count": 11923,
+          "rate": 59.416746765801335
+        }
+      },
+      "post_por_s": 99.36,
+      "pico_posts_em_voo": 26,
+      "situacao": "medido",
+      "interrompido": false,
+      "inicio_epoch_s": 1795835575.100181,
+      "saude_final": {
+        "ai-worker": {
+          "estado": "running",
+          "saude": "sem healthcheck",
+          "reinicios": 0,
+          "oom": false
+        },
+        "gateway": {
+          "estado": "running",
+          "saude": "healthy",
+          "reinicios": 0,
+          "oom": false
+        },
+        "backend": {
+          "estado": "running",
+          "saude": "healthy",
+          "reinicios": 0,
+          "oom": false
+        },
+        "ai-service": {
+          "estado": "running",
+          "saude": "healthy",
+          "reinicios": 0,
+          "oom": false
+        },
+        "postgres": {
+          "estado": "running",
+          "saude": "healthy",
+          "reinicios": 0,
+          "oom": false
+        },
+        "rabbitmq": {
+          "estado": "running",
+          "saude": "healthy",
+          "reinicios": 0,
+          "oom": false
+        }
+      },
+      "ram_pico_mib": 1099.1,
+      "cpu_pico_nucleos_por_intervalo": {
+        "backend": 3.497,
+        "ai-service": 0.435,
+        "gateway": 0.194,
+        "postgres": 0.064
+      },
+      "janela_medida": {
+        "amostras": 13,
+        "servicos": {
+          "ai-service": {
+            "cpu_media_pct": 38.5,
+            "cpu_pico_pct": 65.6,
+            "ram_pico_mib": 107.5
+          },
+          "ai-worker": {
+            "cpu_media_pct": 0.0,
+            "cpu_pico_pct": 0.0,
+            "ram_pico_mib": 95.2
+          },
+          "backend": {
+            "cpu_media_pct": 47.6,
+            "cpu_pico_pct": 64.5,
+            "ram_pico_mib": 538.7
+          },
+          "gateway": {
+            "cpu_media_pct": 18.1,
+            "cpu_pico_pct": 23.5,
+            "ram_pico_mib": 14.0
+          },
+          "k6": {
+            "cpu_media_pct": 37.0,
+            "cpu_pico_pct": 52.7,
+            "ram_pico_mib": 187.2
+          },
+          "postgres": {
+            "cpu_media_pct": 5.5,
+            "cpu_pico_pct": 14.9,
+            "ram_pico_mib": 50.8
+          },
+          "rabbitmq": {
+            "cpu_media_pct": 0.6,
+            "cpu_pico_pct": 1.0,
+            "ram_pico_mib": 110.4
+          }
+        }
+      },
+      "cpu_janela_nucleos_media_pico": {
+        "backend": [
+          0.44,
+          0.51
+        ],
+        "ai-service": [
+          0.4,
+          0.43
+        ],
+        "gateway": [
+          0.16,
+          0.19
+        ],
+        "postgres": [
+          0.05,
+          0.06
+        ]
+      }
+    },
+    {
+      "usuarios": 300,
+      "segundos": 120,
+      "metricas": {
+        "classificacao_ms": {
+          "max": 136,
+          "count": 17826,
+          "avg": 14.643947043644115,
+          "med": 12,
+          "p(90)": 26,
+          "p(95)": 33,
+          "p(99)": 54
+        },
+        "classificacao_valida": {
+          "rate": 1,
+          "passes": 17826,
+          "fails": 0
+        },
+        "classificacao_no_prazo": {
+          "fails": 0,
+          "rate": 1,
+          "passes": 17826
+        },
+        "classificacoes": {
+          "count": 17826,
+          "rate": 88.8661553384013
+        },
+        "interacao_ms": {
+          "max": 196,
+          "count": 17826,
+          "avg": 19.070346684617974,
+          "med": 15,
+          "p(90)": 33,
+          "p(95)": 42,
+          "p(99)": 69
+        },
+        "interacao_no_prazo": {
+          "rate": 1,
+          "passes": 17826,
+          "fails": 0
+        },
+        "interacoes": {
+          "count": 17826,
+          "rate": 88.8661553384013
+        },
+        "interacoes_validas": {
+          "count": 17826,
+          "rate": 88.8661553384013
+        },
+        "csrf_ms": {
+          "med": 3,
+          "p(90)": 8,
+          "p(95)": 10,
+          "p(99)": 19.75,
+          "max": 101,
+          "count": 17826,
+          "avg": 4.142264108605408
+        },
+        "sessoes_medidas": {
+          "count": 300,
+          "rate": 1.4955596657421963
+        },
+        "login_ms": {
+          "avg": 518.0466666666666,
+          "med": 477,
+          "p(90)": 649.1,
+          "p(95)": 794,
+          "p(99)": 1050.1999999999998,
+          "max": 1183,
+          "count": 300
+        },
+        "sessoes_estabelecidas": {
+          "count": 300,
+          "rate": 1.4955596657421963
+        },
+        "vus": {
+          "value": 2,
+          "min": 2,
+          "max": 300
+        },
+        "vus_max": {
+          "value": 300,
+          "min": 300,
+          "max": 300
+        },
+        "http_200": {
+          "count": 17826,
+          "rate": 88.8661553384013
+        }
+      },
+      "post_por_s": 148.55,
+      "pico_posts_em_voo": 26,
+      "indicador_oficial": "atendido",
+      "indicador_complementar": "atendido",
+      "situacao": "atendido",
+      "interrompido": false,
+      "inicio_epoch_s": 1795835785.631526,
+      "saude_final": {
+        "ai-worker": {
+          "estado": "running",
+          "saude": "sem healthcheck",
+          "reinicios": 0,
+          "oom": false
+        },
+        "gateway": {
+          "estado": "running",
+          "saude": "healthy",
+          "reinicios": 0,
+          "oom": false
+        },
+        "backend": {
+          "estado": "running",
+          "saude": "healthy",
+          "reinicios": 0,
+          "oom": false
+        },
+        "ai-service": {
+          "estado": "running",
+          "saude": "healthy",
+          "reinicios": 0,
+          "oom": false
+        },
+        "postgres": {
+          "estado": "running",
+          "saude": "healthy",
+          "reinicios": 0,
+          "oom": false
+        },
+        "rabbitmq": {
+          "estado": "running",
+          "saude": "healthy",
+          "reinicios": 0,
+          "oom": false
+        }
+      },
+      "ram_pico_mib": 1197.7,
+      "cpu_pico_nucleos_por_intervalo": {
+        "backend": 5.245,
+        "ai-service": 0.622,
+        "gateway": 0.912,
+        "postgres": 0.081
+      },
+      "janela_medida": {
+        "amostras": 13,
+        "servicos": {
+          "ai-service": {
+            "cpu_media_pct": 58.2,
+            "cpu_pico_pct": 72.3,
+            "ram_pico_mib": 107.0
+          },
+          "ai-worker": {
+            "cpu_media_pct": 0.0,
+            "cpu_pico_pct": 0.0,
+            "ram_pico_mib": 95.2
+          },
+          "backend": {
+            "cpu_media_pct": 65.4,
+            "cpu_pico_pct": 76.6,
+            "ram_pico_mib": 541.1
+          },
+          "gateway": {
+            "cpu_media_pct": 48.8,
+            "cpu_pico_pct": 119.2,
+            "ram_pico_mib": 15.8
+          },
+          "k6": {
+            "cpu_media_pct": 52.6,
+            "cpu_pico_pct": 76.5,
+            "ram_pico_mib": 277.9
+          },
+          "postgres": {
+            "cpu_media_pct": 7.3,
+            "cpu_pico_pct": 20.4,
+            "ram_pico_mib": 52.2
+          },
+          "rabbitmq": {
+            "cpu_media_pct": 1.2,
+            "cpu_pico_pct": 10.5,
+            "ram_pico_mib": 110.7
+          }
+        }
+      },
+      "cpu_janela_nucleos_media_pico": {
+        "backend": [
+          0.61,
+          0.65
+        ],
+        "ai-service": [
+          0.57,
+          0.62
+        ],
+        "gateway": [
+          0.51,
+          0.91
+        ],
+        "postgres": [
+          0.07,
+          0.08
+        ]
+      }
+    }
+  ]
+}

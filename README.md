@@ -11,7 +11,7 @@ C4Container
     Person(pessoa, "Administrador ou colaborador", "Acessa pelo navegador")
     System_Boundary(evolia, "Implantação Docker Compose") {
         Container(gateway, "Gateway e frontend", "Nginx e React", "Serve a interface e encaminha a API")
-        Container(java, "Backend modular", "Java e Spring Boot", "Cadastro, identidade, consentimento, treinamento e portas de IA")
+        Container(java, "Backend modular", "Java e Spring Boot", "Cadastro, identidade, sessão, consentimento, treinamento e portas de IA")
         ContainerDb(db, "Banco de dados", "PostgreSQL", "Cadastros, contas, consentimentos e solicitações")
         Container(api, "Serviço de IA", "Python e FastAPI", "ML, RAG sobre documentos de cursos e agente de orientação")
         ContainerQueue(broker, "Mensageria", "RabbitMQ", "Fila de treinamento e DLQ")
@@ -20,7 +20,7 @@ C4Container
         Container(ollama, "Modelo generativo local", "Ollama e Qwen", "Sugere próximos passos a partir do nível")
     }
     Rel(pessoa, gateway, "Usa", "HTTP local / HTTPS externo")
-    Rel(gateway, java, "Encaminha /api", "REST")
+    Rel(gateway, java, "Encaminha /api", "REST / cookie de sessão")
     Rel(java, db, "Consulta e persiste", "SQL")
     Rel(java, api, "Classifica, recomenda e orienta", "REST")
     Rel(java, ollama, "Pede próximos passos", "Spring AI / HTTP")
@@ -39,11 +39,11 @@ Somente o gateway publica porta no Compose padrão.
 |---|---|
 | Organização no código e comunicação | [Arquitetura](docs/arquitetura-af.md#a-organização-arquitetural-no-código) · [REST e RabbitMQ](docs/arquitetura-af.md#c-comunicação-arquitetural) |
 | Requisitos arquiteturalmente significativos | [ASRs](docs/arquitetura-af.md#d-requisitos-arquiteturalmente-significativos) |
-| Decisão arquitetural | [ADR](docs/arquitetura-af.md#e-adr--monólito-modular-híbrido) |
+| Decisões arquiteturais | [ADR: monólito modular híbrido](docs/arquitetura-af.md#e-adr--monólito-modular-híbrido) · [ADR 002: sessões no lugar de HTTP Basic](docs/arquitetura-af.md#adr-002--sessões-no-servidor-no-lugar-de-http-basic) |
 | Situação de RF01–RF05 e RNF01–RNF05 | [Matriz de evidências](docs/evidencias-af.md#situação-resumida) |
-| Dados das medições | [Evidências da Etapa 14](docs/evidencias-etapa14/README.md) |
+| Dados das medições | [Etapa 14.1, estado atual](docs/evidencias-etapa14-1/README.md) · [Etapa 14, histórico](docs/evidencias-etapa14/README.md) |
 
-O RNF01 não foi atendido no ambiente testado; veja o [diagnóstico](docs/evidencias-af.md#rnf01--carga-de-classificação).
+O RNF01 foi atendido nas condições testadas (300 usuários, p95 de 33 ms, ambiente local); veja os [resultados e limites](docs/evidencias-af.md#rnf01--carga-de-classificação).
 
 ## Estrutura
 
@@ -87,7 +87,11 @@ conta individual que poderá autorizar o uso da IA.
 
 O Nginx serve a interface e encaminha `/api` ao Java na mesma origem. Se a
 porta estiver ocupada, defina `GATEWAY_PORT` no `.env`. Fora da máquina
-local, HTTPS é obrigatório para usar HTTP Basic.
+local, use HTTPS e defina `SESSION_COOKIE_SECURE=true`.
+
+O acesso usa sessão no servidor: a senha é enviada uma vez, no login, e o
+navegador guarda um cookie `HttpOnly`. A sessão expira após 30 minutos de
+inatividade.
 
 O Ollama baixa o modelo no primeiro uso e reaproveita o volume nas próximas
 execuções. Enquanto o download estiver em andamento, a orientação base
