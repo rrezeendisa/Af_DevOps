@@ -23,7 +23,7 @@ describe('revogação de consentimento com sessão', () => {
       return decisao()
     })
     const { usuario } = renderizarApp('/consentimento')
-    await screen.findByRole('heading', { level: 1, name: 'Entrar' })
+    await screen.findByRole('heading', { level: 1, name: 'Que bom ter você aqui!' })
     await preencherLogin(usuario, 'ana')
 
     await usuario.click(await screen.findByRole('button', { name: 'Revogar autorização' }))

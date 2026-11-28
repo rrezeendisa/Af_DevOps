@@ -1,18 +1,17 @@
 import { zodResolver } from '@hookform/resolvers/zod'
-import { Eye, EyeOff, LoaderCircle } from 'lucide-react'
+import { ArrowLeft, Eye, EyeOff, LoaderCircle, LockKeyhole, UserRound } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { useForm } from 'react-hook-form'
-import { Navigate, useLocation } from 'react-router'
+import { Link, Navigate, useLocation } from 'react-router'
 import { z } from 'zod'
 import { podeAcessar } from '@/app/rotas'
+import { Decorativo } from '@/components/arte/Decorativo'
 import { MensagemErro } from '@/components/feedback/MensagemErro'
-import { FormasOrganicas } from '@/components/marca/FormasOrganicas'
-import { MarcaEvolia, SLOGAN } from '@/components/marca/MarcaEvolia'
+import { MarcaEvolia } from '@/components/marca/MarcaEvolia'
 import { AlternadorTema } from '@/components/tema/AlternadorTema'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { cn } from '@/lib/utils'
 import { useAuth, type MotivoFalhaLogin } from './contexto'
 import { destinoAposLogin } from './destino'
 
@@ -47,12 +46,8 @@ const AVISOS = {
   'sessao-substituida': { titulo: 'Sessão alterada', texto: 'A sessão deste navegador mudou. Entre novamente.' },
 } as const
 
-const PILARES = [
-  { rotulo: 'Conexão', cor: 'bg-white dark:bg-secondary' },
-  { rotulo: 'Conhecimento', cor: 'bg-primary' },
-  { rotulo: 'Crescimento', cor: 'bg-highlight' },
-  { rotulo: 'Evolução', cor: 'bg-simbolo-detalhe' },
-] as const
+const CAMPO = 'h-12 rounded-xl pl-11 focus-visible:ring-offset-surface md:text-base'
+const ICONE_DO_CAMPO = 'pointer-events-none absolute top-1/2 left-4 size-[1.125rem] -translate-y-1/2 text-muted-foreground'
 
 /** Tela de entrada. Credenciais seguem direto para `entrar()` e o campo de senha é limpo em seguida. */
 export function PaginaEntrar() {
@@ -115,7 +110,7 @@ export function PaginaEntrar() {
   const ocupado = isSubmitting || estado.status === 'autenticando' || estado.status === 'saindo'
 
   return (
-    <div className="relative min-h-svh bg-background lg:grid lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)]">
+    <div className="fundo-entrada relative isolate flex min-h-svh items-center justify-center overflow-hidden bg-background px-4 py-20 sm:px-8 lg:px-12 lg:py-10">
       <a
         href="#formulario-entrar"
         className="sr-only z-50 rounded-[10px] bg-primary px-4 py-2 font-semibold text-primary-foreground focus:not-sr-only focus:fixed focus:top-3 focus:left-3"
@@ -123,51 +118,26 @@ export function PaginaEntrar() {
         Ir para o formulário
       </a>
 
-      <div className="absolute top-4 right-4 z-10 sm:top-6 sm:right-6">
+      <div className="absolute top-4 right-4 z-20 sm:top-6 sm:right-6">
         <AlternadorTema />
       </div>
 
-      {/* Painel institucional: visível a partir de lg. */}
-      <aside
-        aria-label="Sobre a Evolia"
-        className="relative isolate m-4 hidden overflow-hidden rounded-[2rem] bg-accent p-12 lg:sticky lg:top-4 lg:flex lg:h-[calc(100svh-2rem)] lg:flex-col xl:p-16 dark:border dark:border-accent/30 dark:bg-surface-2"
-      >
-        <MarcaEvolia tamanho="lg" sobreLilas />
-        <div className="mt-16 max-w-[30rem] xl:mt-20">
-          <p className="font-heading text-5xl leading-[1.04] font-bold tracking-[-0.02em] text-accent-foreground xl:text-6xl dark:text-foreground">
-            {SLOGAN}
-          </p>
-          <p className="mt-6 max-w-[26rem] text-lg text-accent-foreground/85 dark:text-muted-foreground">
-            Uma plataforma de educação corporativa que conecta colaboradores, conhecimento e inteligência artificial.
-          </p>
-          <ul className="mt-8 flex flex-wrap gap-x-5 gap-y-2" aria-label="Pilares da Evolia">
-            {PILARES.map((pilar) => (
-              <li key={pilar.rotulo} className="flex items-center gap-2 text-sm font-medium text-accent-foreground dark:text-foreground">
-                <span aria-hidden="true" className={cn('size-2.5 rounded-full', pilar.cor)} />
-                {pilar.rotulo}
-              </li>
-            ))}
-          </ul>
-        </div>
-        {/* Ocupa só o espaço que sobra: as formas encolhem inteiras, sem corte, em janelas baixas. */}
-        <div className="mt-auto flex min-h-0 flex-1 items-end justify-end pt-8">
-          <FormasOrganicas className="h-full max-h-[14rem] w-auto max-w-full" />
-        </div>
-      </aside>
+      <div className="relative w-full max-w-[32rem] lg:max-w-[75rem]">
+        {/* Profundidade atrás do cartão: desfocados e fora das bordas. */}
+        <Decorativo nome="petalas" movimento="balancar" className="-top-12 -left-10 -z-10 w-28 opacity-70 blur-[3px] sm:w-36" />
+        <Decorativo nome="petalas" movimento="derivar" className="-right-12 -bottom-14 -z-10 w-32 opacity-60 blur-[5px] lg:w-52" />
 
-      <main id="formulario-entrar" tabIndex={-1} className="flex min-h-svh items-center justify-center px-5 py-16 outline-none sm:px-10">
-        <div className="w-full max-w-[25rem]">
-          {/* Faixa de marca compacta abaixo de lg, no lugar do painel institucional. */}
-          <div className="relative isolate mb-10 overflow-hidden rounded-3xl bg-accent px-6 pt-6 pb-7 lg:hidden dark:border dark:border-accent/30 dark:bg-surface-2">
-            <MarcaEvolia sobreLilas />
-            <p className="mt-6 max-w-[64%] font-heading text-[1.375rem] leading-[1.12] font-bold tracking-[-0.01em] text-accent-foreground sm:max-w-[18rem] sm:text-3xl dark:text-foreground">
-              {SLOGAN}
-            </p>
-            <FormasOrganicas className="absolute right-5 bottom-5 -z-10 w-[26%] sm:w-[30%]" />
-          </div>
+        <div className="grid overflow-hidden rounded-[28px] border border-border bg-surface/70 shadow-alta backdrop-blur-xl lg:min-h-[38rem] lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)]">
+          <main id="formulario-entrar" tabIndex={-1} className="flex items-center justify-center bg-surface/95 px-6 py-10 outline-none sm:px-12 lg:py-7">
+            <div className="w-full max-w-[23rem]">
+              <div className="relative">
+                <MarcaEvolia comSlogan className="pr-20 lg:pr-0" />
+                {/* Composição reduzida onde o painel visual não aparece. */}
+                <Decorativo nome="mascote" movimento="flutuar" className="-top-4 right-0 w-16 sm:w-20 lg:hidden" />
+              </div>
 
-          <h1 className="text-4xl font-semibold tracking-[-0.01em] text-foreground">Entrar</h1>
-          <p className="mt-3 text-base text-muted-foreground">Use as credenciais fornecidas pela sua organização.</p>
+              <h1 className="mt-10 lg:mt-7 text-3xl font-semibold tracking-[-0.01em] text-foreground sm:text-4xl">Que bom ter você aqui!</h1>
+              <p className="mt-3 text-base text-muted-foreground">Entre para acessar sua área de aprendizagem.</p>
 
           <div className="mt-8 grid gap-6">
             {falha !== null && (
@@ -208,8 +178,11 @@ export function PaginaEntrar() {
             <form noValidate onSubmit={(evento) => void handleSubmit(aoEnviar)(evento)} aria-busy={ocupado} className="grid gap-5">
               <div className="grid gap-2">
                 <Label htmlFor="nomeUsuario">Nome de usuário</Label>
+                <div className="relative">
+                <UserRound aria-hidden="true" className={ICONE_DO_CAMPO} />
                 <Input
                   id="nomeUsuario"
+                  className={CAMPO}
                   autoComplete="username"
                   autoCapitalize="none"
                   spellCheck={false}
@@ -217,6 +190,7 @@ export function PaginaEntrar() {
                   aria-describedby={erroUsuario ? 'erro-nomeUsuario' : undefined}
                   {...register('nomeUsuario')}
                 />
+                </div>
                 {erroUsuario && (
                   <p id="erro-nomeUsuario" className="text-sm text-destructive">
                     {erroUsuario}
@@ -227,11 +201,12 @@ export function PaginaEntrar() {
               <div className="grid gap-2">
                 <Label htmlFor="senha">Senha</Label>
                 <div className="relative">
+                  <LockKeyhole aria-hidden="true" className={ICONE_DO_CAMPO} />
                   <Input
                     id="senha"
                     type={senhaVisivel ? 'text' : 'password'}
                     autoComplete="current-password"
-                    className="pr-12"
+                    className={`${CAMPO} pr-12`}
                     aria-invalid={erroSenha ? true : undefined}
                     aria-describedby={erroSenha ? 'erro-senha' : undefined}
                     {...register('senha')}
@@ -242,7 +217,7 @@ export function PaginaEntrar() {
                     aria-pressed={senhaVisivel}
                     aria-controls="senha"
                     onClick={() => setSenhaVisivel((visivel) => !visivel)}
-                    className="absolute inset-y-0 right-0 flex w-11 items-center justify-center rounded-r-[10px] text-muted-foreground outline-none hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
+                    className="absolute inset-y-0 right-0 flex w-11 items-center justify-center rounded-r-xl text-muted-foreground outline-none hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
                   >
                     {senhaVisivel ? <EyeOff aria-hidden="true" className="size-4" /> : <Eye aria-hidden="true" className="size-4" />}
                   </button>
@@ -254,18 +229,39 @@ export function PaginaEntrar() {
                 )}
               </div>
 
-              <Button type="submit" size="lg" className="mt-2 w-full" disabled={ocupado}>
+              <Button type="submit" size="lg" className="mt-2 h-12 w-full rounded-xl bg-linear-to-r from-primary to-neon-violet text-base shadow-neon hover:brightness-105" disabled={ocupado}>
                 {ocupado && <LoaderCircle aria-hidden="true" className="size-4 animate-spin" />}
                 {ocupado ? 'Entrando…' : 'Entrar'}
               </Button>
             </form>
 
-            <p className="text-sm text-muted-foreground">
-              Acesso restrito a administradores e colaboradores com conta cadastrada.
-            </p>
+            <div className="grid justify-items-center gap-3 text-center">
+              <p className="text-sm text-muted-foreground">Acesso restrito a administradores e colaboradores com conta cadastrada.</p>
+              <Link to="/" className="inline-flex items-center gap-1.5 rounded-md text-sm font-medium text-foreground underline-offset-4 outline-none hover:underline focus-visible:ring-2 focus-visible:ring-ring">
+                <ArrowLeft aria-hidden="true" className="size-4" />
+                Voltar à página inicial
+              </Link>
+            </div>
           </div>
+            </div>
+          </main>
+
+          {/* Painel visual: só quando há espaço para as duas áreas. */}
+          <aside aria-label="Sobre a Evolia" className="painel-entrada relative isolate hidden overflow-hidden lg:flex lg:flex-col">
+            <Decorativo nome="petalas" movimento="derivar" className="-top-14 -right-12 w-40 xl:w-44" />
+            <div className="relative z-10 grid gap-4 px-12 pt-28 xl:px-14">
+              <p className="max-w-[27rem] font-heading text-4xl leading-[1.1] font-bold tracking-[-0.02em] text-foreground xl:text-[2.75rem]">
+                O futuro começa com o que você <em className="texto-neon font-medium">aprende.</em>
+              </p>
+              <p className="text-lg text-foreground">Novas competências, novas possibilidades.</p>
+            </div>
+            {/* Faixa própria do mascote: não passa sobre o texto. */}
+            <div className="relative mt-4 min-h-72 flex-1">
+              <Decorativo nome="mascote" movimento="flutuar" className="right-4 bottom-8 w-28 xl:w-36" />
+            </div>
+          </aside>
         </div>
-      </main>
+      </div>
     </div>
   )
 }

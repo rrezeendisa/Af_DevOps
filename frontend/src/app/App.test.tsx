@@ -12,7 +12,7 @@ describe('App', () => {
     const fetchMock = criarFetch()
     fetchMock.mockResolvedValue(new Response(null, { status: 401 }))
     renderizarApp('/inicio')
-    expect(await screen.findByRole('heading', { level: 1, name: 'Entrar' })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { level: 1, name: 'Que bom ter você aqui!' })).toBeInTheDocument()
     expect(screen.getAllByText('Evolia').length).toBeGreaterThan(0)
     expect(screen.getAllByText('Inteligência que desenvolve pessoas.').length).toBeGreaterThan(0)
     // Somente a consulta de restauração, sem escrita nem credenciais.

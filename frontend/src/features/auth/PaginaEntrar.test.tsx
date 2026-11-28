@@ -103,6 +103,20 @@ describe('interação', () => {
     expect(campoSenha()).toHaveAttribute('type', 'password')
   })
 
+  it('não oferece recursos inexistentes, tem volta à página inicial e decoração fora da leitura', async () => {
+    simular()
+    const { container } = renderizarApp('/entrar')
+    await screen.findByRole('heading', { level: 1, name: 'Que bom ter você aqui!' })
+    expect(screen.getByRole('link', { name: 'Voltar à página inicial' })).toHaveAttribute('href', '/')
+    expect(container.textContent).not.toMatch(/esqueceu|lembrar|criar conta|google|apple|facebook/i)
+    for (const elemento of container.querySelectorAll('[data-decorativo]')) {
+      expect(elemento).toHaveAttribute('alt', '')
+      expect(elemento).toHaveAttribute('aria-hidden', 'true')
+      expect(elemento).toHaveClass('pointer-events-none')
+    }
+    expect(container.querySelector('[style]')).toBeNull()
+  })
+
   it('percorre o formulário pelo teclado e envia com Enter', async () => {
     const { servidor } = simular()
     const { usuario } = renderizarApp('/entrar')
@@ -124,7 +138,7 @@ describe('interação', () => {
 
     await usuario.click(campoSenha())
     await usuario.keyboard('{Enter}')
-    expect(await screen.findByRole('heading', { level: 1, name: 'Gestão que transforma.' })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { level: 1, name: 'Visão geral da Evolia' })).toBeInTheDocument()
     // Um único login (sem retentativa); as demais chamadas são do painel do ADMIN.
     expect(servidor.da('POST /api/login')).toHaveLength(1)
   })
@@ -148,7 +162,7 @@ describe('interação', () => {
     await act(async () => {
       resposta.resolver()
     })
-    expect(await screen.findByRole('heading', { level: 1, name: 'Gestão que transforma.' })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { level: 1, name: 'Visão geral da Evolia' })).toBeInTheDocument()
   })
 
   it('não permite duplo envio enquanto autentica', async () => {
@@ -173,7 +187,7 @@ describe('resultado do login', () => {
   it('leva ao destino original quando permitido', async () => {
     simular()
     const { usuario } = renderizarApp('/admin/treinamentos')
-    expect(await screen.findByRole('heading', { level: 1, name: 'Entrar' })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { level: 1, name: 'Que bom ter você aqui!' })).toBeInTheDocument()
 
     await preencherLogin(usuario, 'admin')
 
@@ -183,11 +197,11 @@ describe('resultado do login', () => {
   it('volta ao início quando o destino original não é permitido', async () => {
     simular()
     const { usuario } = renderizarApp('/admin/treinamentos')
-    await screen.findByRole('heading', { level: 1, name: 'Entrar' })
+    await screen.findByRole('heading', { level: 1, name: 'Que bom ter você aqui!' })
 
     await preencherLogin(usuario, 'ana')
 
-    expect(await screen.findByRole('heading', { level: 1, name: 'Aprender é evoluir.' })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { level: 2, name: 'Explore suas competências' })).toBeInTheDocument()
     expect(screen.queryByText('Seu perfil não tem acesso a esta área.')).toBeNull()
   })
 
@@ -280,11 +294,11 @@ describe('resultado do login', () => {
     expect(screen.queryByRole('status')).toBeNull()
 
     await preencherLogin(usuario, 'admin')
-    await screen.findByRole('heading', { level: 1, name: 'Gestão que transforma.' })
+    await screen.findByRole('heading', { level: 1, name: 'Visão geral da Evolia' })
     await usuario.click(screen.getByRole('button', { name: 'Sair' }))
 
     expect(await screen.findByRole('status')).toHaveTextContent('Você saiu da Evolia.')
-    expect(screen.getByRole('heading', { level: 1, name: 'Entrar' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { level: 1, name: 'Que bom ter você aqui!' })).toBeInTheDocument()
   })
 })
 
