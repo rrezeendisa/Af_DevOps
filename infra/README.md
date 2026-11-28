@@ -6,9 +6,9 @@ de treinamento, a pipeline e os testes integrados.
 ## Visão geral
 
 ```text
-                     rede "servicos"                                  rede "dados" (interna)
+                     rede "treinamento"                               rede "dados" (interna)
   ┌──────────┐  POST /api/treinamentos  ┌──────────┐   JDBC    ┌────────────┐
-  │  ADMIN   │ ───────────────────────▶ │ backend  │ ────────▶ │ PostgreSQL │
+  │  Nginx   │ ───────────────────────▶ │ backend  │ ────────▶ │ PostgreSQL │
   └──────────┘                          └──────────┘           └────────────┘
                                           │      ▲
              publica {"solicitacao_id"}   │      │ PATCH /internal/treinamentos/{id}/status
@@ -25,15 +25,47 @@ de treinamento, a pipeline e os testes integrados.
 
 | Serviço Compose | Imagem | Função |
 | --- | --- | --- |
+| `gateway` | `frontend/Dockerfile` | Nginx serve o build da Evolia e encaminha `/api` ao Java |
 | `postgres` | `postgres:17` | Banco do backend; só na rede interna `dados` |
 | `rabbitmq` | `rabbitmq:4.1-management` | Broker AMQP e painel de gerenciamento |
 | `rabbitmq-setup` | `curlimages/curl` | Job único que aplica `infra/rabbitmq/definitions.json` |
 | `backend` | `backend/Dockerfile` | API Java; publica solicitações e recebe o status |
 | `ai-service` | `ai-service/Dockerfile` (`api`) | API FastAPI; treina o modelo inicial se não existir |
 | `ai-worker` | `ai-service/Dockerfile` (`worker`) | Consome a fila e treina o modelo |
+| `ollama` | `ollama/ollama:0.40.18` | Executa o modelo generativo local por CPU |
+| `ollama-modelo` | Mesma imagem do Ollama | Verifica ou baixa o modelo para o volume do Ollama |
 
 Ordem de subida garantida por `healthcheck` + `depends_on`: PostgreSQL e
-RabbitMQ → topologia → backend e ai-service → worker.
+RabbitMQ → topologia → backend e ai-service → worker. O gateway espera o
+backend saudável. O Ollama prepara o modelo em paralelo, e o Java pode
+atender com a orientação base enquanto a geração complementar estiver indisponível.
+
+| Rede | Serviços |
+| --- | --- |
+| `borda` | Gateway, única porta publicada em `127.0.0.1:8088` por padrão |
+| `entrada` | Gateway → Java |
+| `dados` | Java → PostgreSQL |
+| `ia` | Java → FastAPI |
+| `treinamento` | Java, RabbitMQ, configuração das filas e worker |
+| `generativa` | Java, Ollama e inicializador do modelo |
+| `download` | Somente Ollama, para acesso ao registro do modelo |
+
+As redes entre serviços são internas. `/healthz` verifica o gateway.
+O gateway não encaminha `/actuator`, `/internal` ou caminhos diretos ao FastAPI.
+Os logs de acesso guardam método, status e duração. Fora da máquina local,
+HTTPS é obrigatório para usar HTTP Basic.
+
+### Diagnóstico local
+
+Para liberar temporariamente as portas diretas do Java, do FastAPI e do
+gerenciamento RabbitMQ, use o arquivo adicional. Essas portas ficam em loopback.
+
+```sh
+docker compose -f docker-compose.yml -f compose.diagnostico.yml up -d
+```
+
+`BACKEND_PORT`, `AI_SERVICE_PORT` e `RABBITMQ_MANAGEMENT_PORT` alteram
+essas portas. Use o Compose padrão para a demonstração.
 
 ## Variáveis e segredos
 
@@ -52,8 +84,7 @@ gerados com o `htpasswd` da imagem `httpd`). O modelo comentado está em
 | `MAX_MESSAGE_RETRIES` | Worker (padrão 3) |
 
 Dentro da rede do Compose a URL do broker é
-`amqp://<RABBITMQ_USER>:<RABBITMQ_PASSWORD>@rabbitmq:5672/%2F`. Fora dela
-(worker rodando na máquina), use `localhost` no lugar de `rabbitmq`.
+`amqp://<RABBITMQ_USER>:<RABBITMQ_PASSWORD>@rabbitmq:5672/%2F`.
 Hashes BCrypt devem ficar entre aspas simples no `.env`, pois contêm `$`.
 
 ## Mensageria das solicitações de treinamento
@@ -104,10 +135,43 @@ final é idempotente (204); trocar um status final responde 409.
 | `postgres-data` | Dados do PostgreSQL |
 | `rabbitmq-data` | Filas e mensagens duráveis (hostname fixo `rabbitmq`) |
 | `ai-artifacts` | `/data/artifacts`: modelo (`classifier.joblib`) e ledger do worker (`training-results.json`), compartilhado entre API e worker |
+| `ollama-data` | `/root/.ollama`: modelo generativo local, preservado entre inicializações |
 
 O ledger em volume garante a idempotência do worker mesmo após recriar os
 containers. A API de IA só carrega um modelo novo ao reiniciar
 (`docker compose restart ai-service`).
+
+### Ollama
+
+O ambiente padrão usa o Ollama em container, com um modelo carregado por
+vez, uma geração simultânea e fila curta. O Qwen 2.5 1.5B Q4_K_M ocupa cerca
+de 986 MB. O job verifica o volume antes do download. Se o registro estiver
+indisponível no primeiro uso, a aplicação continua com a orientação base.
+Quando o acesso voltar, rode `docker compose up ollama-modelo` para concluir
+a preparação. Compare a primeira chamada e as seguintes ao medir latência.
+
+No Mac Intel, reserve inicialmente 8 GiB para o Docker e 20–25 GB em disco.
+Esses valores são estimativas para uma geração por vez. Build, treinamento
+e geração podem disputar CPU e memória. Evite dois ambientes completos
+ativos e não carregue o modelo nativo junto com o containerizado.
+
+Em uma validação local no Mac Intel, a orientação levou 51,12 s na primeira
+requisição e 8,01 s e 14,33 s nas duas seguintes, com três sugestões em cada
+resposta. Ao parar o Ollama, a orientação base voltou com HTTP 200 em 31,02 s.
+O pico amostrado de RAM foi cerca de 1,64 GiB no Ollama e 2,51 GiB no projeto.
+Esses resultados são de chamadas individuais e não validam o RNF01. A carga de
+classificação foi medida separadamente e
+[não atingiu a meta](../docs/evidencias-af.md#rnf01--carga-de-classificação).
+
+Para usar o Ollama nativo no desenvolvimento, pare o Ollama do Compose e
+inicie o ambiente com o arquivo adicional. O Java acessa o modelo em
+`host.docker.internal:11434`; confira que o Ollama local está acessível a
+partir do Docker Desktop.
+
+```sh
+docker compose stop ollama
+docker compose -f docker-compose.yml -f compose.ollama-nativo.yml up --build
+```
 
 ## Testes
 
@@ -123,14 +187,18 @@ token interno, DLQ e acesso ao ai-service pela rede do Compose.
 
 ## Pipeline
 
-`.github/workflows/ci.yml` executa os jobs `backend`, `ai-service` e
-`docker` em paralelo e, se todos passarem, o job `integracao`, que gera um
+`.github/workflows/ci.yml` executa `backend`, `ai-service`, `frontend` e
+`docker` em paralelo. O job `integracao` aguarda esses jobs, gera um
 `.env` descartável e roda `./scripts/testes-integrados.sh --down`.
+A suíte do gateway e do treinamento inicia apenas os serviços necessários,
+sem baixar o modelo generativo. Carga e falhas controladas têm um
+[roteiro separado](../integration-tests/carga/README.md), executado localmente
+em 27/11/2026 ([resultados](../docs/evidencias-etapa14/README.md)). A pipeline
+ainda não foi executada no GitHub.
 
 ## Problemas comuns
 
-- **Porta 8080 ocupada** (backend rodando na IDE): defina `BACKEND_PORT`
-  no `.env` ou no terminal, por exemplo `BACKEND_PORT=18080`.
+- **Porta 8088 ocupada**: defina `GATEWAY_PORT` no `.env` ou no terminal.
 - **`docker compose up` falha com variável obrigatória**: gere o `.env`
   com `./scripts/gerar-env.sh`.
 - **Scripts com `\r` no Windows**: o `.gitattributes` força LF em `*.sh`

@@ -128,8 +128,9 @@ A aplicação aceita custos BCrypt de 10 a 14. Essa faixa evita custos muito
 baixos e limita o trabalho necessário para verificar cada senha. O custo 12 é
 a recomendação inicial para a demonstração. A verificação BCrypt
 ocorre a cada requisição autenticada e pode aumentar o tempo de resposta e o
-uso de CPU. Antes de definir uma carga suportada ou ajustar o custo, meça o
-desempenho em um ambiente representativo.
+uso de CPU. Nos [testes de carga](../docs/evidencias-af.md#rnf01--carga-de-classificação),
+esse foi o principal fator identificado para o RNF01 não ser atendido. Antes de
+ajustar o custo, avalie as implicações de segurança e meça novamente.
 
 ### Senha do PostgreSQL e inicialização
 
@@ -578,8 +579,8 @@ automaticamente e não precisa do Ollama para iniciar.
 
 | Variável | Padrão |
 | --- | --- |
-| `IA_GENERATIVA_HABILITADA` | `false` |
-| `OLLAMA_BASE_URL` | `http://127.0.0.1:11434` no macOS e `http://host.docker.internal:11434` no Compose |
+| `IA_GENERATIVA_HABILITADA` | `false` com Java local e `true` no Compose |
+| `OLLAMA_BASE_URL` | `http://127.0.0.1:11434` com Java local e `http://ollama:11434` no Compose |
 | `OLLAMA_MODEL` | `qwen2.5:1.5b` |
 | `OLLAMA_TEMPERATURE` | `0.2` |
 | `OLLAMA_NUM_PREDICT` | `128` tokens de saída |
@@ -608,15 +609,14 @@ Para validar com o backend no Docker e o Ollama nativo no macOS, execute
 na raiz do repositório.
 
 ```sh
-IA_GENERATIVA_HABILITADA=true OLLAMA_BASE_URL=http://host.docker.internal:11434 \
-  OLLAMA_MODEL=qwen2.5:1.5b docker compose up -d --build --wait
+docker compose -f docker-compose.yml -f compose.ollama-nativo.yml up --build
 ```
 
 Com uma conta individual que autorizou o uso da IA, chame a rota de orientação
 e confira `proximosPassos` junto aos campos originais. Com o Ollama
 indisponível, repita a chamada e confira o retorno da orientação base sem o
-campo complementar. A configuração reproduzível para a entrega será alinhada
-na etapa de infraestrutura.
+campo complementar. No Compose padrão, o inicializador do Ollama prepara o
+modelo em um volume persistente. A preparação do modelo fica fora do Java.
 
 ## Cursos
 
@@ -718,14 +718,15 @@ ou troca de senha pela API. HTTP Basic deve ser usado com dados
 fictícios em ambiente controlado. Fora da máquina local, use HTTPS, pois o
 cabeçalho de autenticação contém credenciais codificadas em Base64.
 
-As listagens não têm paginação e o desempenho sob carga ainda não foi medido.
-Os tempos registrados acima correspondem a requisições individuais. O RNF01
-ainda precisa ser validado.
+As listagens não têm paginação. Os tempos registrados acima correspondem a
+requisições individuais. A carga de classificação foi testada e o RNF01
+[não foi atendido no ambiente ensaiado](../docs/evidencias-af.md#rnf01--carga-de-classificação);
+o desempenho das listagens sob carga não foi medido.
 A verificação de consentimento se aplica às chamadas feitas pelo backend Java.
-O FastAPI mantém a porta de desenvolvimento publicada em `127.0.0.1`.
-Chamadas diretas a classificação e recomendações no FastAPI não passam pela
-autenticação nem pela verificação de consentimento do Java. O acesso direto
-ao FastAPI ainda precisa ser restringido.
+No Compose padrão, o FastAPI só fica acessível ao Java pela rede interna.
+O modo de diagnóstico publica uma porta em loopback. Chamadas diretas a
+classificação e recomendações por essa porta ficam fora da autenticação e
+da verificação de consentimento do Java.
 
 A orientação base usa o texto determinístico do Python. As sugestões do
 modelo local complementam esse texto e podem variar entre chamadas.

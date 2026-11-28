@@ -1,0 +1,475 @@
+{
+  "metadados": {
+    "projeto": "evolia-validacao",
+    "revisao_git": "23ea620844fae87860fb0654839b9d566b3585db",
+    "script_k6_sha256": "eb49bd627235b7e937778311209c2fd050fd76aefaa1109ea1d27bd72e1d2449",
+    "host": "macOS-14.8.9-x86_64-i386-64bit",
+    "imagem_k6": "grafana/k6:1.8.2@sha256:00fdcebafbc86cb0137d429529b1caa401a02e09025f02fc74866fa6e2b004d8",
+    "vm_ram_bytes": 8322740224,
+    "vm_cpus": 8,
+    "inicio_epoch_s": 1795827640.056001,
+    "imagens": {
+      "ai-service": "sha256:96a39968c37d355e2a7fe7076352de99c180fc491b6e131d792458e687cfb942",
+      "rabbitmq": "sha256:abcf6bc2eb4ff990bf041e605c485938739c5c98c513e0bc30a0ae9d0664be45",
+      "backend": "sha256:10ec2a4cffaa0a1bd3b6fcbbb6399356a2d33e23ddf57d5844f1256c63ec07b1",
+      "gateway": "sha256:83953bf35cc9e3c874bfa7a51dda609762d0bcf1c71f8fc0ad1af4af56e558e1",
+      "ai-worker": "sha256:fc460e25cb32f8467c7db2259025a63d3185074d24ff952d4ca7de5bc0788f2f",
+      "postgres": "sha256:97fb53376be3e4fb1a8a61421daa69dcc3bf2fa39bda3259f5245f9a455af1a9"
+    }
+  },
+  "patamares": [
+    {
+      "usuarios": 10,
+      "segundos": 120,
+      "metricas": {
+        "classificacao_ms": {
+          "p(95)": 452.54999999999995,
+          "p(99)": 480.71,
+          "max": 536,
+          "count": 430,
+          "avg": 394.706976744186,
+          "med": 385,
+          "p(90)": 435.1
+        },
+        "csrf_ms": {
+          "p(99)": 475.5499999999999,
+          "max": 553,
+          "count": 430,
+          "avg": 389.06976744186045,
+          "med": 380,
+          "p(90)": 429,
+          "p(95)": 447.54999999999995
+        },
+        "ciclo_ms": {
+          "p(99)": 925.0999999999998,
+          "max": 993,
+          "count": 430,
+          "avg": 783.8627906976744,
+          "med": 774,
+          "p(90)": 855,
+          "p(95)": 871.0999999999999
+        },
+        "classificacao_valida": {
+          "rate": 1,
+          "passes": 430,
+          "fails": 0
+        },
+        "classificacao_no_prazo": {
+          "rate": 1,
+          "passes": 430,
+          "fails": 0
+        },
+        "classificacoes": {
+          "rate": 2.1406975402905895,
+          "count": 430
+        },
+        "ciclos": {
+          "rate": 2.1506542730361273,
+          "count": 432
+        },
+        "sessoes_medidas": {
+          "count": 10,
+          "rate": 0.04978366372768813
+        },
+        "vus": {
+          "value": 1,
+          "min": 0,
+          "max": 10
+        },
+        "vus_max": {
+          "value": 10,
+          "min": 10,
+          "max": 10
+        },
+        "http_200": {
+          "count": 430,
+          "rate": 2.1406975402905895
+        }
+      },
+      "post_por_s": 3.58,
+      "pico_posts_em_voo": 6,
+      "situacao": "medido",
+      "interrompido": false,
+      "ram_pico_mib": 946.0,
+      "cpu_pico_nucleos_por_intervalo": {
+        "backend": 3.076,
+        "ai-service": 0.068,
+        "gateway": 0.021
+      }
+    },
+    {
+      "usuarios": 50,
+      "segundos": 120,
+      "metricas": {
+        "classificacao_ms": {
+          "max": 6393,
+          "count": 781,
+          "avg": 2807.169014084507,
+          "med": 2782,
+          "p(90)": 3759,
+          "p(95)": 4339,
+          "p(99)": 5514.000000000002
+        },
+        "csrf_ms": {
+          "count": 781,
+          "avg": 2818.761843790013,
+          "med": 2784,
+          "p(90)": 3811,
+          "p(95)": 4280,
+          "p(99)": 5432.400000000005,
+          "max": 6390
+        },
+        "ciclo_ms": {
+          "p(90)": 7075,
+          "p(95)": 7939,
+          "p(99)": 9439.800000000001,
+          "max": 10803,
+          "count": 781,
+          "avg": 5626.0307298335465,
+          "med": 5549
+        },
+        "classificacao_valida": {
+          "passes": 781,
+          "fails": 0,
+          "rate": 1
+        },
+        "classificacao_no_prazo": {
+          "rate": 0.1587708066581306,
+          "passes": 124,
+          "fails": 657
+        },
+        "classificacoes": {
+          "count": 781,
+          "rate": 3.8999045944522566
+        },
+        "ciclos": {
+          "count": 788,
+          "rate": 3.9348589250043253
+        },
+        "sessoes_medidas": {
+          "rate": 0.24967378965763487,
+          "count": 50
+        },
+        "vus": {
+          "value": 2,
+          "min": 1,
+          "max": 50
+        },
+        "vus_max": {
+          "min": 50,
+          "max": 50,
+          "value": 50
+        },
+        "http_200": {
+          "count": 781,
+          "rate": 3.8999045944522566
+        }
+      },
+      "post_por_s": 6.51,
+      "pico_posts_em_voo": 33,
+      "situacao": "medido",
+      "interrompido": false,
+      "ram_pico_mib": 999.4,
+      "cpu_pico_nucleos_por_intervalo": {
+        "backend": 7.722,
+        "ai-service": 0.127,
+        "gateway": 0.035
+      }
+    },
+    {
+      "usuarios": 100,
+      "segundos": 120,
+      "metricas": {
+        "classificacao_ms": {
+          "p(95)": 8155.9,
+          "p(99)": 8623.56,
+          "max": 9058,
+          "count": 812,
+          "avg": 6372.536945812808,
+          "med": 6493,
+          "p(90)": 7857.6
+        },
+        "csrf_ms": {
+          "max": 10745,
+          "count": 812,
+          "avg": 6438.290640394089,
+          "med": 6496,
+          "p(90)": 7951,
+          "p(95)": 8414.349999999999,
+          "p(99)": 9260.8
+        },
+        "ciclo_ms": {
+          "p(99)": 16830.8,
+          "max": 18020,
+          "count": 812,
+          "avg": 12810.959359605911,
+          "med": 12873,
+          "p(90)": 14993.9,
+          "p(95)": 15694.25
+        },
+        "classificacao_valida": {
+          "fails": 0,
+          "rate": 1,
+          "passes": 812
+        },
+        "classificacao_no_prazo": {
+          "fails": 810,
+          "rate": 0.0024630541871921183,
+          "passes": 2
+        },
+        "classificacoes": {
+          "rate": 4.042392215958553,
+          "count": 812
+        },
+        "ciclos": {
+          "count": 806,
+          "rate": 4.012522322737184
+        },
+        "sessoes_medidas": {
+          "count": 100,
+          "rate": 0.4978315536894769
+        },
+        "vus": {
+          "min": 1,
+          "max": 100,
+          "value": 1
+        },
+        "vus_max": {
+          "value": 100,
+          "min": 100,
+          "max": 100
+        },
+        "http_200": {
+          "count": 812,
+          "rate": 4.042392215958553
+        }
+      },
+      "post_por_s": 6.77,
+      "pico_posts_em_voo": 58,
+      "situacao": "medido",
+      "interrompido": false,
+      "ram_pico_mib": 1071.4,
+      "cpu_pico_nucleos_por_intervalo": {
+        "backend": 7.727,
+        "ai-service": 0.108,
+        "gateway": 0.022
+      }
+    },
+    {
+      "usuarios": 200,
+      "segundos": 120,
+      "metricas": {
+        "classificacao_ms": {
+          "max": 19023,
+          "count": 704,
+          "avg": 12698.498579545454,
+          "med": 13019.5,
+          "p(90)": 15746.800000000001,
+          "p(95)": 16504.65,
+          "p(99)": 17602.29
+        },
+        "csrf_ms": {
+          "p(99)": 15009.94,
+          "max": 15064,
+          "count": 1007,
+          "avg": 13271.54915590864,
+          "med": 13807,
+          "p(90)": 15003,
+          "p(95)": 15004
+        },
+        "ciclo_ms": {
+          "count": 704,
+          "avg": 25225.355113636364,
+          "med": 25703.5,
+          "p(90)": 29477,
+          "p(95)": 30320.5,
+          "p(99)": 31287.73,
+          "max": 33320
+        },
+        "classificacao_valida": {
+          "passes": 704,
+          "fails": 0,
+          "rate": 1
+        },
+        "classificacao_no_prazo": {
+          "passes": 1,
+          "fails": 703,
+          "rate": 0.0014204545454545455
+        },
+        "classificacoes": {
+          "count": 704,
+          "rate": 3.503297176170842
+        },
+        "ciclos": {
+          "count": 972,
+          "rate": 4.836938714826787
+        },
+        "csrf_falhas": {
+          "count": 200,
+          "rate": 0.9952548795939891
+        },
+        "sessoes_medidas": {
+          "count": 200,
+          "rate": 0.9952548795939891
+        },
+        "vus": {
+          "value": 1,
+          "min": 1,
+          "max": 200
+        },
+        "vus_max": {
+          "value": 200,
+          "min": 200,
+          "max": 200
+        },
+        "http_200": {
+          "count": 704,
+          "rate": 3.503297176170842
+        }
+      },
+      "post_por_s": 5.87,
+      "pico_posts_em_voo": 111,
+      "situacao": "medido",
+      "interrompido": false,
+      "ram_pico_mib": 1187.2,
+      "cpu_pico_nucleos_por_intervalo": {
+        "backend": 7.928,
+        "ai-service": 0.105,
+        "gateway": 0.029
+      }
+    },
+    {
+      "usuarios": 300,
+      "segundos": 120,
+      "metricas": {
+        "classificacao_ms": {
+          "count": 2,
+          "avg": 20006,
+          "med": 20006,
+          "p(90)": 20006,
+          "p(95)": 20006,
+          "p(99)": 20006,
+          "max": 20006
+        },
+        "csrf_ms": {
+          "avg": 15002.463554073369,
+          "med": 15002,
+          "p(90)": 15008,
+          "p(95)": 15011.1,
+          "p(99)": 15045,
+          "max": 15141,
+          "count": 2099
+        },
+        "ciclo_ms": {
+          "count": 2,
+          "avg": 32828.5,
+          "med": 32828.5,
+          "p(90)": 34096.9,
+          "p(95)": 34255.45,
+          "p(99)": 34382.29,
+          "max": 34414
+        },
+        "classificacao_valida": {
+          "passes": 0,
+          "fails": 2,
+          "rate": 0
+        },
+        "classificacao_no_prazo": {
+          "rate": 0,
+          "passes": 0,
+          "fails": 2
+        },
+        "classificacoes": {
+          "count": 2,
+          "rate": 0.009950320523326464
+        },
+        "ciclos": {
+          "rate": 10.5274391136794,
+          "count": 2116
+        },
+        "csrf_falhas": {
+          "count": 2115,
+          "rate": 10.522463953417736
+        },
+        "sessoes_medidas": {
+          "count": 2,
+          "rate": 0.009950320523326464
+        },
+        "vus": {
+          "value": 1,
+          "min": 1,
+          "max": 300
+        },
+        "vus_max": {
+          "value": 300,
+          "min": 300,
+          "max": 300
+        },
+        "sem_resposta": {
+          "count": 2,
+          "rate": 0.009950320523326464
+        }
+      },
+      "post_por_s": 0.02,
+      "pico_posts_em_voo": 2,
+      "situacao": "inconclusivo",
+      "motivo": "carga, sess\u00f5es ou amostra incompleta",
+      "interrompido": false,
+      "ram_pico_mib": 1258.2,
+      "cpu_pico_nucleos_por_intervalo": {
+        "backend": 7.723,
+        "ai-service": 0.132,
+        "gateway": 0.058
+      }
+    },
+    {
+      "usuarios": 300,
+      "segundos": 300,
+      "metricas": {
+        "csrf_ms": {
+          "p(95)": 15011,
+          "p(99)": 15066.63,
+          "max": 15576,
+          "count": 1694,
+          "avg": 15003.955135773318,
+          "med": 15002,
+          "p(90)": 15007
+        },
+        "classificacao_no_prazo": {
+          "rate": 0,
+          "passes": 0,
+          "fails": 0
+        },
+        "ciclos": {
+          "count": 1435,
+          "rate": 9.153910544170353
+        },
+        "csrf_falhas": {
+          "count": 1435,
+          "rate": 9.153910544170353
+        },
+        "vus": {
+          "value": 300,
+          "min": 2,
+          "max": 300
+        },
+        "vus_max": {
+          "value": 300,
+          "min": 300,
+          "max": 300
+        }
+      },
+      "post_por_s": 0.0,
+      "pico_posts_em_voo": 0,
+      "situacao": "inconclusivo",
+      "motivo": "servi\u00e7o sem sa\u00fade por 30 s",
+      "interrompido": true,
+      "ram_pico_mib": 1260.0,
+      "cpu_pico_nucleos_por_intervalo": {
+        "backend": 8.166,
+        "ai-service": 0.088,
+        "gateway": 0.049
+      }
+    }
+  ]
+}
