@@ -1,0 +1,14 @@
+# Desenvolvimento. Use com docker-compose.yml e com o Ollama do host pronto.
+services:
+  backend:
+    environment:
+      OLLAMA_BASE_URL: http://host.docker.internal:11434
+    networks:
+      - ollama-host
+  ollama:
+    profiles: ["ollama-container"]
+  ollama-modelo:
+    profiles: ["ollama-container"]
+
+networks:
+  ollama-host:

@@ -1,22 +1,21 @@
-# Backend AF-DevOps
+# Backend da Evolia
 
-Este backend faz parte do AF-DevOps, uma plataforma de educação corporativa
-desenvolvida como atividade acadêmica de Engenharia de Computação. O backend
-oferece cadastro e consulta de colaboradores e cursos para o RF01 e integra
-os serviços de classificação, recomendação e orientação dos RF02, RF03 e RF04.
-Também controla o consentimento para uso da IA, complementa a orientação com
-Spring AI e acompanha solicitações de treinamento do RF05.
+Este é o backend da Evolia, um projeto acadêmico. Ele cuida do cadastro e da consulta de colaboradores e
+cursos (RF01), integra a classificação, a recomendação e a orientação (RF02, RF03 e RF04), controla o
+consentimento para o uso da IA e acompanha as solicitações de treinamento (RF05).
 
-A aplicação usa a arquitetura de monólito modular. Isso significa que os módulos
-compartilham a mesma aplicação Spring Boot e o mesmo banco de dados, mas cada
-domínio mantém suas próprias entidades, regras e rotas.
+Usamos um monólito modular: os módulos ficam na mesma aplicação Spring Boot e no mesmo banco, mas cada
+assunto tem suas próprias classes, regras e rotas.
+
+Para apenas executar a aplicação, siga o [README principal](../README.md#como-executar). Este documento é
+para quem quer desenvolver, testar ou chamar a API diretamente.
 
 ## Organização do backend
 
 O código-fonte principal fica em `src/main/java/br/edu/facens/afdevops`. Os
 pacotes `colaborador`, `curso`, `identidade`, `consentimento`, `ia` e `treinamento`
 agrupam as classes de cada domínio. O pacote `seguranca` define a
-autenticação, as permissões e a proteção CSRF. Dentro de
+autenticação por sessão, as permissões e a proteção CSRF. Dentro de
 cada módulo, os controllers recebem as requisições HTTP, os services aplicam as
 regras, os repositories acessam o banco, as entidades representam os dados
 persistidos e os DTOs definem os dados recebidos e enviados pela API.
@@ -67,7 +66,8 @@ desenvolvimento. A senha deve ser fornecida pelo ambiente.
 
 ### Contas de demonstração
 
-Configure duas contas fictícias com nomes distintos, usando até 64 letras
+No ambiente com Docker, o `scripts/gerar-env.sh` já cria essas contas. Ao executar o backend fora dele,
+configure duas contas fictícias com nomes distintos, usando até 64 letras
 ASCII, números, pontos, hífens ou sublinhados. A comparação dos nomes não
 diferencia maiúsculas de minúsculas.
 
@@ -126,10 +126,9 @@ configurar_contas || printf '%s\n' 'Configuração não concluída. Execute nova
 
 A aplicação aceita custos BCrypt de 10 a 14. Essa faixa evita custos muito
 baixos e limita o trabalho necessário para verificar cada senha. O custo 12 é
-a recomendação inicial para a demonstração. A verificação BCrypt
-ocorre a cada requisição autenticada e pode aumentar o tempo de resposta e o
-uso de CPU. Antes de definir uma carga suportada ou ajustar o custo, meça o
-desempenho em um ambiente representativo.
+a recomendação inicial para a demonstração. A verificação BCrypt ocorre somente
+no login; as requisições seguintes usam a sessão. Antes de ajustar o custo,
+avalie as implicações de segurança e meça novamente.
 
 ### Senha do PostgreSQL e inicialização
 
@@ -217,109 +216,117 @@ textuais dos cadastros.
 
 ## Autenticação e permissões
 
-A API usa HTTP Basic. Envie as credenciais em cada chamada protegida. O
-backend não mantém sessão de autenticação.
+A API pública usa sessão no servidor, em memória, gerenciada pelo Spring
+Security. HTTP Basic não é aceito. O fluxo é:
+
+1. `GET /api/csrf` (público) entrega o token e o cookie `XSRF-TOKEN`.
+2. `POST /api/login`, com `username` e `password` em formulário e o cabeçalho
+   `X-XSRF-TOKEN`, responde 204 e cria o cookie `EVOLIA_SESSAO`.
+3. `GET /api/me` devolve a identidade e o cabeçalho `X-Evolia-Contexto`.
+4. As chamadas seguintes enviam o cookie e `X-Evolia-Contexto`. Escritas também
+   enviam um token CSRF obtido na hora.
+5. `POST /api/logout` invalida a sessão e responde 204.
+
+O cookie é `HttpOnly` e `SameSite=Strict`. Com `SESSION_COOKIE_SECURE=true`
+também é `Secure`, o que é obrigatório fora do loopback, com HTTPS. A sessão
+expira após 30 minutos de inatividade (`SESSION_TIMEOUT`) e não sobrevive ao
+reinício do backend. O contexto muda a cada login e impede que um cliente antigo
+use a sessão de outro usuário. A decisão está no
+[ADR 002](../docs/arquitetura-af.md#adr-002--sessões-no-servidor-no-lugar-de-http-basic).
 
 | Rota | Acesso |
 | --- | --- |
 | `GET /actuator/health` | Público |
 | `GET /api/colaboradores`, `GET /api/colaboradores/{id}`, `POST /api/colaboradores` | `ADMIN` |
 | `POST /api/cursos` e `POST /api/colaboradores/{id}/conta` | `ADMIN` |
-| `GET /api/cursos`, `GET /api/cursos/{id}`, `GET /api/csrf` e `GET /api/me` | `ADMIN` e `COLABORADOR` |
+| `GET /api/csrf` e `POST /api/login` | Público (o login exige o token CSRF) |
+| `POST /api/logout` | Sessão atual, com CSRF e contexto |
+| `GET /api/cursos`, `GET /api/cursos/{id}` e `GET /api/me` | `ADMIN` e `COLABORADOR` |
 | `GET /api/me/consentimento` e `PUT /api/me/consentimento` | `COLABORADOR` com conta individual |
 | `POST /api/ia/classificacoes`, `POST /api/ia/recomendacoes` e `POST /api/ia/orientacoes` | `COLABORADOR` com conta individual e consentimento concedido |
 | `POST /api/treinamentos`, `GET /api/treinamentos`, `GET /api/treinamentos/{id}` | `ADMIN` |
 | `PATCH /internal/treinamentos/{id}/status` | Serviço interno, com `Authorization: Bearer <INTERNAL_API_TOKEN>` |
 
-Os demais caminhos e métodos são negados. Nos exemplos, `curl --user` recebe
-apenas o nome de usuário e pede a senha de forma interativa. Use os nomes
-configurados para suas contas.
+Os demais caminhos e métodos são negados. A rota interna usa apenas o Bearer do
+worker: uma sessão de usuário não dá acesso a ela, e o token interno não dá
+acesso à API pública.
 
 | HTTP | Código | Quando ocorre |
 | --- | --- | --- |
-| 401 Unauthorized | `AUTENTICACAO_NECESSARIA` | Credenciais ausentes ou inválidas |
+| 400 Bad Request | `DADOS_INVALIDOS` | Login com parâmetros na URL |
+| 401 Unauthorized | `AUTENTICACAO_NECESSARIA` | Sessão ausente ou expirada, ou credenciais inválidas no login |
+| 401 Unauthorized | `SESSAO_SUBSTITUIDA` | Contexto ausente ou diferente do da sessão |
 | 403 Forbidden | `ACESSO_NEGADO` | Perfil sem permissão |
 | 403 Forbidden | `CSRF_INVALIDO` | Token CSRF ausente ou inválido, ou cookie incompatível |
 
-As respostas acima usam `application/problem+json` e incluem o campo
-`codigo`. A resposta 401 também inclui `WWW-Authenticate: Basic realm="AF-DevOps"`.
-Nas operações de escrita, a proteção CSRF é verificada antes da autenticação. Se faltar o
-token ou o cookie correspondente, a resposta será 403 mesmo sem credenciais.
+As respostas acima usam `application/problem+json` e incluem o campo `codigo`.
+A proteção CSRF é verificada antes da autenticação. No gateway, o excesso de
+tentativas de login recebe HTTP 429.
 
-### Token CSRF para operações de escrita
+### Sessão e CSRF nos exemplos
 
-Antes de enviar um `POST` ou `PUT`, obtenha o token com uma chamada autenticada
-a `GET /api/csrf`. O acesso agora é permitido para `ADMIN` e `COLABORADOR`.
-A resposta fornece um cookie `XSRF-TOKEN` e um
-JSON com `headerName` e `token`. Envie o cookie e o valor de `token` no
-cabeçalho `X-XSRF-TOKEN`, além das credenciais HTTP Basic. Use o valor do
-JSON no cabeçalho, pois ele vem mascarado pelo Spring Security.
-
-O exemplo abaixo usa `jq` para ler o token. Como alternativa, o Node.js pode
-validar e extrair o mesmo campo. Ambas as opções verificam o formato antes de
-continuar. Execute os próximos cadastros no mesmo terminal Bash e preserve o
-arquivo temporário até concluir os exemplos.
+Os exemplos usam Bash e `curl`; o cadastro de conta usa também `jq`. Defina as
+funções abaixo uma vez no mesmo terminal. A senha é lida sem aparecer na tela, no histórico ou nos argumentos
+dos processos, e os cookies ficam em um arquivo temporário removido no logout.
+`EVOLIA` aponta para o Java local; pelo gateway do Compose, use
+`http://127.0.0.1:8088`.
 
 ```sh
-obter_csrf() {
-  local usuario="${1:-$AFDEVOPS_ADMIN_USERNAME}" arquivo resposta token
-  if [[ -n "${csrf_cookie:-}" ]]; then
-    rm -f "$csrf_cookie"
-  fi
-  unset csrf_cookie csrf_token
-  arquivo="$(mktemp)" || { printf '%s\n' 'Não foi possível criar o arquivo temporário.' >&2; return 1; }
-  resposta="$(curl --fail --silent --show-error --user "$usuario" \
-    --cookie-jar "$arquivo" http://127.0.0.1:8080/api/csrf)" || {
-      rm -f "$arquivo"
-      printf '%s\n' 'Não foi possível obter o token CSRF.' >&2
-      return 1
-    }
-  token="$(printf '%s' "$resposta" | jq -er \
-    'select(.headerName == "X-XSRF-TOKEN") | .token | select(type == "string" and test("^[A-Za-z0-9_-]+$"))')" || {
-      rm -f "$arquivo"
-      printf '%s\n' 'A resposta CSRF é inválida.' >&2
-      return 1
-    }
-  if ! awk 'NF >= 7 && $6 == "XSRF-TOKEN" && $7 != "" { encontrado=1 } END { exit !encontrado }' "$arquivo"; then
-    rm -f "$arquivo"
-    printf '%s\n' 'O cookie CSRF está ausente.' >&2
+EVOLIA="${EVOLIA:-http://127.0.0.1:8080}"
+
+token_csrf() {
+  local token
+  token="$(curl -fsS -b "$sessao_cookies" -c "$sessao_cookies" "$EVOLIA/api/csrf" |
+    sed -n 's/.*"token" *: *"\([A-Za-z0-9_-]*\)".*/\1/p')"
+  [ -n "$token" ] && printf '%s' "$token"
+}
+
+entrar() {
+  local usuario senha token status
+  read -r -p 'Usuário: ' usuario || return 1
+  read -rs -p 'Senha: ' senha || return 1
+  printf '\n'
+  sessao_cookies="$(mktemp)" || return 1
+  sessao_contexto=
+  token="$(token_csrf)" || return 1
+  status="$(printf '%s' "$senha" | curl -sS -o /dev/null -w '%{http_code}' \
+    -b "$sessao_cookies" -c "$sessao_cookies" -H "X-XSRF-TOKEN: $token" \
+    --data-urlencode "username=$usuario" --data-urlencode password@- \
+    "$EVOLIA/api/login")"
+  if [ "$status" != 204 ]; then
+    printf 'Login recusado (HTTP %s).\n' "$status" >&2
+    rm -f "$sessao_cookies"
     return 1
   fi
-  csrf_cookie="$arquivo"
-  csrf_token="$token"
-  trap 'rm -f "$csrf_cookie"' EXIT
+  sessao_contexto="$(curl -fsS -D - -o /dev/null -b "$sessao_cookies" -c "$sessao_cookies" \
+    "$EVOLIA/api/me" | tr -d '\r' | awk 'tolower($1) == "x-evolia-contexto:" { print $2 }')"
+  [ -n "$sessao_contexto" ]
 }
-obter_csrf || printf '%s\n' 'Obtenção do token não concluída. Execute novamente antes de continuar.' >&2
-```
 
-Para usar Node.js no lugar de `jq`, substitua a atribuição de `token` dentro
-da função `obter_csrf` pelo comando abaixo. Ele verifica o nome do cabeçalho
-e aceita somente um token não vazio no formato Base64 URL seguro. Se o JSON
-estiver inválido ou o token não corresponder ao formato, o comando falha e a
-função interrompe o fluxo.
+# Uso: api MÉTODO /caminho [corpo JSON, ou @- para ler da entrada padrão]
+api() {
+  local metodo="$1" rota="$2" token
+  local opcoes=(-sS -i -X "$metodo" -b "$sessao_cookies" -c "$sessao_cookies"
+    -H "X-Evolia-Contexto: $sessao_contexto")
+  if [ "$metodo" != GET ]; then
+    token="$(token_csrf)" || return 1
+    opcoes+=(-H "X-XSRF-TOKEN: $token")
+  fi
+  if [ "$#" -ge 3 ]; then
+    opcoes+=(-H 'Content-Type: application/json' --data-binary "$3")
+  fi
+  curl "${opcoes[@]}" "$EVOLIA$rota"
+  printf '\n'
+}
 
-```sh
-token="$(printf '%s' "$resposta" | node -e '
-let texto = "";
-process.stdin.setEncoding("utf8");
-process.stdin.on("data", parte => texto += parte);
-process.stdin.on("end", () => {
-  try {
-    const dados = JSON.parse(texto);
-    if (dados.headerName !== "X-XSRF-TOKEN" ||
-        typeof dados.token !== "string" ||
-        !/^[A-Za-z0-9_-]+$/.test(dados.token)) process.exitCode = 1;
-    else process.stdout.write(dados.token);
-  } catch {
-    process.exitCode = 1;
-  }
-});
-')" || {
-  rm -f "$arquivo"
-  printf '%s\n' 'A resposta CSRF é inválida.' >&2
-  return 1
+sair() {
+  api POST /api/logout && rm -f "$sessao_cookies"
+  sessao_contexto=
 }
 ```
+
+Para os exemplos administrativos, execute `entrar` com a conta ADMIN. Ao trocar
+de conta, execute `sair` antes de `entrar`.
 
 ## Colaboradores
 
@@ -338,13 +345,11 @@ valor deve ser único.
 Exemplo de cadastro e consultas:
 
 ```sh
-curl -i --user "$AFDEVOPS_ADMIN_USERNAME" --cookie "$csrf_cookie" \
-  -H "X-XSRF-TOKEN: $csrf_token" http://127.0.0.1:8080/api/colaboradores \
-  -H 'Content-Type: application/json' \
-  -d '{"nome":"Pessoa Fictícia","email":"pessoa@example.com","cargo":"Analista","departamento":"Educação"}'
+api POST /api/colaboradores \
+  '{"nome":"Pessoa Fictícia","email":"pessoa@example.com","cargo":"Analista","departamento":"Educação"}'
 
-curl --user "$AFDEVOPS_ADMIN_USERNAME" http://127.0.0.1:8080/api/colaboradores
-curl --user "$AFDEVOPS_ADMIN_USERNAME" http://127.0.0.1:8080/api/colaboradores/1
+api GET /api/colaboradores
+api GET /api/colaboradores/1
 ```
 
 Troque `1` pelo ID retornado no cadastro. Os erros usam
@@ -366,96 +371,18 @@ ter pelo menos 12 caracteres, ocupar até 72 bytes em UTF-8 e conter ao menos
 um caractere que não seja espaço em branco. O backend guarda somente o hash
 BCrypt com custo 12.
 
-Antes dos exemplos, informe o usuário e a senha administrativa em variáveis
-locais do Bash. A senha é lida sem aparecer na tela, no histórico ou nos
-argumentos dos processos. Mantenha esse terminal aberto durante os comandos.
+Com a sessão do ADMIN, substitua `1` pelo ID do colaborador. O `jq` monta o
+JSON a partir de valores lidos sem expor a senha. Sem `jq`, crie a conta pela
+interface, em “Contas”.
 
 ```sh
-read -r -p 'Usuário ADMIN: ' AFDEVOPS_ADMIN_USERNAME
-read -rs -p 'Senha ADMIN: ' AFDEVOPS_ADMIN_PASSWORD
+read -r -p 'Nome do usuário: ' usuario
+read -rs -p 'Senha inicial: ' senha
 printf '\n'
-export AFDEVOPS_ADMIN_USERNAME AFDEVOPS_ADMIN_PASSWORD
-```
-
-O curl receberá a senha pela entrada padrão usando uma configuração temporária
-com permissão restrita, removida ao final. Defina esta função uma vez no mesmo
-terminal. Ela também permite usar `jq` ou Node.js para conferir e extrair o
-token CSRF.
-
-```sh
-curl_seguro() {
-  local arquivo status
-  arquivo="$(mktemp)" || return 1
-  chmod 600 "$arquivo" || { rm -f "$arquivo"; return 1; }
-  printf 'user = "%s:%s"\n' "$AFDEVOPS_ADMIN_USERNAME" "$AFDEVOPS_ADMIN_PASSWORD" > "$arquivo"
-  curl --config "$arquivo" "$@"
-  status=$?
-  rm -f "$arquivo"
-  return "$status"
-}
-
-extrair_token_csrf() {
-  if command -v jq >/dev/null 2>&1; then
-    jq -er 'select(.headerName == "X-XSRF-TOKEN") | .token | select(type == "string" and test("^[A-Za-z0-9_-]+$"))'
-  else
-    node -e '
-      let texto = "";
-      process.stdin.setEncoding("utf8");
-      process.stdin.on("data", parte => texto += parte);
-      process.stdin.on("end", () => {
-        try {
-          const resposta = JSON.parse(texto);
-          if (resposta.headerName !== "X-XSRF-TOKEN" ||
-              typeof resposta.token !== "string" ||
-              !/^[A-Za-z0-9_-]+$/.test(resposta.token)) process.exitCode = 1;
-          else process.stdout.write(resposta.token);
-        } catch { process.exitCode = 1; }
-      });
-    '
-  fi
-}
-```
-
-Substitua `1` pelo ID do colaborador. O exemplo abaixo usa `jq` para montar
-o JSON. Para usar Node.js, troque a linha indicada pela alternativa logo
-depois do exemplo.
-
-```sh
-(
-  set -o pipefail
-  resposta="$(curl_seguro --fail --silent --show-error --cookie-jar "$csrf_cookie" \
-    http://127.0.0.1:8080/api/csrf)" || exit 1
-  csrf_token="$(printf '%s' "$resposta" | extrair_token_csrf)" || exit 1
-  read -r -p 'Nome do usuário: ' usuario || exit 1
-  read -rs -p 'Senha inicial: ' senha || exit 1
-  printf '\n'
-  printf '%s\n' "$usuario" "$senha" |
-    jq -Rn '{nomeUsuario: input, senhaInicial: input}' |
-    curl_seguro -i --cookie "$csrf_cookie" \
-      -H "X-XSRF-TOKEN: $csrf_token" -H 'Content-Type: application/json' \
-      --data-binary @- http://127.0.0.1:8080/api/colaboradores/1/conta
-)
-```
-
-Para extrair o token CSRF com Node.js, use esta linha no lugar da linha
-`csrf_token=...` do exemplo. O comando confirma o cabeçalho esperado e rejeita
-respostas JSON inválidas ou tokens fora do formato antes de continuar.
-
-```sh
-csrf_token="$(printf '%s' "$resposta" | node -e '
-let texto = "";
-process.stdin.setEncoding("utf8");
-process.stdin.on("data", parte => texto += parte);
-process.stdin.on("end", () => {
-  try {
-    const resposta = JSON.parse(texto);
-    if (resposta.headerName !== "X-XSRF-TOKEN" ||
-        typeof resposta.token !== "string" ||
-        !/^[A-Za-z0-9_-]+$/.test(resposta.token)) process.exitCode = 1;
-    else process.stdout.write(resposta.token);
-  } catch { process.exitCode = 1; }
-});
-')"
+printf '%s\n' "$usuario" "$senha" |
+  jq -Rn '{nomeUsuario: input, senhaInicial: input}' |
+  api POST /api/colaboradores/1/conta @-
+unset senha
 ```
 
 O cadastro retorna HTTP 201 com o ID da conta, o nome de usuário, o perfil
@@ -471,9 +398,12 @@ O endpoint `GET /api/me` mostra o nome e o perfil da conta autenticada. Para
 uma conta individual, também mostra `colaboradorId`. A resposta não tem
 senha, hash ou token interno e não é armazenada em cache.
 
+Saia da conta administrativa e entre com a conta individual:
+
 ```sh
-read -r -p 'Nome da conta individual: ' usuario_individual
-curl --user "$usuario_individual" http://127.0.0.1:8080/api/me
+sair
+entrar
+api GET /api/me
 ```
 
 ## Consentimento para IA
@@ -485,13 +415,8 @@ repetidos ou com outros tipos retornam HTTP 400. Contas de demonstração
 recebem HTTP 403.
 
 ```sh
-curl --user "$usuario_individual" http://127.0.0.1:8080/api/me/consentimento
-
-if obter_csrf "$usuario_individual"; then
-  curl -i --user "$usuario_individual" --cookie "$csrf_cookie" \
-    -X PUT -H "X-XSRF-TOKEN: $csrf_token" -H 'Content-Type: application/json' \
-    --data '{"autorizado":true}' http://127.0.0.1:8080/api/me/consentimento
-fi
+api GET /api/me/consentimento
+api PUT /api/me/consentimento '{"autorizado":true}'
 ```
 
 Para revogar, use `{"autorizado":false}`. Até a primeira decisão, o retorno é
@@ -505,7 +430,7 @@ interrompe aquelas que já começaram.
 
 ## Integração com o serviço de IA
 
-As três rotas aceitam JSON e exigem HTTP Basic, cookie e token CSRF. As notas
+As três rotas aceitam JSON e exigem sessão de conta individual, contexto e token CSRF. As notas
 `logica`, `comunicacao` e `tecnologia` devem ser inteiros de 1 a 5. O backend
 rejeita campos extras, campos repetidos e parâmetros na URL. Ele obtém o ID
 do colaborador pela autenticação e só o envia ao Python na orientação.
@@ -520,20 +445,12 @@ O nível de competência é `INICIANTE`, `INTERMEDIARIO` ou `AVANCADO`. Códigos
 `CURSO-001` identificam documentos no Python e não correspondem aos IDs
 numéricos do catálogo Java.
 
-Depois de conceder o consentimento, obtenha o CSRF com a conta individual.
-Use a mesma conta para enviar as três requisições.
+Depois de conceder o consentimento, use a sessão da mesma conta:
 
 ```sh
-if obter_csrf "$usuario_individual"; then
-  enviar_ia() {
-    curl -i --user "$usuario_individual" --cookie "$csrf_cookie" \
-      -H "X-XSRF-TOKEN: $csrf_token" -H 'Content-Type: application/json' \
-      --data "$2" "http://127.0.0.1:8080/api/ia/$1"
-  }
-  enviar_ia classificacoes '{"logica":1,"comunicacao":3,"tecnologia":5}'
-  enviar_ia recomendacoes '{"logica":1,"comunicacao":3,"tecnologia":5,"nivel":"INICIANTE"}'
-  enviar_ia orientacoes '{"pergunta":"Por onde começo?","competencias":{"logica":1,"comunicacao":3,"tecnologia":5}}'
-fi
+api POST /api/ia/classificacoes '{"logica":1,"comunicacao":3,"tecnologia":5}'
+api POST /api/ia/recomendacoes '{"logica":1,"comunicacao":3,"tecnologia":5,"nivel":"INICIANTE"}'
+api POST /api/ia/orientacoes '{"pergunta":"Por onde começo?","competencias":{"logica":1,"comunicacao":3,"tecnologia":5}}'
 ```
 
 | Variável | Uso |
@@ -578,8 +495,8 @@ automaticamente e não precisa do Ollama para iniciar.
 
 | Variável | Padrão |
 | --- | --- |
-| `IA_GENERATIVA_HABILITADA` | `false` |
-| `OLLAMA_BASE_URL` | `http://127.0.0.1:11434` no macOS e `http://host.docker.internal:11434` no Compose |
+| `IA_GENERATIVA_HABILITADA` | `false` com Java local e `true` no Compose |
+| `OLLAMA_BASE_URL` | `http://127.0.0.1:11434` com Java local e `http://ollama:11434` no Compose |
 | `OLLAMA_MODEL` | `qwen2.5:1.5b` |
 | `OLLAMA_TEMPERATURE` | `0.2` |
 | `OLLAMA_NUM_PREDICT` | `128` tokens de saída |
@@ -608,15 +525,14 @@ Para validar com o backend no Docker e o Ollama nativo no macOS, execute
 na raiz do repositório.
 
 ```sh
-IA_GENERATIVA_HABILITADA=true OLLAMA_BASE_URL=http://host.docker.internal:11434 \
-  OLLAMA_MODEL=qwen2.5:1.5b docker compose up -d --build --wait
+docker compose -f docker-compose.yml -f compose.ollama-nativo.yml up --build
 ```
 
 Com uma conta individual que autorizou o uso da IA, chame a rota de orientação
 e confira `proximosPassos` junto aos campos originais. Com o Ollama
 indisponível, repita a chamada e confira o retorno da orientação base sem o
-campo complementar. A configuração reproduzível para a entrega será alinhada
-na etapa de infraestrutura.
+campo complementar. No Compose padrão, o inicializador do Ollama prepara o
+modelo em um volume persistente. A preparação do modelo fica fora do Java.
 
 ## Cursos
 
@@ -633,14 +549,14 @@ A resposta inclui o identificador e `criadoEm` em formato ISO 8601.
 
 Exemplo de cadastro e consultas:
 
-```sh
-curl -i --user "$AFDEVOPS_ADMIN_USERNAME" --cookie "$csrf_cookie" \
-  -H "X-XSRF-TOKEN: $csrf_token" http://127.0.0.1:8080/api/cursos \
-  -H 'Content-Type: application/json' \
-  -d '{"nome":"Curso fictício","descricao":"Introdução fictícia","cargaHoraria":8,"categoria":"Educação","nivel":"BASICO"}'
+O cadastro exige a sessão do ADMIN; a consulta vale para os dois perfis.
 
-curl --user "$AFDEVOPS_COLABORADOR_USERNAME" http://127.0.0.1:8080/api/cursos
-curl --user "$AFDEVOPS_COLABORADOR_USERNAME" http://127.0.0.1:8080/api/cursos/1
+```sh
+api POST /api/cursos \
+  '{"nome":"Curso fictício","descricao":"Introdução fictícia","cargaHoraria":8,"categoria":"Educação","nivel":"BASICO"}'
+
+api GET /api/cursos
+api GET /api/cursos/1
 ```
 
 Troque `1` pelo ID retornado no cadastro. Os erros usam
@@ -667,20 +583,28 @@ treina o modelo e chama a rota interna com
 `{"status":"FALHOU","mensagem":"..."}`. Repetir o mesmo status final é
 aceito sem alterações; trocar um status final responde 409.
 
-O `POST` não tem corpo e segue o fluxo CSRF descrito acima:
+O `POST` não tem corpo. Com a sessão do ADMIN:
 
 ```sh
-curl -i --user "$AFDEVOPS_ADMIN_USERNAME" --cookie "$csrf_cookie" \
-  -H "X-XSRF-TOKEN: $csrf_token" -X POST http://127.0.0.1:8080/api/treinamentos
-
-curl --user "$AFDEVOPS_ADMIN_USERNAME" http://127.0.0.1:8080/api/treinamentos/1
+api POST /api/treinamentos
+api GET /api/treinamentos/1
 ```
 
-A rota `/internal/**` tem cadeia de segurança própria, sem cookies nem
-CSRF, e compara o token em tempo constante. Os testes de integração do
+A rota `/internal/**` tem cadeia de segurança própria, sem sessão, cookies nem
+CSRF: exige `Authorization: Bearer <INTERNAL_API_TOKEN>` e compara o token em
+tempo constante. Os testes de integração do
 módulo usam RabbitMQ real via Testcontainers.
 
-## Última validação
+## Histórico de validações
+
+Os números abaixo são registros de cada data. Os resultados mais recentes estão no
+[README principal](../README.md#12-desempenho-e-qualidade).
+
+Na Etapa 14.1 (27–28/11/2026), com a autenticação por sessão, passaram 274
+testes Java, 507 testes React, 38 testes integrados pelo gateway e 25 cenários
+no navegador. A carga com 300 usuários atingiu a meta do RNF01 nas condições
+testadas. Detalhes na [matriz de evidências](../docs/evidencias-af.md). Os
+parágrafos abaixo registram validações anteriores.
 
 Em 27/11/2026, 255 testes automatizados foram aprovados antes do ajuste final
 do prompt. Após o ajuste para educação corporativa, 24 testes específicos
@@ -714,18 +638,20 @@ no PostgreSQL. Contas administrativas não conseguiram acessar o consentimento.
 As contas em memória servem para demonstração e não têm vínculo com o
 cadastro de colaboradores. Para trocar as contas de demonstração, atualize o
 ambiente e reinicie o backend. Contas individuais ainda não têm recuperação
-ou troca de senha pela API. HTTP Basic deve ser usado com dados
-fictícios em ambiente controlado. Fora da máquina local, use HTTPS, pois o
-cabeçalho de autenticação contém credenciais codificadas em Base64.
+ou troca de senha pela API. Use dados fictícios em ambiente controlado. Fora da
+máquina local, use HTTPS e `SESSION_COOKIE_SECURE=true`, pois a senha trafega no
+login e o cookie identifica a sessão. As sessões ficam em memória, em uma única
+instância, sem expiração absoluta, limite por usuário ou bloqueio por conta. O
+limite de tentativas de login existe somente no gateway.
 
-As listagens não têm paginação e o desempenho sob carga ainda não foi medido.
-Os tempos registrados acima correspondem a requisições individuais. O RNF01
-ainda precisa ser validado.
+As listagens não têm paginação. A carga de classificação foi testada e o RNF01
+[foi atendido nas condições ensaiadas](../docs/evidencias-af.md#rnf01--carga-de-classificação);
+o desempenho das listagens sob carga não foi medido.
 A verificação de consentimento se aplica às chamadas feitas pelo backend Java.
-O FastAPI mantém a porta de desenvolvimento publicada em `127.0.0.1`.
-Chamadas diretas a classificação e recomendações no FastAPI não passam pela
-autenticação nem pela verificação de consentimento do Java. O acesso direto
-ao FastAPI ainda precisa ser restringido.
+No Compose padrão, o FastAPI só fica acessível ao Java pela rede interna.
+O modo de diagnóstico publica uma porta em loopback. Chamadas diretas a
+classificação e recomendações por essa porta ficam fora da autenticação e
+da verificação de consentimento do Java.
 
 A orientação base usa o texto determinístico do Python. As sugestões do
 modelo local complementam esse texto e podem variar entre chamadas.

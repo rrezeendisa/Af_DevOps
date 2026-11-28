@@ -12,3 +12,6 @@ Práticas de proteção de contas e dados, identificação de riscos digitais e 
 - Reconhecer sinais comuns de phishing.
 - Aplicar práticas de autenticação e proteção de dados.
 - Relatar um incidente pelos canais institucionais.
+
+## Observação
+Documento institucional fictício, criado para a demonstração acadêmica da Evolia.

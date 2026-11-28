@@ -12,3 +12,6 @@ Estudo de abstração, decomposição e padrões para estruturar soluções de p
 - Modelar problemas com múltiplas restrições.
 - Identificar padrões e abstrações úteis.
 - Justificar a escolha de uma estratégia de solução.
+
+## Observação
+Documento institucional fictício, criado para a demonstração acadêmica da Evolia.

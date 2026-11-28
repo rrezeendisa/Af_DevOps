@@ -12,3 +12,6 @@ Curso de entrada sobre sequência, condições e repetição para resolver probl
 - Decompor um problema cotidiano em etapas.
 - Descrever algoritmos com pseudocódigo.
 - Reconhecer condições e estruturas de repetição.
+
+## Observação
+Documento institucional fictício, criado para a demonstração acadêmica da Evolia.

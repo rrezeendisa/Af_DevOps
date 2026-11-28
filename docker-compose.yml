@@ -1,13 +1,8 @@
 # Ambiente integrado do AF-DevOps (Frente C — DevOps e QA).
 #
-# Uso:
-#   1. Gere o arquivo .env local:   ./scripts/gerar-env.sh
-#   2. Suba o ambiente:             docker compose up -d --build --wait
-#   3. Derrube (mantendo dados):    docker compose down
-#      Derrube e apague volumes:    docker compose down -v
-#
-# Segredos ficam somente no .env (ignorado pelo Git). As portas são publicadas
-# apenas em 127.0.0.1; o PostgreSQL não é publicado fora da rede interna.
+# Primeiro uso: bash scripts/gerar-env.sh
+# Inicialização completa: docker compose up --build
+# Apenas o gateway publica uma porta, em loopback.
 
 name: afdevops
 
@@ -15,7 +10,27 @@ x-ai-service-build: &ai-service-build
   context: ./ai-service
   dockerfile: Dockerfile
 
+x-ollama-image: &ollama-image ollama/ollama:0.40.18@sha256:1cabd20e1762a7a8444bf4a7110b346d923cd77ab6c97c984434140638c913ec
+
 services:
+  gateway:
+    build:
+      context: ./frontend
+    image: evolia-gateway:local
+    restart: unless-stopped
+    environment:
+      # POST /api/login por endereço de origem: taxa sustentada e rajada tolerada.
+      LOGIN_RATE: ${LOGIN_RATE:-10r/s}
+      LOGIN_BURST: ${LOGIN_BURST:-50}
+    ports:
+      - "127.0.0.1:${GATEWAY_PORT:-8088}:8080"
+    networks:
+      - borda
+      - entrada
+    depends_on:
+      backend:
+        condition: service_healthy
+
   postgres:
     image: postgres:17
     restart: unless-stopped
@@ -42,13 +57,10 @@ services:
     environment:
       RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-afdevops}
       RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:?Defina RABBITMQ_PASSWORD no .env}
-    ports:
-      - "127.0.0.1:${RABBITMQ_AMQP_PORT:-5672}:5672"
-      - "127.0.0.1:${RABBITMQ_MANAGEMENT_PORT:-15672}:15672"
     volumes:
       - rabbitmq-data:/var/lib/rabbitmq
     networks:
-      - servicos
+      - treinamento
     # Testa as portas AMQP e de gerenciamento sem usar a CLI do RabbitMQ: o
     # healthcheck roda como root e a CLI criaria um .erlang.cookie com dono
     # root antes do broker, impedindo a inicialização (erro eacces).
@@ -71,7 +83,7 @@ services:
     volumes:
       - ./infra/rabbitmq:/definitions:ro
     networks:
-      - servicos
+      - treinamento
     depends_on:
       rabbitmq:
         condition: service_healthy
@@ -95,20 +107,24 @@ services:
       # Publicação das solicitações de treinamento e rota interna do worker.
       RABBITMQ_URL: amqp://${RABBITMQ_USER:-afdevops}:${RABBITMQ_PASSWORD:?Defina RABBITMQ_PASSWORD no .env}@rabbitmq:5672/%2F
       RABBITMQ_HEALTH_ENABLED: "true"
+      # Use true somente quando o acesso ao gateway for por HTTPS.
+      SESSION_COOKIE_SECURE: ${SESSION_COOKIE_SECURE:-false}
+      SESSION_TIMEOUT: ${SESSION_TIMEOUT:-30m}
       INTERNAL_API_TOKEN: ${INTERNAL_API_TOKEN:?Defina INTERNAL_API_TOKEN no .env}
       AI_SERVICE_URL: http://ai-service:8000
-      IA_GENERATIVA_HABILITADA: ${IA_GENERATIVA_HABILITADA:-false}
-      OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://host.docker.internal:11434}
+      IA_GENERATIVA_HABILITADA: ${IA_GENERATIVA_HABILITADA:-true}
+      OLLAMA_BASE_URL: http://ollama:11434
       OLLAMA_MODEL: ${OLLAMA_MODEL:-qwen2.5:1.5b}
       OLLAMA_TEMPERATURE: ${OLLAMA_TEMPERATURE:-0.2}
       OLLAMA_NUM_PREDICT: ${OLLAMA_NUM_PREDICT:-128}
       OLLAMA_NUM_CTX: ${OLLAMA_NUM_CTX:-1024}
       OLLAMA_TIMEOUT: ${OLLAMA_TIMEOUT:-PT60S}
-    ports:
-      - "127.0.0.1:${BACKEND_PORT:-8080}:8080"
     networks:
       - dados
-      - servicos
+      - entrada
+      - ia
+      - treinamento
+      - generativa
     depends_on:
       postgres:
         condition: service_healthy
@@ -128,12 +144,10 @@ services:
     restart: unless-stopped
     environment:
       INTERNAL_API_TOKEN: ${INTERNAL_API_TOKEN:?Defina INTERNAL_API_TOKEN no .env}
-    ports:
-      - "127.0.0.1:${AI_SERVICE_PORT:-8000}:8000"
     volumes:
       - ai-artifacts:/data/artifacts
     networks:
-      - servicos
+      - ia
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=3)"]
       interval: 10s
@@ -157,7 +171,7 @@ services:
     volumes:
       - ai-artifacts:/data/artifacts
     networks:
-      - servicos
+      - treinamento
     depends_on:
       rabbitmq-setup:
         condition: service_completed_successfully
@@ -166,13 +180,58 @@ services:
       ai-service:
         condition: service_healthy
 
+  ollama:
+    image: *ollama-image
+    restart: unless-stopped
+    environment:
+      OLLAMA_MODEL: ${OLLAMA_MODEL:-qwen2.5:1.5b}
+      OLLAMA_NUM_PARALLEL: "1"
+      OLLAMA_MAX_LOADED_MODELS: "1"
+      OLLAMA_MAX_QUEUE: "2"
+      OLLAMA_NO_CLOUD: "1"
+    volumes:
+      - ollama-data:/root/.ollama
+    networks:
+      - generativa
+      - download
+    healthcheck:
+      test: ["CMD-SHELL", "ollama show \"$${OLLAMA_MODEL}\" >/dev/null 2>&1"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 20m
+
+  ollama-modelo:
+    image: *ollama-image
+    entrypoint: ["sh", "/ollama/preparar-modelo.sh"]
+    restart: "no"
+    environment:
+      OLLAMA_HOST: http://ollama:11434
+      OLLAMA_MODEL: ${OLLAMA_MODEL:-qwen2.5:1.5b}
+    volumes:
+      - ./infra/ollama/preparar-modelo.sh:/ollama/preparar-modelo.sh:ro
+    networks:
+      - generativa
+    depends_on:
+      ollama:
+        condition: service_started
+
 networks:
-  # Rede interna: somente backend e PostgreSQL, sem acesso externo.
+  borda:
+  entrada:
+    internal: true
   dados:
     internal: true
-  servicos:
+  ia:
+    internal: true
+  treinamento:
+    internal: true
+  generativa:
+    internal: true
+  download:
 
 volumes:
   postgres-data:
   rabbitmq-data:
   ai-artifacts:
+  ollama-data:

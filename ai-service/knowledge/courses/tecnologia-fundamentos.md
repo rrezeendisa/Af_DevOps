@@ -12,3 +12,6 @@ Visão introdutória de sistemas, arquivos, ferramentas digitais e colaboração
 - Diferenciar arquivos, aplicações e serviços digitais.
 - Utilizar ferramentas de colaboração com segurança básica.
 - Reconhecer termos tecnológicos comuns no trabalho.
+
+## Observação
+Documento institucional fictício, criado para a demonstração acadêmica da Evolia.

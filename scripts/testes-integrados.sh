@@ -2,7 +2,7 @@
 # Sobe o ambiente integrado e executa os testes ponta a ponta.
 #
 #   ./scripts/testes-integrados.sh            # sobe, testa e mantém o ambiente
-#   ./scripts/testes-integrados.sh --down     # derruba tudo (inclusive volumes) ao final
+#   ./scripts/testes-integrados.sh --down     # encerra o ambiente e preserva os volumes
 #
 # Requer .env (./scripts/gerar-env.sh), Docker e Python 3.12+.
 set -euo pipefail
@@ -17,21 +17,23 @@ fi
 
 derrubar=false
 [[ "${1:-}" == "--down" ]] && derrubar=true
+compose=(docker compose -f docker-compose.yml -f compose.diagnostico.yml)
 
 finalizar() {
     local codigo=$?
     if [[ $codigo -ne 0 ]]; then
         echo "Falha nos testes integrados; últimas linhas dos logs:" >&2
-        docker compose logs --tail 60 >&2 || true
+        "${compose[@]}" ps --all >&2 || true
     fi
     if $derrubar; then
-        docker compose down -v --remove-orphans || true
+        "${compose[@]}" down || true
     fi
     exit $codigo
 }
 trap finalizar EXIT
 
-docker compose up -d --build --wait --wait-timeout 300
+# A suíte de infraestrutura/treinamento não depende da geração complementar.
+"${compose[@]}" up -d --build --wait --wait-timeout 300 gateway ai-worker
 
 PYTHON="${PYTHON:-python3}"
 command -v "$PYTHON" >/dev/null 2>&1 || PYTHON=python

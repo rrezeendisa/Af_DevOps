@@ -1,0 +1,35 @@
+{
+  "escopo": "avisos do k6 na execução inteira, incluindo subida, aquecimento e drenagem; difere das contagens da janela medida",
+  "patamares": {
+    "10-120": {
+      "timeout_get_csrf": 0,
+      "timeout_post_classificacao": 0,
+      "outras_linhas_de_aviso": 0
+    },
+    "50-120": {
+      "timeout_get_csrf": 0,
+      "timeout_post_classificacao": 0,
+      "outras_linhas_de_aviso": 0
+    },
+    "100-120": {
+      "timeout_get_csrf": 0,
+      "timeout_post_classificacao": 0,
+      "outras_linhas_de_aviso": 0
+    },
+    "200-120": {
+      "timeout_get_csrf": 302,
+      "timeout_post_classificacao": 9,
+      "outras_linhas_de_aviso": 0
+    },
+    "300-120": {
+      "timeout_get_csrf": 2593,
+      "timeout_post_classificacao": 57,
+      "outras_linhas_de_aviso": 0
+    },
+    "300-300": {
+      "timeout_get_csrf": 2384,
+      "timeout_post_classificacao": 0,
+      "outras_linhas_de_aviso": 0
+    }
+  }
+}

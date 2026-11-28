@@ -1,0 +1,16 @@
+node_modules
+dist
+dist-ssr
+coverage
+**/.env*
+**/*.local
+**/*.log
+**/*.pem
+**/*.key
+*.tsbuildinfo
+.git
+.idea
+.vscode
+.DS_Store
+src/**/*.test.*
+src/test

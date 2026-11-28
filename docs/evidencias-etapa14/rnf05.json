@@ -1,0 +1,6 @@
+{
+  "origem": "amostras de docker stats do projeto de validação (etapas 12 e 13) e recursos.jsonl da carga (etapa 14)",
+  "orientacao_com_ollama": { "pico_soma_projeto_mib": 2566.2, "pico_ollama_mib": 1676.3, "quadros_amostrados": 256 },
+  "carga_classificacao": { "pico_servicos_e_k6_mib": 1260.0, "primeira_amostra_servicos_sem_k6_mib": 880.0, "ollama_em_execucao": false },
+  "nao_medido": ["potência e energia", "custo monetário", "custo sob a carga de 300 usuários"]
+}

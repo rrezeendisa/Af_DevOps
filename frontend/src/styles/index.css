@@ -1,0 +1,428 @@
+/* Tokens da Evolia. Fonte e contraste: frontend/DESIGN_SYSTEM.md (seções 2 e 3). */
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --font-sans: 'Inter Variable', ui-sans-serif, system-ui, sans-serif;
+  --font-heading: 'Fraunces Variable', ui-serif, Georgia, serif;
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  /* Tokens próprios da Evolia */
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-highlight: var(--highlight);
+  --color-highlight-foreground: var(--highlight-foreground);
+  --color-brand-detail: var(--brand-detail);
+  --color-simbolo-detalhe: var(--simbolo-detalhe);
+  --color-selected: var(--selected);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+
+  --radius-sm: calc(var(--radius) * 0.5);
+  --radius-md: calc(var(--radius) * 0.75);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.5);
+  --radius-2xl: calc(var(--radius) * 2);
+  --radius-3xl: calc(var(--radius) * 3);
+  --radius-4xl: calc(var(--radius) * 4);
+
+  /* Design 2.0: lavagens para composição (sempre com texto --foreground). */
+  --color-lavagem-lilas: var(--lavagem-lilas);
+  --color-lavagem-rosa: var(--lavagem-rosa);
+  --color-lavagem-lima: var(--lavagem-lima);
+
+  /* Elevação: sombras difusas, levemente quentes. No escuro quase desaparecem. */
+  --shadow-baixa: var(--sombra-baixa);
+  --shadow-media: var(--sombra-media);
+  --shadow-alta: var(--sombra-alta);
+
+  /* Escala editorial (Fraunces). */
+  --text-display: clamp(2.5rem, 1.4rem + 4.6vw, 5.25rem);
+  --text-display--line-height: 1.02;
+  --text-display--letter-spacing: -0.025em;
+  --text-titulo: clamp(1.875rem, 1.35rem + 2.1vw, 3.25rem);
+  --text-titulo--line-height: 1.08;
+  --text-titulo--letter-spacing: -0.018em;
+  --text-subtitulo: clamp(1.0625rem, 0.98rem + 0.35vw, 1.3125rem);
+  --text-subtitulo--line-height: 1.55;
+  --text-rotulo: 0.75rem;
+  --text-rotulo--line-height: 1.2;
+  --text-rotulo--letter-spacing: 0.12em;
+
+  /* Ritmo vertical entre seções. */
+  --spacing-secao: clamp(4rem, 2rem + 8vw, 8rem);
+
+  /* Soft Neon Futurism: cores exclusivamente decorativas (nunca em texto corrido). */
+  --color-neon-violet: #A66CFF;
+  --color-neon-pink: #FF48DD;
+  --color-neon-lime: #DFFF45;
+  --color-electric-lilac: #CE9AFF;
+  --shadow-neon: var(--sombra-neon);
+
+  /* Motion. */
+  --ease-suave: cubic-bezier(0.22, 1, 0.36, 1);
+  --animate-respirar: respirar 7s ease-in-out infinite;
+  --animate-flutuar: flutuar 8s ease-in-out infinite;
+  --animate-derivar: derivar 13s ease-in-out infinite;
+  --animate-balancar: balancar 17s ease-in-out infinite;
+
+  @keyframes derivar {
+    0%, 100% { transform: translate(0, 0); }
+    50% { transform: translate(0.4rem, -0.75rem); }
+  }
+  @keyframes balancar {
+    0%, 100% { transform: rotate(-4deg); }
+    50% { transform: rotate(4deg); }
+  }
+  --animate-tracar: tracar 1.2s var(--ease-suave) both;
+
+  @keyframes respirar {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.06); }
+  }
+  @keyframes flutuar {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-0.5rem); }
+  }
+  @keyframes tracar {
+    from { stroke-dashoffset: 1; }
+    to { stroke-dashoffset: 0; }
+  }
+}
+
+:root {
+  --radius: 0.5rem;
+
+  /* Telas internas predominantemente brancas. */
+  --background: #FDFCFF;
+  --surface: #FFFFFF;
+  --surface-2: #F8EDFE;
+  --foreground: #211C26;
+  --muted-foreground: #625A69;
+  --border: #EDE7F3;
+  --input: #8A8290;
+  --ring: #521256;
+
+  --primary: #F170C3;
+  --primary-foreground: #211C26;
+  --secondary: #EFD2FE;
+  --secondary-foreground: #211C26;
+  --accent: #EFD2FE;
+  --accent-foreground: #211C26;
+  --highlight: #E2E585;
+  --highlight-foreground: #211C26;
+  --brand-detail: #521256;
+  --simbolo-detalhe: #521256;
+  --selected: #EFD2FE;
+
+  --sombra-neon: 0 2px 8px rgb(166 108 255 / 0.1), 0 24px 48px -18px rgb(166 108 255 / 0.38);
+  /* Extremos do título em gradiente: só texto grande (≥ 3:1 sobre o fundo). */
+  --texto-neon-a: #8F52F0;
+  --texto-neon-b: #CC35B4;
+  /* Intensidade das luzes difusas. */
+  --luz-violeta: rgb(206 154 255 / 0.42);
+  --luz-rosa: rgb(255 72 221 / 0.2);
+  --luz-lima: rgb(223 255 69 / 0.32);
+  --vidro: rgb(255 255 255 / 0.74);
+  --vidro-borda: rgb(255 255 255 / 0.9);
+
+  --lavagem-lilas: #F6E6FE;
+  --lavagem-rosa: #FCE4F3;
+  --lavagem-lima: #F4F5CF;
+
+  --sombra-baixa: 0 1px 2px rgb(33 28 38 / 0.05), 0 2px 8px rgb(82 18 86 / 0.04);
+  --sombra-media: 0 2px 6px rgb(33 28 38 / 0.05), 0 14px 32px -8px rgb(82 18 86 / 0.12);
+  --sombra-alta: 0 8px 20px rgb(33 28 38 / 0.07), 0 32px 64px -16px rgb(82 18 86 / 0.18);
+
+  --destructive: #B42318;
+  --destructive-foreground: #FFFFFF;
+  --success: #2F6B2F;
+  --warning: #8A5A00;
+
+  --card: var(--surface);
+  --card-foreground: var(--foreground);
+  --popover: var(--surface);
+  --popover-foreground: var(--foreground);
+  --muted: var(--surface-2);
+
+  --chart-1: #F170C3;
+  --chart-2: #EFD2FE;
+  --chart-3: #E2E585;
+  --chart-4: #521256;
+  --chart-5: #625A69;
+
+  --sidebar: var(--surface);
+  --sidebar-foreground: var(--foreground);
+  --sidebar-primary: var(--primary);
+  --sidebar-primary-foreground: var(--primary-foreground);
+  --sidebar-accent: var(--selected);
+  --sidebar-accent-foreground: var(--foreground);
+  --sidebar-border: var(--border);
+  --sidebar-ring: var(--ring);
+
+  color-scheme: light;
+}
+
+/* Dark: base grafite neutra; Deep Plum não é usado sobre o fundo escuro (1,38:1). */
+.dark {
+  --background: #17131B;
+  --surface: #211D25;
+  --surface-2: #2A2630;
+  --foreground: #F4F1F6;
+  --muted-foreground: #B9B2BF;
+  --border: #332E39;
+  --input: #7A7381;
+  --ring: #EFD2FE;
+
+  --primary: #F170C3;
+  --primary-foreground: #211C26;
+  --secondary: #EFD2FE;
+  --secondary-foreground: #211C26;
+  --accent: #EFD2FE;
+  --accent-foreground: #211C26;
+  --highlight: #E2E585;
+  --highlight-foreground: #211C26;
+  --brand-detail: #EFD2FE;
+  /* A pétala plum vira off-white no escuro: plum sobre grafite fica em 1,38:1. */
+  --simbolo-detalhe: #F4F1F6;
+  --selected: #342C3B;
+
+  /* No escuro as lavagens são grafite com um toque de cor: nada de grandes áreas roxas. */
+  --sombra-neon: 0 24px 56px -20px rgb(166 108 255 / 0.45);
+  --texto-neon-a: #CE9AFF;
+  --texto-neon-b: #FF74E4;
+  --luz-violeta: rgb(166 108 255 / 0.2);
+  --luz-rosa: rgb(255 72 221 / 0.13);
+  --luz-lima: rgb(223 255 69 / 0.09);
+  --vidro: rgb(42 38 48 / 0.88);
+  --vidro-borda: rgb(255 255 255 / 0.1);
+
+  --lavagem-lilas: #29232E;
+  --lavagem-rosa: #2D222A;
+  --lavagem-lima: #27271F;
+
+  --sombra-baixa: 0 1px 2px rgb(0 0 0 / 0.3);
+  --sombra-media: 0 10px 28px -10px rgb(0 0 0 / 0.55);
+  --sombra-alta: 0 28px 60px -18px rgb(0 0 0 / 0.65);
+
+  --destructive: #FF8A80;
+  --destructive-foreground: #211C26;
+  --success: #8FD18F;
+  --warning: #F2B84B;
+
+  --chart-4: #B9B2BF;
+  --chart-5: #7A7381;
+
+  --sidebar-accent-foreground: var(--foreground);
+
+  color-scheme: dark;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring;
+  }
+  html {
+    @apply font-sans;
+  }
+  body {
+    @apply bg-background text-foreground antialiased;
+  }
+  h1, h2 {
+    @apply font-heading;
+  }
+  :focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+  }
+}
+
+/* Desativa transições durante a troca de tema (ver src/lib/tema.ts). */
+.sem-transicao,
+.sem-transicao *,
+.sem-transicao *::before,
+.sem-transicao *::after {
+  transition: none !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+@layer components {
+  /* Grão sutil, em arquivo local (a CSP bloqueia data:). Usar em superfícies amplas. */
+  .textura-grao {
+    position: relative;
+    isolation: isolate;
+  }
+  .textura-grao::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    border-radius: inherit;
+    pointer-events: none;
+    background-image: url('../assets/ilustracoes/grao.svg');
+    background-size: 160px 160px;
+    opacity: 0.35;
+  }
+  .dark .textura-grao::before {
+    opacity: 0.18;
+  }
+
+  /* Rótulo curto em caixa alta, acima de títulos. */
+  .rotulo-editorial {
+    font-size: var(--text-rotulo);
+    line-height: var(--text-rotulo--line-height);
+    letter-spacing: var(--text-rotulo--letter-spacing);
+    font-weight: 600;
+    text-transform: uppercase;
+    color: var(--muted-foreground);
+  }
+}
+
+@layer components {
+  /* Luzes difusas de fundo (CSS puro, sem imagens). Para landing e login. */
+  .fundo-neon {
+    background-image:
+      radial-gradient(60% 55% at 82% 12%, var(--luz-violeta), transparent 70%),
+      radial-gradient(45% 45% at 8% 80%, var(--luz-rosa), transparent 70%),
+      radial-gradient(35% 35% at 62% 100%, var(--luz-lima), transparent 70%);
+  }
+
+  /* Título em gradiente. Somente em texto grande. */
+  .texto-neon {
+    background-image: linear-gradient(100deg, var(--texto-neon-a), var(--texto-neon-b));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    padding-inline-end: 0.08em;
+  }
+
+  /* Superfície translúcida: apenas em poucas fichas flutuantes. */
+  .vidro {
+    background-color: var(--vidro);
+    border: 1px solid var(--vidro-borda);
+    backdrop-filter: blur(14px);
+  }
+
+}
+
+@media (forced-colors: active) {
+  .texto-neon {
+    background: none;
+    color: CanvasText;
+  }
+}
+
+@layer components {
+  /* Brilhos de seção inteira: terminam antes das bordas de cima e de baixo, sem aresta entre seções. */
+  .fundo-neon-aberto {
+    background-image:
+      radial-gradient(ellipse 42% 48% at 82% 50%, var(--luz-violeta), transparent 100%),
+      radial-gradient(ellipse 38% 40% at 6% 58%, var(--luz-rosa), transparent 100%),
+      radial-gradient(ellipse 34% 30% at 62% 69%, var(--luz-lima), transparent 100%);
+  }
+}
+@layer components {
+  /* Véus dos cartões de área: fundem a fotografia na superfície do tema, sem aresta. */
+  .veu-base {
+    background-image: linear-gradient(to top, var(--surface) 0%, color-mix(in srgb, var(--surface) 82%, transparent) 30%, color-mix(in srgb, var(--surface) 35%, transparent) 65%, transparent 100%);
+  }
+  /* Opaco sob o texto, à esquerda; some antes do rosto, à direita. */
+  .veu-lateral {
+    background-image: linear-gradient(to right, var(--surface) 0%, var(--surface) 43%, color-mix(in srgb, var(--surface) 84%, transparent) 53%, color-mix(in srgb, var(--surface) 35%, transparent) 63%, transparent 73%);
+  }
+  /* Base e canto inferior esquerdo, onde ficam título, descrição e categorias. */
+  .veu-canto {
+    background-image:
+      radial-gradient(115% 90% at 0% 100%, var(--surface) 0%, var(--surface) 53%, color-mix(in srgb, var(--surface) 60%, transparent) 72%, transparent 89%),
+      linear-gradient(to top, var(--surface) 0%, color-mix(in srgb, var(--surface) 60%, transparent) 28%, transparent 55%);
+  }
+}
+@layer components {
+  /* Tela de entrada: brilhos localizados na página e no painel visual. */
+  .fundo-entrada {
+    background-image:
+      radial-gradient(ellipse 38% 46% at 8% 12%, var(--luz-violeta), transparent 100%),
+      radial-gradient(ellipse 34% 40% at 94% 82%, var(--luz-rosa), transparent 100%),
+      radial-gradient(ellipse 26% 30% at 70% 4%, var(--luz-lima), transparent 100%);
+  }
+  .painel-entrada {
+    background-color: var(--lavagem-lilas);
+    background-image:
+      radial-gradient(ellipse 70% 55% at 85% 8%, var(--luz-rosa), transparent 100%),
+      radial-gradient(ellipse 80% 60% at 20% 70%, var(--luz-violeta), transparent 100%),
+      radial-gradient(ellipse 55% 40% at 75% 95%, var(--luz-lima), transparent 100%);
+  }
+}
+@layer components {
+  /* Banners das páginas iniciais: cor concentrada aqui; o restante da tela segue branco/grafite. */
+  .banner-colaborador {
+    background-color: var(--lavagem-lilas);
+    background-image:
+      radial-gradient(ellipse 45% 90% at 100% 60%, var(--luz-lima), transparent 100%),
+      radial-gradient(ellipse 50% 100% at 45% 20%, var(--luz-rosa), transparent 100%),
+      radial-gradient(ellipse 40% 80% at 78% 70%, var(--luz-violeta), transparent 100%);
+  }
+  .banner-admin {
+    background-color: var(--lavagem-lilas);
+    background-image:
+      radial-gradient(ellipse 45% 100% at 85% 30%, var(--luz-rosa), transparent 100%),
+      radial-gradient(ellipse 55% 100% at 60% 90%, var(--luz-violeta), transparent 100%);
+  }
+}
+@layer components {
+  /* Orientador: um único halo lilás, muito suave, atrás das boas-vindas. */
+  .fundo-orientador {
+    background-image: radial-gradient(ellipse 46% 27% at 50% 29%, var(--luz-violeta), transparent 100%);
+  }
+}
+@layer components {
+  /* Competências e recomendações: iluminação lilás só num canto da superfície branca. */
+  .fundo-resultado {
+    background-image: radial-gradient(ellipse 50% 70% at 100% 0%, var(--luz-violeta), transparent 100%);
+  }
+}

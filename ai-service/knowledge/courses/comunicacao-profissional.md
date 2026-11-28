@@ -12,3 +12,6 @@ Fundamentos de comunicação clara em mensagens, reuniões e interações cotidi
 - Organizar mensagens com objetivo e contexto.
 - Adequar o tom ao canal profissional.
 - Praticar escuta ativa em conversas de trabalho.
+
+## Observação
+Documento institucional fictício, criado para a demonstração acadêmica da Evolia.
