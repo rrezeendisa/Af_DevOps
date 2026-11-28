@@ -1,0 +1,189 @@
+/* Tokens da Evolia. Fonte e contraste: frontend/DESIGN_SYSTEM.md (seções 2 e 3). */
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --font-sans: 'Inter Variable', ui-sans-serif, system-ui, sans-serif;
+  --font-heading: 'Fraunces Variable', ui-serif, Georgia, serif;
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  /* Tokens próprios da Evolia */
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-highlight: var(--highlight);
+  --color-highlight-foreground: var(--highlight-foreground);
+  --color-brand-detail: var(--brand-detail);
+  --color-simbolo-detalhe: var(--simbolo-detalhe);
+  --color-selected: var(--selected);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+
+  --radius-sm: calc(var(--radius) * 0.5);
+  --radius-md: calc(var(--radius) * 0.75);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.5);
+  --radius-2xl: calc(var(--radius) * 2);
+}
+
+:root {
+  --radius: 0.5rem;
+
+  --background: #FAF8F5;
+  --surface: #FFFFFF;
+  --surface-2: #F8EDFE;
+  --foreground: #211C26;
+  --muted-foreground: #625A69;
+  --border: #E8E2EC;
+  --input: #8A8290;
+  --ring: #521256;
+
+  --primary: #F170C3;
+  --primary-foreground: #211C26;
+  --secondary: #EFD2FE;
+  --secondary-foreground: #211C26;
+  --accent: #EFD2FE;
+  --accent-foreground: #211C26;
+  --highlight: #E2E585;
+  --highlight-foreground: #211C26;
+  --brand-detail: #521256;
+  --simbolo-detalhe: #521256;
+  --selected: #EFD2FE;
+
+  --destructive: #B42318;
+  --destructive-foreground: #FFFFFF;
+  --success: #2F6B2F;
+  --warning: #8A5A00;
+
+  --card: var(--surface);
+  --card-foreground: var(--foreground);
+  --popover: var(--surface);
+  --popover-foreground: var(--foreground);
+  --muted: var(--surface-2);
+
+  --chart-1: #F170C3;
+  --chart-2: #EFD2FE;
+  --chart-3: #E2E585;
+  --chart-4: #521256;
+  --chart-5: #625A69;
+
+  --sidebar: var(--surface);
+  --sidebar-foreground: var(--foreground);
+  --sidebar-primary: var(--primary);
+  --sidebar-primary-foreground: var(--primary-foreground);
+  --sidebar-accent: var(--selected);
+  --sidebar-accent-foreground: var(--foreground);
+  --sidebar-border: var(--border);
+  --sidebar-ring: var(--ring);
+
+  color-scheme: light;
+}
+
+/* Dark: base grafite neutra; Deep Plum não é usado sobre o fundo escuro (1,38:1). */
+.dark {
+  --background: #17131B;
+  --surface: #211D25;
+  --surface-2: #2A2630;
+  --foreground: #F4F1F6;
+  --muted-foreground: #B9B2BF;
+  --border: #332E39;
+  --input: #7A7381;
+  --ring: #EFD2FE;
+
+  --primary: #F170C3;
+  --primary-foreground: #211C26;
+  --secondary: #EFD2FE;
+  --secondary-foreground: #211C26;
+  --accent: #EFD2FE;
+  --accent-foreground: #211C26;
+  --highlight: #E2E585;
+  --highlight-foreground: #211C26;
+  --brand-detail: #EFD2FE;
+  /* A pétala plum vira off-white no escuro: plum sobre grafite fica em 1,38:1. */
+  --simbolo-detalhe: #F4F1F6;
+  --selected: #342C3B;
+
+  --destructive: #FF8A80;
+  --destructive-foreground: #211C26;
+  --success: #8FD18F;
+  --warning: #F2B84B;
+
+  --chart-4: #B9B2BF;
+  --chart-5: #7A7381;
+
+  --sidebar-accent-foreground: var(--foreground);
+
+  color-scheme: dark;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring;
+  }
+  html {
+    @apply font-sans;
+  }
+  body {
+    @apply bg-background text-foreground antialiased;
+  }
+  h1, h2 {
+    @apply font-heading;
+  }
+  :focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+  }
+}
+
+/* Desativa transições durante a troca de tema (ver src/lib/tema.ts). */
+.sem-transicao,
+.sem-transicao *,
+.sem-transicao *::before,
+.sem-transicao *::after {
+  transition: none !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
