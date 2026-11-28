@@ -23,6 +23,20 @@ export type NomeFoto =
   | 'mascote-evolia'
   | 'mascote-comemorando'
   | 'mascote-pensativo'
+  | 'curso-seguranca-informacao'
+  | 'curso-banco-dados-sql'
+  | 'curso-arquitetura-software'
+  | 'curso-desenvolvimento-software'
+  | 'curso-git-github'
+  | 'curso-tecnologia-digital'
+  | 'curso-logica-programacao'
+  | 'curso-decisao-dados'
+  | 'curso-resolucao-problemas'
+  | 'curso-pensamento-computacional'
+  | 'curso-algoritmos-estruturas'
+  | 'curso-feedback-escuta'
+  | 'curso-lideranca-equipes'
+  | 'curso-apresentacoes-impacto'
 
 /** URL da fotografia, preferindo AVIF; `undefined` se não houver arquivo. */
 export function urlDaFoto(nome: NomeFoto, disponiveis: Record<string, string> = arquivos): string | undefined {
