@@ -10,7 +10,7 @@ def test_knowledge_base_loads_courses_and_retrieves_relevant_source() -> None:
 
     results = knowledge_base.search("fundamentos tecnologia digital", top_k=1)
 
-    assert len(knowledge_base.documents) == 9
+    assert len(knowledge_base.documents) == 12
     assert results
     document, score = results[0]
     assert document.competency == "tecnologia"

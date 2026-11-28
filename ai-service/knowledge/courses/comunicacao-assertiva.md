@@ -12,3 +12,6 @@ Práticas de comunicação assertiva, feedback construtivo e alinhamento entre p
 - Expressar necessidades com clareza e respeito.
 - Estruturar feedback com exemplos observáveis.
 - Confirmar acordos e próximos passos em equipe.
+
+## Observação
+Documento institucional fictício, criado para a demonstração acadêmica da Evolia.

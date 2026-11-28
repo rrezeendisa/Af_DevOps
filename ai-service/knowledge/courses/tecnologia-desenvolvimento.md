@@ -12,3 +12,6 @@ Introdução ao ciclo de desenvolvimento, controle de versão, testes e integra�
 - Descrever etapas do ciclo de desenvolvimento.
 - Compreender o papel do controle de versão e dos testes.
 - Identificar práticas básicas de integração de software.
+
+## Observação
+Documento institucional fictício, criado para a demonstração acadêmica da Evolia.

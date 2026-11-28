@@ -12,3 +12,6 @@ Prática de decomposição, comparação de alternativas e elaboração de algor
 - Separar problemas em partes menores.
 - Comparar soluções considerando clareza e custo.
 - Validar algoritmos com exemplos de entrada.
+
+## Observação
+Documento institucional fictício, criado para a demonstração acadêmica da Evolia.

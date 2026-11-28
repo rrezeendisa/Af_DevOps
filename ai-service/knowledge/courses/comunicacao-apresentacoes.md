@@ -12,3 +12,6 @@ Planejamento de apresentações técnicas e facilitação de conversas com difer
 - Adaptar narrativas a públicos distintos.
 - Apresentar argumentos apoiados por evidências.
 - Facilitar decisões e conversas de equipe.
+
+## Observação
+Documento institucional fictício, criado para a demonstração acadêmica da Evolia.
