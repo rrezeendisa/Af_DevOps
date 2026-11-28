@@ -18,7 +18,7 @@ describe('proteção das rotas', () => {
   it('anônimo em /inicio vai para a tela de entrada', async () => {
     criarFetch().mockResolvedValue(new Response(null, { status: 401 }))
     renderizarApp('/inicio')
-    expect(await screen.findByRole('heading', { level: 1, name: 'Entrar' })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { level: 1, name: 'Que bom ter você aqui!' })).toBeInTheDocument()
   })
 
   it.each(['/admin/colaboradores', '/admin/contas', '/admin/treinamentos'])(
@@ -83,9 +83,9 @@ describe('proteção das rotas', () => {
 
 describe('shell autenticado', () => {
   it.each([
-    ['ADMIN', ['Visão geral', 'Colaboradores', 'Cursos', 'Contas', 'Treinamentos', 'Sair']],
-    ['COLABORADOR_INDIVIDUAL', ['Minha área', 'Cursos', 'Competências', 'Recomendações', 'Orientação', 'Consentimento', 'Sair']],
-    ['COLABORADOR_DEMONSTRACAO', ['Minha área', 'Cursos', 'Sair']],
+    ['ADMIN', ['Visão geral', 'Colaboradores', 'Cursos', 'Contas', 'Treinamentos da IA', 'Sair']],
+    ['COLABORADOR_INDIVIDUAL', ['Início', 'Catálogo de cursos', 'Minhas competências', 'Recomendações', 'Orientador Evolia', 'Privacidade e IA', 'Sair']],
+    ['COLABORADOR_DEMONSTRACAO', ['Início', 'Catálogo de cursos', 'Sair']],
   ] as const)('sidebar de %s', async (tipo, esperado) => {
     renderizarAutenticado(tipo)
     const sidebar = await screen.findByRole('complementary')
@@ -101,14 +101,14 @@ describe('shell autenticado', () => {
     expect(within(sidebar).getByRole('link', { name: 'Visão geral' })).toHaveAttribute('aria-current', 'page')
     const trilha = screen.getByRole('navigation', { name: 'Trilha de navegação' })
     expect(within(trilha).queryByRole('link')).toBeNull()
-    expect(within(trilha).getByText('Início')).toHaveAttribute('aria-current', 'page')
+    expect(within(trilha).getByText('Visão geral')).toHaveAttribute('aria-current', 'page')
 
     await usuario.click(within(sidebar).getByRole('link', { name: 'Colaboradores' }))
 
     expect(within(sidebar).getByRole('link', { name: 'Colaboradores' })).toHaveAttribute('aria-current', 'page')
     expect(within(sidebar).getByRole('link', { name: 'Visão geral' })).not.toHaveAttribute('aria-current')
     const novaTrilha = screen.getByRole('navigation', { name: 'Trilha de navegação' })
-    expect(within(novaTrilha).getByRole('link', { name: 'Evolia' })).toHaveAttribute('href', '/inicio')
+    expect(within(novaTrilha).getByRole('link', { name: 'Administração' })).toHaveAttribute('href', '/inicio')
     expect(within(novaTrilha).getByText('Colaboradores')).toHaveAttribute('aria-current', 'page')
     expect(document.title).toBe('Colaboradores · Evolia')
     expect(screen.getByRole('main')).toHaveFocus()
@@ -120,14 +120,31 @@ describe('shell autenticado', () => {
     expect(valor.sair).toHaveBeenCalledTimes(1)
   })
 
-  it('menu do usuário mostra nome e tipo de conta e permite sair', async () => {
+  it('o rodapé da navegação identifica o usuário e o tipo de conta e permite sair', async () => {
     const { usuario, valor } = renderizarAutenticado('COLABORADOR_DEMONSTRACAO')
-    await usuario.click(await screen.findByRole('button', { name: 'Menu do usuário colab.demo' }))
-    const menu = await screen.findByRole('menu')
-    expect(within(menu).getByText('colab.demo')).toBeInTheDocument()
-    expect(within(menu).getByText('Conta de demonstração')).toBeInTheDocument()
-    await usuario.click(within(menu).getByRole('menuitem', { name: 'Sair' }))
+    const sidebar = await screen.findByRole('complementary')
+    expect(within(sidebar).getByText('colab.demo')).toBeInTheDocument()
+    expect(within(sidebar).getByText('Conta de demonstração')).toBeInTheDocument()
+    await usuario.click(within(sidebar).getByRole('button', { name: 'Sair' }))
     expect(valor.sair).toHaveBeenCalledTimes(1)
+  })
+
+  it('recolhe a navegação sem perder os rótulos e sem gravar no armazenamento local', async () => {
+    const { usuario } = renderizarAutenticado('ADMIN')
+    const sidebar = await screen.findByRole('complementary')
+    await usuario.click(screen.getByRole('button', { name: 'Recolher a navegação' }))
+    expect(screen.getByRole('button', { name: 'Recolher a navegação' })).toHaveAttribute('aria-pressed', 'true')
+    expect(within(sidebar).getByRole('link', { name: 'Colaboradores' })).toHaveAttribute('href', '/admin/colaboradores')
+    expect(Object.keys(localStorage).filter((chave) => chave !== 'evolia:tema')).toEqual([])
+  })
+
+  it('o menu mobile abre com o foco na navegação, nunca em “Sair”', async () => {
+    const { usuario, valor } = renderizarAutenticado('COLABORADOR_INDIVIDUAL')
+    await usuario.click(await screen.findByRole('button', { name: 'Abrir menu' }))
+    const painel = await screen.findByRole('dialog', { name: 'Menu' })
+    expect(within(painel).getByRole('link', { name: 'Início' })).toHaveFocus()
+    await usuario.keyboard('{Enter}')
+    expect(valor.sair).not.toHaveBeenCalled()
   })
 
   it('oferece link para pular ao conteúdo', async () => {
@@ -143,7 +160,7 @@ describe('shell autenticado', () => {
 
     await usuario.click(abrir)
     const painel = await screen.findByRole('dialog', { name: 'Menu' })
-    expect(within(painel).getByRole('link', { name: 'Orientação' })).toBeInTheDocument()
+    expect(within(painel).getByRole('link', { name: 'Orientador Evolia' })).toBeInTheDocument()
 
     await usuario.keyboard('{Escape}')
     expect(screen.queryByRole('dialog', { name: 'Menu' })).toBeNull()
@@ -153,7 +170,7 @@ describe('shell autenticado', () => {
     const { usuario } = renderizarAutenticado('ADMIN')
     await usuario.click(await screen.findByRole('button', { name: 'Abrir menu' }))
     const painel = await screen.findByRole('dialog', { name: 'Menu' })
-    await usuario.click(within(painel).getByRole('link', { name: 'Treinamentos' }))
+    await usuario.click(within(painel).getByRole('link', { name: 'Treinamentos da IA' }))
     expect(screen.queryByRole('dialog', { name: 'Menu' })).toBeNull()
     expect(screen.getByRole('heading', { level: 1, name: 'Treinamentos' })).toBeInTheDocument()
   })

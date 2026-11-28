@@ -9,9 +9,9 @@ const CONTA_INDIVIDUAL = ['/competencias', '/recomendacoes', '/orientacao', '/co
 
 describe('tabela de rotas', () => {
   it.each([
-    ['ADMIN', ['Visão geral', 'Colaboradores', 'Cursos', 'Contas', 'Treinamentos']],
-    ['COLABORADOR_INDIVIDUAL', ['Minha área', 'Cursos', 'Competências', 'Recomendações', 'Orientação', 'Consentimento']],
-    ['COLABORADOR_DEMONSTRACAO', ['Minha área', 'Cursos']],
+    ['ADMIN', ['Visão geral', 'Colaboradores', 'Cursos', 'Contas', 'Treinamentos da IA']],
+    ['COLABORADOR_INDIVIDUAL', ['Início', 'Catálogo de cursos', 'Minhas competências', 'Recomendações', 'Orientador Evolia', 'Privacidade e IA']],
+    ['COLABORADOR_DEMONSTRACAO', ['Início', 'Catálogo de cursos']],
   ] as const)('navegação de %s segue o painel', (tipo, esperado) => {
     expect(rotasDe(tipo).map((rota) => rotuloNav(rota, tipo))).toEqual(esperado)
   })

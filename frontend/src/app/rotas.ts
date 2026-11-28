@@ -1,11 +1,11 @@
 import {
   BookOpen,
-  ChartNoAxesCombined,
-  GraduationCap,
-  LayoutGrid,
+  ChartNoAxesColumn,
+  House,
+  MessageCircle,
   ShieldCheck,
+  Sparkle,
   Sparkles,
-  SquareActivity,
   UserCog,
   Users,
   type LucideIcon,
@@ -28,6 +28,8 @@ export type Rota = {
   descricao: string
   /** Cor do ladrilho do ícone no acesso rápido. */
   tom: TomRota
+  /** Itens de preferência ficam num grupo próprio na navegação. */
+  grupo?: 'preferencias'
   /** Página de detalhe em `${caminho}/:id`, com a mesma permissão da rota-mãe. */
   detalhe?: { titulo: string }
 }
@@ -48,8 +50,8 @@ export const ROTAS: readonly Rota[] = [
   {
     caminho: ROTA_INICIO,
     titulo: 'Início',
-    rotuloNav: { ADMIN: 'Visão geral', COLABORADOR_INDIVIDUAL: 'Minha área', COLABORADOR_DEMONSTRACAO: 'Minha área' },
-    icone: LayoutGrid,
+    rotuloNav: { ADMIN: 'Visão geral' },
+    icone: House,
     permitir: TODAS,
     situacao: 'disponivel',
     descricao: 'Ponto de partida da plataforma.',
@@ -68,6 +70,7 @@ export const ROTAS: readonly Rota[] = [
   {
     caminho: '/cursos',
     titulo: 'Cursos',
+    rotuloNav: { COLABORADOR_INDIVIDUAL: 'Catálogo de cursos', COLABORADOR_DEMONSTRACAO: 'Catálogo de cursos' },
     icone: BookOpen,
     permitir: TODAS,
     situacao: 'disponivel',
@@ -78,7 +81,8 @@ export const ROTAS: readonly Rota[] = [
   {
     caminho: '/competencias',
     titulo: 'Competências',
-    icone: ChartNoAxesCombined,
+    rotuloNav: 'Minhas competências',
+    icone: ChartNoAxesColumn,
     permitir: INDIVIDUAL,
     situacao: 'disponivel',
     descricao: 'Avaliação de lógica, comunicação e tecnologia, com classificação do nível por Machine Learning.',
@@ -87,7 +91,7 @@ export const ROTAS: readonly Rota[] = [
   {
     caminho: '/recomendacoes',
     titulo: 'Recomendações',
-    icone: GraduationCap,
+    icone: Sparkles,
     permitir: INDIVIDUAL,
     situacao: 'disponivel',
     descricao: 'Cursos recomendados para o seu nível, com justificativas e fontes.',
@@ -106,7 +110,8 @@ export const ROTAS: readonly Rota[] = [
   {
     caminho: '/admin/treinamentos',
     titulo: 'Treinamentos',
-    icone: SquareActivity,
+    rotuloNav: 'Treinamentos da IA',
+    icone: Sparkle,
     permitir: ADMIN,
     situacao: 'disponivel',
     descricao: 'Solicitação e acompanhamento de treinamentos do modelo de classificação.',
@@ -115,9 +120,8 @@ export const ROTAS: readonly Rota[] = [
   },
   {
     caminho: '/orientacao',
-    titulo: 'Orientação com IA',
-    rotuloNav: 'Orientação',
-    icone: Sparkles,
+    titulo: 'Orientador Evolia',
+    icone: MessageCircle,
     permitir: INDIVIDUAL,
     situacao: 'disponivel',
     descricao: 'Orientação personalizada com IA, com cursos sugeridos e próximos passos quando disponíveis.',
@@ -126,6 +130,8 @@ export const ROTAS: readonly Rota[] = [
   {
     caminho: '/consentimento',
     titulo: 'Consentimento',
+    rotuloNav: 'Privacidade e IA',
+    grupo: 'preferencias',
     icone: ShieldCheck,
     permitir: INDIVIDUAL,
     situacao: 'disponivel',
