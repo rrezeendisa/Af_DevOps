@@ -9,7 +9,7 @@ describe('capa ilustrativa do curso', () => {
     ['  segurança DA informação no cotidiano ', 'Tecnologia', 'curso-seguranca-informacao'],
     ['Privacidade de dados', 'Tecnologia', 'capa-seguranca'],
     ['Redes de computadores', 'Tecnologia', 'area-tecnologia'],
-    ['Escrita profissional', 'Comunicação', 'area-comunicacao'],
+    ['Oratória', 'Comunicação', 'area-comunicacao'],
     ['Jogos de estratégia', 'Raciocínio lógico', 'area-logica'],
     ['Curso sem tema', 'Outros', 'experiencia-estudo'],
   ])('%s em %s usa %s', (nome, categoria, foto) => {
@@ -33,11 +33,24 @@ describe('capas próprias', () => {
     'Feedback e escuta ativa',
     'Liderança e facilitação de equipes',
     'Apresentações de alto impacto',
+    'Escrita profissional',
   ])('%s tem arquivo de capa', (nome) => {
     const { foto } = capaDoCurso({ nome, categoria: 'Qualquer' })
     expect(foto).toMatch(/^curso-/)
     expect(urlDaFoto(foto)).toBeTruthy()
   })
+})
+
+it('não repete capa entre os cursos de Comunicação do catálogo', () => {
+  const fotos = [
+    'Comunicação no ambiente corporativo',
+    'Comunicação assertiva',
+    'Escrita profissional',
+    'Apresentações de alto impacto',
+    'Feedback e escuta ativa',
+    'Liderança e facilitação de equipes',
+  ].map((nome) => capaDoCurso({ nome, categoria: 'Comunicação' }).foto)
+  expect(new Set(fotos).size).toBe(fotos.length)
 })
 
 describe('iniciais', () => {

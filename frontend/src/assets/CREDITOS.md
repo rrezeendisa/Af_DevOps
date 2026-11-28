@@ -45,14 +45,14 @@ ilustrativos e as pessoas não são reais.
 | `fotos/curso-resolucao-problemas.webp` | 73,3 kB | `catalogo-curso-imagem-16.png` | Resolução estruturada de problemas: equipe sobre esboços e notas adesivas |
 | `fotos/curso-pensamento-computacional.webp` | 59,0 kB | `Imagem do ChatGPT … 06_06_43-7.png` | Pensamento computacional: rede neural e dispersão de pontos |
 | `fotos/curso-algoritmos-estruturas.webp` | 57,9 kB | `catalogo-curso-imagem-13.png` | Algoritmos e estruturas de dados: diagramas de nós em hierarquia e gráficos |
-| `fotos/curso-feedback-escuta.webp` | 56,8 kB | `catalogo-curso-imagem-15.png` | Feedback e escuta ativa: conversa entre duas pessoas |
+| `fotos/curso-feedback-escuta.webp` | 56,8 kB | `catalogo-curso-imagem-8.png` | Feedback e escuta ativa: conversa entre duas pessoas |
 | `fotos/curso-lideranca-equipes.webp` | 72,9 kB | `Imagem do ChatGPT … 06_06_40-5.png` | Liderança e facilitação de equipes: equipe reunida com pessoas conduzindo em pé |
 | `fotos/curso-apresentacoes-impacto.webp` | 80,0 kB | `catalogo-curso-imagem-1.png` | Apresentações de alto impacto: equipe com quadro de gráficos e megafone |
+| `fotos/curso-escrita-profissional.webp` | 57,6 kB | `catalogo-curso-imagem-15.png` | Escrita profissional: pessoa escrevendo com caneta digital |
 
-Sem capa própria (usam a foto do tema): Comunicação assertiva, Comunicação no ambiente corporativo,
-Escrita profissional e Fundamentos do raciocínio lógico. Não usadas: `Equipe de Cibersegurança em
-Ação-2.png` (segundo tema de segurança) e `catalogo-curso-imagem-8.png` (desenho de interfaces, sem curso
-correspondente).
+Sem imagem própria: Comunicação assertiva (foto do tema), Comunicação no ambiente corporativo (usa
+`experiencia-estudo`) e Fundamentos do raciocínio lógico (foto do tema). Não usada: `Equipe de
+Cibersegurança em Ação-2.png` (segundo tema de segurança).
 
 ### Prompts resumidos
 

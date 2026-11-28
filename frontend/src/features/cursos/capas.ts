@@ -40,6 +40,9 @@ const POR_NOME = new Map<string, NomeFoto>(
       ['Feedback e escuta ativa', 'curso-feedback-escuta'],
       ['Liderança e facilitação de equipes', 'curso-lideranca-equipes'],
       ['Apresentações de alto impacto', 'curso-apresentacoes-impacto'],
+      ['Escrita profissional', 'curso-escrita-profissional'],
+      // Foto já existente, para não repetir a do tema entre cursos de Comunicação.
+      ['Comunicação no ambiente corporativo', 'experiencia-estudo'],
     ] satisfies [string, NomeFoto][]
   ).map(([nome, foto]) => [normalizarBusca(nome), foto]),
 )

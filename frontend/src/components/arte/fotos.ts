@@ -37,6 +37,7 @@ export type NomeFoto =
   | 'curso-feedback-escuta'
   | 'curso-lideranca-equipes'
   | 'curso-apresentacoes-impacto'
+  | 'curso-escrita-profissional'
 
 /** URL da fotografia, preferindo AVIF; `undefined` se não houver arquivo. */
 export function urlDaFoto(nome: NomeFoto, disponiveis: Record<string, string> = arquivos): string | undefined {
