@@ -1,0 +1,50 @@
+{
+  "rnf02_ml": {
+    "java": "UP",
+    "post": 202,
+    "consulta": 200,
+    "publicacoes_delta": 1,
+    "worker": "CONCLUIDO"
+  },
+  "rnf04": {
+    "colaboradores": [
+      200,
+      201,
+      200
+    ],
+    "cursos": [
+      200,
+      201,
+      200
+    ],
+    "durante_falha": {
+      "classificacoes": [
+        503,
+        "IA_INDISPONIVEL"
+      ],
+      "recomendacoes": [
+        503,
+        "IA_INDISPONIVEL"
+      ],
+      "orientacoes": [
+        503,
+        "IA_INDISPONIVEL"
+      ]
+    },
+    "espera_recuperacao_s": 4.21,
+    "recuperacao": {
+      "classificacoes": 200,
+      "recomendacoes": 200,
+      "orientacoes": 200
+    },
+    "fastapi_recriado": true,
+    "java_preservado": true
+  },
+  "rnf02_rabbitmq": {
+    "post": 503,
+    "codigo": "FILA_INDISPONIVEL",
+    "consulta": 200,
+    "pedido": "FALHOU",
+    "saude_java": "DOWN"
+  }
+}

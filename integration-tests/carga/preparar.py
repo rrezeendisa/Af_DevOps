@@ -1,6 +1,5 @@
 """Provisiona contas fictícias pelo gateway e reusa a sessão HTTP nos roteiros."""
 import argparse
-import base64
 from concurrent.futures import ThreadPoolExecutor
 from http.cookiejar import CookieJar
 import json
@@ -10,6 +9,7 @@ import re
 import secrets
 import time
 from urllib.error import HTTPError
+from urllib.parse import urlencode
 from urllib.request import HTTPCookieProcessor, HTTPRedirectHandler, Request, build_opener
 
 
@@ -19,29 +19,52 @@ class SemRedirect(HTTPRedirectHandler):
 
 
 class Sessao:
+    """Um usuário com cookies próprios. Entra no primeiro uso e mantém o contexto do login."""
+
     def __init__(self, url, usuario, senha):
         self.url = url
-        self.basic = "Basic " + base64.b64encode(f"{usuario}:{senha}".encode()).decode()
+        self.usuario = usuario
+        self.senha = senha
+        self.contexto = None
         self.opener = build_opener(HTTPCookieProcessor(CookieJar()), SemRedirect())
 
-    def chamar(self, rota, metodo="GET", dados=None):
-        headers = {"Authorization": self.basic, "Accept": "application/json"}
-        if metodo in ("POST", "PUT"):
-            status, csrf, _ = self.chamar("/api/csrf")
-            exigir(status == 200 and csrf.get("headerName") == "X-XSRF-TOKEN"
-                   and bool(csrf.get("token")), "obter CSRF")
-            headers["X-XSRF-TOKEN"] = csrf["token"]
-        corpo = None if dados is None else json.dumps(dados).encode()
-        if corpo is not None:
-            headers["Content-Type"] = "application/json"
+    def _enviar(self, rota, metodo, corpo, headers, prazo=25):
+        headers = {"Accept": "application/json", **headers}
+        if self.contexto is not None:
+            headers["X-Evolia-Contexto"] = self.contexto
         req = Request(self.url + rota, corpo, headers, method=metodo)
         try:
-            resposta = self.opener.open(req, timeout=90 if rota == "/api/ia/orientacoes" else 25)
+            resposta = self.opener.open(req, timeout=prazo)
         except HTTPError as erro:
             resposta = erro
         with resposta:
             corpo = resposta.read()
             return resposta.status, json.loads(corpo) if corpo else {}, resposta.headers
+
+    def _csrf(self):
+        status, csrf, _ = self._enviar("/api/csrf", "GET", None, {})
+        exigir(status == 200 and csrf.get("headerName") == "X-XSRF-TOKEN"
+               and bool(csrf.get("token")), "obter CSRF")
+        return {"X-XSRF-TOKEN": csrf["token"]}
+
+    def entrar(self):
+        self.contexto = None
+        formulario = urlencode({"username": self.usuario, "password": self.senha}).encode()
+        status, _, _ = self._enviar("/api/login", "POST", formulario, {
+            "Content-Type": "application/x-www-form-urlencoded", **self._csrf()})
+        exigir(status == 204, "entrar")
+        status, _, headers = self._enviar("/api/me", "GET", None, {})
+        exigir(status == 200 and bool(headers.get("X-Evolia-Contexto")), "identificar a sessão")
+        self.contexto = headers["X-Evolia-Contexto"]
+
+    def chamar(self, rota, metodo="GET", dados=None):
+        if self.contexto is None:
+            self.entrar()
+        headers = self._csrf() if metodo in ("POST", "PUT") else {}
+        corpo = None if dados is None else json.dumps(dados).encode()
+        if corpo is not None:
+            headers["Content-Type"] = "application/json"
+        return self._enviar(rota, metodo, corpo, headers, 90 if rota == "/api/ia/orientacoes" else 25)
 
 
 def exigir(condicao, etapa):

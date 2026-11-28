@@ -1,0 +1,133 @@
+{
+  "data": "2026-11-28T02:48:49.043Z",
+  "total": 25,
+  "aprovados": 25,
+  "resultados": [
+    {
+      "nome": "login inválido mostra mensagem e não cria sessão",
+      "ok": true,
+      "ms": 934
+    },
+    {
+      "nome": "login ADMIN; cookie HttpOnly/SameSite=Strict; nada persistido",
+      "ok": true,
+      "ms": 974
+    },
+    {
+      "nome": "restauração após recarregar, sem novo login",
+      "ok": true,
+      "ms": 467
+    },
+    {
+      "nome": "RF01 cadastro e consulta de colaborador pela interface",
+      "ok": true,
+      "ms": 986
+    },
+    {
+      "nome": "RF01 cadastro e consulta de curso pela interface",
+      "ok": true,
+      "ms": 977
+    },
+    {
+      "nome": "criação da conta individual pela interface",
+      "ok": true,
+      "ms": 954
+    },
+    {
+      "nome": "RF05 solicitação e acompanhamento de treinamento até concluir",
+      "ok": true,
+      "ms": 434
+    },
+    {
+      "nome": "proteção CSRF e rotas internas pelo gateway",
+      "ok": true,
+      "ms": 37
+    },
+    {
+      "nome": "logout confirmado e cookie encerrado não reutilizável",
+      "ok": true,
+      "ms": 318
+    },
+    {
+      "nome": "perfil de demonstração não acessa consentimento nem IA",
+      "ok": true,
+      "ms": 979
+    },
+    {
+      "nome": "perfil individual e concessão de consentimento",
+      "ok": true,
+      "ms": 979
+    },
+    {
+      "nome": "RF02 classificação",
+      "ok": true,
+      "ms": 432
+    },
+    {
+      "nome": "RF03 recomendações com fontes",
+      "ok": true,
+      "ms": 440
+    },
+    {
+      "nome": "RF04 orientação e complemento generativo",
+      "ok": true,
+      "detalhe": "com complemento do Ollama",
+      "ms": 6267
+    },
+    {
+      "nome": "revogação de consentimento descarta a jornada",
+      "ok": true,
+      "ms": 319
+    },
+    {
+      "nome": "abrir e recarregar outra aba não encerra a primeira",
+      "ok": true,
+      "ms": 4500
+    },
+    {
+      "nome": "duas abas: troca de usuário não é adotada pela outra e não deixa dados",
+      "ok": true,
+      "ms": 5094
+    },
+    {
+      "nome": "logout com contexto antigo não encerra a sessão de quem entrou depois",
+      "ok": true,
+      "ms": 4663
+    },
+    {
+      "nome": "sessão substituída: aba antiga não restaura outra identidade em silêncio",
+      "ok": true,
+      "ms": 7214
+    },
+    {
+      "nome": "requisição atrasada enviada após troca de usuário é recusada e descartada",
+      "ok": true,
+      "ms": 5951
+    },
+    {
+      "nome": "logout com falha de rede: marcador, bloqueio, recarga, outra aba e nova tentativa",
+      "ok": true,
+      "ms": 3996
+    },
+    {
+      "nome": "sem localStorage: restauração exige confirmação",
+      "ok": true,
+      "ms": 3588
+    },
+    {
+      "nome": "sem BroadcastChannel: o servidor impede a aba antiga de usar outra identidade",
+      "ok": true,
+      "ms": 5942
+    },
+    {
+      "nome": "sessão expirada por inatividade (SESSION_TIMEOUT=1m)",
+      "ok": true,
+      "ms": 160411
+    },
+    {
+      "nome": "CSP sem violações e nenhum Authorization enviado",
+      "ok": true,
+      "ms": 40
+    }
+  ]
+}

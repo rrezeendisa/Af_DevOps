@@ -271,7 +271,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     })
     canalRef.current = canal
     const aoMudarMarcador = (evento: StorageEvent) => {
-      if (evento.key === CHAVE_SAIDA_PENDENTE || evento.key === null) aoMudarEmOutraAba()
+      // Só interessa a entrada ou a saída do estado pendente. O teste de gravação feito por outra aba
+      // ao restaurar a própria sessão não é uma mudança de sessão.
+      const marcador = evento.key === CHAVE_SAIDA_PENDENTE && (evento.newValue === 'true' || evento.oldValue === 'true')
+      if (marcador || evento.key === null) aoMudarEmOutraAba()
     }
     window.addEventListener('storage', aoMudarMarcador)
     if (estadoRef.current.status === 'verificando') {

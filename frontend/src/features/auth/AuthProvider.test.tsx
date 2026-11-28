@@ -822,9 +822,23 @@ describe('múltiplas abas', () => {
     await waitFor(() => expect(a.atual()).toBe('autenticado:ana'))
 
     localStorage.setItem(CHAVE_SAIDA_PENDENTE, 'true')
-    act(() => void window.dispatchEvent(new StorageEvent('storage', { key: CHAVE_SAIDA_PENDENTE })))
+    const evento = { key: CHAVE_SAIDA_PENDENTE, newValue: 'true' }
+    act(() => void window.dispatchEvent(new StorageEvent('storage', evento)))
 
     expect(a.atual()).toBe('saida-pendente')
+  })
+
+  it.each([
+    ['gravação do teste', { oldValue: null, newValue: 'false' }],
+    ['remoção do teste', { oldValue: 'false', newValue: null }],
+  ])('a %s feita por outra aba ao restaurar não encerra esta', async (_caso, valores) => {
+    servidor.abrir('ana')
+    const a = aba()
+    await waitFor(() => expect(a.atual()).toBe('autenticado:ana'))
+
+    act(() => void window.dispatchEvent(new StorageEvent('storage', { key: CHAVE_SAIDA_PENDENTE, ...valores })))
+
+    expect(a.atual()).toBe('autenticado:ana')
   })
 
   it('sem BroadcastChannel, o servidor ainda impede a aba antiga de usar a nova identidade', async () => {
