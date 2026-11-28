@@ -1,5 +1,5 @@
 import { QueryClientProvider } from '@tanstack/react-query'
-import { render, screen, within } from '@testing-library/react'
+import { render, screen } from '@testing-library/react'
 import { MemoryRouter } from 'react-router'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { AuthContext, type ValorAuth } from '@/features/auth/contexto'
@@ -8,7 +8,7 @@ import { JornadaProvider } from '@/features/ia/JornadaProvider'
 import { criarSessaoApi } from '@/lib/api/cliente'
 import { criarFetch, ME } from '@/test/app'
 import { criarQueryClient } from '../queryClient'
-import { rotasDe } from '../rotas'
+import { podeAcessar } from '../rotas'
 import { Inicio } from './Inicio'
 
 afterEach(() => {
@@ -40,36 +40,26 @@ function renderizar(tipoConta: TipoConta) {
 
 describe('Início', () => {
   it.each([
-    ['ADMIN', 'Gestão que transforma.', 'Educação corporativa inteligente'],
-    ['COLABORADOR_INDIVIDUAL', 'Aprender é evoluir.', 'Sua jornada de desenvolvimento'],
-    ['COLABORADOR_DEMONSTRACAO', 'Aprender é evoluir.', 'Sua jornada de desenvolvimento'],
+    ['ADMIN', 'Visão geral da Evolia', 'Gerencie pessoas, conhecimento e inteligência artificial.'],
+    ['COLABORADOR_INDIVIDUAL', 'Que bom ter você aqui!', 'Descubra novas possibilidades de desenvolvimento.'],
+    ['COLABORADOR_DEMONSTRACAO', 'Que bom ter você aqui!', 'Descubra novas possibilidades de desenvolvimento.'],
   ] as const)('banner de %s', (tipo, titulo, subtitulo) => {
     renderizar(tipo)
     expect(screen.getByRole('heading', { level: 1, name: titulo })).toBeInTheDocument()
     expect(screen.getByText(subtitulo)).toBeInTheDocument()
-    expect(screen.getByText(ME[tipo].nomeUsuario)).toBeInTheDocument()
   })
 
-  it.each(['ADMIN', 'COLABORADOR_INDIVIDUAL', 'COLABORADOR_DEMONSTRACAO'] as const)(
-    'acesso rápido de %s lista só rotas permitidas, marcando apenas as pendentes',
-    (tipo) => {
-      renderizar(tipo)
-      const secao = screen.getByRole('region', { name: 'Acesso rápido' })
-      const links = within(secao).getAllByRole('link')
-      const esperadas = rotasDe(tipo).filter((rota) => rota.caminho !== '/inicio')
-      expect(links.map((link) => link.getAttribute('href'))).toEqual(esperadas.map((rota) => rota.caminho))
-      esperadas.forEach((rota, indice) => {
-        const marcado = links[indice]?.textContent?.includes('Em desenvolvimento')
-        expect(marcado).toBe(rota.situacao === 'pendente')
-      })
-    },
-  )
+  it.each(['ADMIN', 'COLABORADOR_INDIVIDUAL', 'COLABORADOR_DEMONSTRACAO'] as const)('%s só recebe links para rotas permitidas', (tipo) => {
+    renderizar(tipo)
+    for (const link of screen.getAllByRole('link')) {
+      expect(podeAcessar(link.getAttribute('href')!, tipo)).toBe(true)
+    }
+  })
 
   it('conta de demonstração vê o aviso sobre a conta individual e nenhum atalho de IA', () => {
     renderizar('COLABORADOR_DEMONSTRACAO')
     expect(screen.getByRole('status')).toHaveTextContent('disponíveis apenas para contas individuais')
-    const secao = screen.getByRole('region', { name: 'Acesso rápido' })
-    expect(within(secao).queryByRole('link', { name: /Orientação|Consentimento|Competências|Recomendações/ })).toBeNull()
+    expect(screen.queryByRole('link', { name: /orientador|autorização|Avaliar competências/i })).toBeNull()
   })
 
   it('não mostra aviso de demonstração para outras contas', () => {

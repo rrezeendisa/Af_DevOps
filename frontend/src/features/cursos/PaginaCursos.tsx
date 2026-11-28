@@ -1,5 +1,6 @@
 import { BookOpen, Plus, SearchX } from 'lucide-react'
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
+import { useLocation, useNavigate } from 'react-router'
 import { BarraFiltros } from '@/components/feedback/BarraFiltros'
 import { ErroConsulta } from '@/components/feedback/ErroConsulta'
 import { EstadoCarregando } from '@/components/feedback/EstadoCarregando'
@@ -35,7 +36,14 @@ export default function PaginaCursos() {
   const [busca, setBusca] = useState('')
   const [categoria, setCategoria] = useState('')
   const [nivel, setNivel] = useState('')
-  const [formularioAberto, setFormularioAberto] = useState(false)
+  // Atalhos do painel abrem o cadastro direto; nada é enviado por isso.
+  const location = useLocation()
+  const [formularioAberto, setFormularioAberto] = useState(() => (location.state as { abrirCadastro?: boolean } | null)?.abrirCadastro === true)
+  // O pedido vale uma vez: recarregar ou voltar pelo histórico não reabre o cadastro.
+  const navegar = useNavigate()
+  useEffect(() => {
+    if (location.state !== null) void navegar(location.pathname, { replace: true, state: null })
+  }, [location.pathname, location.state, navegar])
   const [cadastrado, setCadastrado] = useState<string | null>(null)
 
   const cursos = useMemo(() => consulta.data ?? [], [consulta.data])

@@ -52,7 +52,7 @@ describe('painel do ADMIN', () => {
     expect(await screen.findByTestId('total-/admin/treinamentos')).toHaveTextContent('4')
   })
 
-  it('mostra a distribuição real por status, com números e percentuais em texto', async () => {
+  it('mostra as contagens reais por status e a tabela, sem percentuais', async () => {
     renderizarAutenticado('ADMIN', '/inicio', {
       'GET /api/colaboradores': () => json([]),
       'GET /api/cursos': () => json([]),
@@ -60,9 +60,10 @@ describe('painel do ADMIN', () => {
     })
     const lista = await screen.findByRole('list', { name: 'Quantidade por status' })
     const itens = within(lista).getAllByRole('listitem').map((item) => item.textContent?.replace(/\s+/g, ' '))
-    expect(itens[0]).toMatch(/^Pendentes: 1 \(25\s?%\)$/)
-    expect(itens[1]).toMatch(/^Concluídas: 2 \(50\s?%\)$/)
-    expect(itens[2]).toMatch(/^Com falha: 1 \(25\s?%\)$/)
+    expect(itens).toEqual(['Pendentes: 1', 'Concluídas: 2', 'Com falha: 1'])
+    const tabela = screen.getByRole('table', { name: 'Solicitações de treinamento mais recentes' })
+    expect(within(tabela).getAllByRole('rowheader').map((c) => c.textContent)).toEqual(['#4', '#3', '#2', '#1'])
+    expect(tabela.textContent).not.toMatch(/%/)
   })
 
   it('sem solicitações, informa que não há dados em vez de mostrar uma barra vazia', async () => {
@@ -101,7 +102,38 @@ describe('painel do ADMIN', () => {
     const secao = await panorama()
     expect(within(secao).getByRole('link', { name: /Abrir colaboradores/ })).toHaveAttribute('href', '/admin/colaboradores')
     expect(within(secao).getByRole('link', { name: /Abrir cursos/ })).toHaveAttribute('href', '/cursos')
-    expect(within(secao).getByRole('link', { name: /Abrir solicitações de treinamento/ })).toHaveAttribute('href', '/admin/treinamentos')
+    expect(within(secao).getByRole('link', { name: /Abrir treinamentos/ })).toHaveAttribute('href', '/admin/treinamentos')
+  })
+
+  it('os atalhos só navegam: nenhum treinamento é solicitado ao abrir o painel ou a página', async () => {
+    const { usuario, fetchMock } = renderizarAutenticado('ADMIN', '/inicio', {
+      'GET /api/colaboradores': () => json([]),
+      'GET /api/cursos': () => json([]),
+      'GET /api/treinamentos': () => json([]),
+    })
+    const acoes = await screen.findByRole('region', { name: 'Ações rápidas' })
+    await usuario.click(within(acoes).getByRole('link', { name: 'Solicitar treinamento' }))
+    expect(await screen.findByRole('heading', { level: 1, name: 'Treinamentos' })).toBeInTheDocument()
+    expect(chamadas(fetchMock).filter((chamada) => chamada.startsWith('POST'))).toEqual([])
+  })
+
+  it('“Novo colaborador” abre o formulário existente, sem enviar nada', async () => {
+    const { usuario, fetchMock } = renderizarAutenticado('ADMIN', '/inicio', {
+      'GET /api/colaboradores': () => json([]),
+      'GET /api/cursos': () => json([]),
+      'GET /api/treinamentos': () => json([]),
+    })
+    await usuario.click(await screen.findByRole('link', { name: 'Novo colaborador' }))
+    expect(await screen.findByRole('dialog', { name: 'Cadastrar colaborador' })).toBeInTheDocument()
+    expect(chamadas(fetchMock).filter((chamada) => chamada.startsWith('POST'))).toEqual([])
+
+    // O pedido é consumido: sair da página e voltar a ela não reabre o formulário.
+    await usuario.keyboard('{Escape}')
+    const barra = screen.getByRole('complementary')
+    await usuario.click(within(barra).getByRole('link', { name: 'Visão geral' }))
+    await usuario.click(within(barra).getByRole('link', { name: 'Colaboradores' }))
+    await screen.findByRole('heading', { level: 1, name: 'Colaboradores' })
+    expect(screen.queryByRole('dialog')).toBeNull()
   })
 
   it.each([
@@ -109,7 +141,7 @@ describe('painel do ADMIN', () => {
     ['COLABORADOR_DEMONSTRACAO', []],
   ] as const)('%s não vê o painel administrativo nem busca dados administrativos', async (tipo, esperadas) => {
     const { fetchMock } = renderizarAutenticado(tipo, '/inicio')
-    expect(await screen.findByRole('heading', { level: 1, name: 'Aprender é evoluir.' })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { level: 2, name: 'Explore suas competências' })).toBeInTheDocument()
     expect(screen.queryByRole('region', { name: 'Panorama' })).toBeNull()
     expect(chamadas(fetchMock)).toEqual(esperadas)
   })

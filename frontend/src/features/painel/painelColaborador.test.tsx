@@ -18,17 +18,19 @@ async function classificarEAbrirPainel(usuario: ReturnType<typeof renderizarAute
   }
   await usuario.click(screen.getByRole('button', { name: 'Classificar' }))
   await screen.findByRole('region', { name: 'Nível estimado' })
-  await usuario.click(within(screen.getByRole('complementary')).getByRole('link', { name: 'Minha área' }))
+  await usuario.click(within(screen.getByRole('complementary')).getByRole('link', { name: 'Início' }))
   return screen.findByRole('region', { name: 'Sua classificação' })
 }
 
 describe('painel do colaborador', () => {
   it('mostra o consentimento real e indica que ainda não há avaliação na sessão', async () => {
     renderizarAutenticado('COLABORADOR_INDIVIDUAL', '/inicio', { 'GET /api/me/consentimento': () => json(AUTORIZADO) })
-    const ia = await screen.findByRole('region', { name: 'Uso da IA' })
+    const ia = await screen.findByRole('region', { name: 'Sua privacidade' })
     expect(await within(ia).findByText('Autorizado')).toBeInTheDocument()
     expect(within(ia).getByText(/^Desde /)).toBeInTheDocument()
-    expect(within(ia).getByRole('link', { name: /Gerenciar consentimento/ })).toHaveAttribute('href', '/consentimento')
+    expect(within(ia).getByRole('link', { name: /Gerenciar autorização/ })).toHaveAttribute('href', '/consentimento')
+    const orientador = screen.getByRole('region', { name: 'Seu orientador IA' })
+    expect(within(orientador).getByRole('link', { name: /Abrir orientador/ })).toHaveAttribute('href', '/orientacao')
 
     const classificacao = screen.getByRole('region', { name: 'Sua classificação' })
     expect(classificacao).toHaveTextContent('Você ainda não fez a avaliação nesta sessão.')
@@ -37,7 +39,7 @@ describe('painel do colaborador', () => {
 
   it('mostra não autorizado com orientação', async () => {
     renderizarAutenticado('COLABORADOR_INDIVIDUAL', '/inicio', { 'GET /api/me/consentimento': () => json({ autorizado: false, decididoEm: null }) })
-    const ia = await screen.findByRole('region', { name: 'Uso da IA' })
+    const ia = await screen.findByRole('region', { name: 'Sua privacidade' })
     expect(await within(ia).findByText('Não autorizado')).toBeInTheDocument()
   })
 
@@ -84,25 +86,21 @@ describe('painel do colaborador', () => {
     expect(classificacao).toHaveTextContent('Você ainda não fez a avaliação nesta sessão.')
   })
 
-  it('acesso rápido do colaborador individual não tem telas pendentes', async () => {
+  it('o conteúdo do colaborador individual só leva a rotas permitidas', async () => {
     renderizarAutenticado('COLABORADOR_INDIVIDUAL', '/inicio', { 'GET /api/me/consentimento': () => json(AUTORIZADO) })
-    const atalhos = await screen.findByRole('region', { name: 'Acesso rápido' })
-    expect(within(atalhos).queryByText('Em desenvolvimento')).toBeNull()
-    expect(within(atalhos).getAllByRole('link').map((l) => l.getAttribute('href'))).toEqual([
-      '/cursos',
-      '/competencias',
-      '/recomendacoes',
-      '/orientacao',
-      '/consentimento',
-    ])
+    await screen.findByRole('region', { name: 'Sua privacidade' })
+    const destinos = new Set(within(screen.getByRole('main')).getAllByRole('link').map((l) => l.getAttribute('href')))
+    expect([...destinos].sort()).toEqual(['/competencias', '/consentimento', '/cursos', '/orientacao'])
   })
 
   it('a conta de demonstração continua restrita ao início e ao catálogo', async () => {
     const { fetchMock } = renderizarAutenticado('COLABORADOR_DEMONSTRACAO', '/inicio')
-    await screen.findByRole('heading', { level: 1, name: 'Aprender é evoluir.' })
-    expect(screen.queryByRole('region', { name: 'Sua situação' })).toBeNull()
-    const atalhos = screen.getByRole('region', { name: 'Acesso rápido' })
-    expect(within(atalhos).getAllByRole('link').map((l) => l.getAttribute('href'))).toEqual(['/cursos'])
+    await screen.findByRole('heading', { level: 2, name: 'Explore suas competências' })
+    for (const nome of ['Sua privacidade', 'Seu orientador IA', 'Sua classificação']) {
+      expect(screen.queryByRole('region', { name: nome })).toBeNull()
+    }
+    const destinos = new Set(within(screen.getByRole('main')).getAllByRole('link').map((l) => l.getAttribute('href')))
+    expect([...destinos]).toEqual(['/cursos'])
     expect(fetchMock).not.toHaveBeenCalled()
   })
 })
