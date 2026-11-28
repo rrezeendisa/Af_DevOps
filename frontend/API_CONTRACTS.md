@@ -17,11 +17,21 @@ campos que não existam lá.
 
 ## 2. Autenticação e identidade
 
-- HTTP Basic sem sessão (`SessionCreationPolicy.STATELESS`): toda requisição protegida envia
-  `Authorization: Basic base64(usuario:senha)`. Não há rota de login nem de logout.
-- **Login:** chamar `GET /api/me` com as credenciais digitadas. Resposta 200 significa
-  autenticado; 401 significa credenciais inválidas.
-- **Logout:** é apenas local (ver seção 6).
+Sessão no servidor (Spring Security), em memória. HTTP Basic não autentica a API pública.
+
+1. `GET /api/csrf` (público; não cria sessão).
+2. `POST /api/login`, `application/x-www-form-urlencoded` (`username`, `password`) com `X-XSRF-TOKEN`.
+   Responde 204 e o cookie `EVOLIA_SESSAO` (`HttpOnly`, `SameSite=Strict`; `Secure` com
+   `SESSION_COOKIE_SECURE=true`). 401 para credenciais inválidas, 400 se houver parâmetros na URL,
+   429 quando o gateway limita as tentativas.
+3. `GET /api/me`: identidade no corpo e o contexto no cabeçalho `X-Evolia-Contexto`.
+4. Toda requisição autenticada envia o cookie (mesma origem) e `X-Evolia-Contexto`. Contexto ausente
+   ou diferente responde 401 `SESSAO_SUBSTITUIDA`. Só `GET /api/me` aceita a ausência dele, para
+   restaurar a sessão.
+5. `POST /api/logout` com CSRF e contexto: 204 (também sem sessão). Com contexto antigo, 401
+   `SESSAO_SUBSTITUIDA`, sem encerrar a sessão atual.
+
+A sessão expira após 30 min de inatividade (`SESSION_TIMEOUT`) e não sobrevive ao reinício do Java.
 
 `GET /api/me` responde com `IdentidadeResponse` (`…/identidade/IdentidadeController.java`), com `Cache-Control: no-store`:
 
@@ -47,14 +57,8 @@ As contas de demonstração ficam em memória no servidor e não têm vínculo c
 
 ### Cabeçalho `WWW-Authenticate`
 
-O 401 inclui `WWW-Authenticate: Basic realm="AF-DevOps"` (`…/seguranca/ErrosSeguranca.java`).
-Em `fetch`, isso faz o navegador abrir a janela nativa de login. O backend **não** será
-alterado. A solução fica no proxy:
-
-- **Vite (dev):** remover o cabeçalho na resposta, em `configure` → `proxy.on('proxyRes', r => delete r.headers['www-authenticate'])`.
-- **Nginx no Compose:** `proxy_hide_header WWW-Authenticate;`.
-- ⚠️ **Pendente:** validar no navegador real (Chrome, Firefox, Safari) que nenhuma janela nativa
-  aparece em 401, tanto no login com senha errada quanto em credenciais expiradas.
+A API pública não envia desafio `Basic`. O Nginx também remove o cabeçalho e não encaminha
+`Authorization` do navegador.
 
 ## 3. CSRF nas operações de escrita
 
@@ -63,10 +67,11 @@ Configuração (`…/seguranca/SegurancaConfig.java`):
 - `CookieCsrfTokenRepository` com o cookie `XSRF-TOKEN` **HttpOnly** e **SameSite=Strict**. O
   JavaScript não lê esse cookie, e isso é esperado.
 - `XorCsrfTokenRequestAttributeHandler`: o token do JSON é **mascarado** e é ele que vai no cabeçalho.
+- O token é renovado no login e no logout.
 - Em escritas, o CSRF é verificado **antes** da autenticação. Sem token válido, a resposta é
   403 `CSRF_INVALIDO`, mesmo sem credenciais.
 
-`GET /api/csrf` (ADMIN e COLABORADOR, autenticado), com `Cache-Control: no-store`:
+`GET /api/csrf` (público), com `Cache-Control: no-store`:
 
 ```ts
 type TokenCsrf = { headerName: 'X-XSRF-TOKEN'; token: string }; // token: [A-Za-z0-9_-]+
@@ -74,9 +79,9 @@ type TokenCsrf = { headerName: 'X-XSRF-TOKEN'; token: string }; // token: [A-Za-
 
 **Fluxo obrigatório para cada `POST` e `PUT`:**
 
-1. `GET /api/csrf` com Basic. O navegador grava o cookie `XSRF-TOKEN`.
-2. Enviar a escrita com Basic, `X-XSRF-TOKEN: <token do JSON>` e `credentials: 'same-origin'`
-   (cookie enviado automaticamente).
+1. `GET /api/csrf`. O navegador grava o cookie `XSRF-TOKEN`.
+2. Enviar a escrita com `X-XSRF-TOKEN: <token do JSON>`, o contexto e `credentials: 'same-origin'`
+   (cookies enviados automaticamente).
 3. Validar `headerName === 'X-XSRF-TOKEN'` e o formato do token antes de usá-lo.
 
 **Serialização obrigatória.** O cliente HTTP mantém uma **fila única** (cadeia de *promises*)
@@ -87,13 +92,14 @@ para o par “obter CSRF e executar escrita”. Assim, duas escritas concorrente
 **Sem retentativa automática.** Nenhuma escrita é repetida pelo cliente, nem em 403
 `CSRF_INVALIDO`. O erro volta para quem chamou, e a interface decide se oferece “Tentar novamente”.
 
-**Implementação:** `criarSessaoApi(credenciais)` em `frontend/src/lib/api/cliente.ts` cria uma sessão
-por login, com as credenciais apenas no *closure*. A sessão expõe:
+**Implementação:** `criarSessaoApi()` em `frontend/src/lib/api/cliente.ts` representa um login. Ela
+guarda em memória só o contexto e expõe:
 
+- `autenticar` e `retomar`, para entrar e para restaurar.
 - `obter`, `enviar` e `substituir`, que exigem resposta JSON validada.
 - `escreverSemResposta`, que admite sucesso sem corpo.
-- `encerrar()`, que cancela o que está em andamento e o que espera na fila, descarta as credenciais
-  e impede novas chamadas.
+- `encerrarNoServidor()`, que aborta o que está pendente e pede o logout, fora da fila de escrita.
+- `encerrar()`, que cancela localmente, sem logout.
 
 Só aceita caminhos `/api/<segmentos>` simples. Os erros (`ApiError` em `erros.ts`) guardam apenas
 `tipo`, `status` e um `codigo` reconhecido.
@@ -250,12 +256,30 @@ para mostrar o registro `FALHOU`.
 
 ## 6. Sessão no cliente
 
-- Credenciais ficam **exclusivamente em memória** (estado React ou módulo). Nunca em
-  `localStorage`, `sessionStorage`, cookies legíveis, IndexedDB, URL ou logs.
-- O `localStorage` pode guardar **apenas** preferências de interface. Hoje, só o tema
-  (`evolia:tema` = `claro | escuro | sistema`). Credenciais, dados pessoais, avaliações de
-  competências e respostas da IA nunca são persistidos.
-- Recarregar a página encerra a sessão. Isso é esperado.
+- A senha existe somente durante o envio do login. Nunca em `localStorage`, `sessionStorage`,
+  cookies legíveis, IndexedDB, URL ou logs. O contexto fica só em memória.
+- O `localStorage` guarda preferências de interface (`evolia:tema`) e **uma exceção**:
+  `evolia:logout-pendente`, com o valor `"true"`, sem usuário, credencial, token ou contexto.
+  Notas, dados pessoais e respostas da IA nunca são persistidos.
+- Recarregar a página restaura a sessão válida (`GET /api/me`). Estado privado em memória é perdido.
+
+**Logout confirmado.**
+
+1. O marcador é gravado no clique, antes de qualquer requisição, e o estado local é descartado.
+2. A saída só é declarada com a confirmação do servidor, que também remove o marcador.
+3. Sem confirmação, o estado fica `saida-pendente`: nada privado é exibido, a sessão não é restaurada
+   (nem após recarregar ou em outra aba) e há o botão “Tentar sair novamente”. Não há repetição automática.
+4. A repetição só age enquanto o marcador existir. Um login posterior remove o marcador antes de criar a
+   sessão, e a repetição relê o marcador antes de enviar o logout.
+5. Antes de autenticar, a sessão anterior é encerrada no servidor. Se isso falhar, o login não ocorre.
+6. Sem `localStorage`, a restauração exige confirmação (“Continuar” ou “Sair”).
+
+O marcador protege a interface; quem invalida a sessão é o servidor.
+
+**Várias abas.** `BroadcastChannel` (`evolia:sessao`) transmite só a palavra `sessao-alterada`, e o
+evento `storage` do marcador também sincroniza. A aba que recebe descarta o estado e não adota a nova
+identidade. Sem o canal, o contexto verificado no servidor impede a troca silenciosa.
+
 - **Logout ou troca de usuário**, nesta ordem:
   1. Abortar as requisições pendentes (`AbortController` da sessão).
   2. `queryClient.cancelQueries()`.
@@ -268,22 +292,22 @@ para mostrar o registro `FALHOU`.
 
 **Implementação** (`frontend/src/features/auth`):
 
-- `AuthProvider` cria uma `SessaoApi` por tentativa de login e entrega as credenciais direto a
-  `criarSessaoApi`, sem guardá-las.
-- Toda mudança de sessão (login, troca, logout, 401 ou desmontagem) incrementa uma **geração**.
-  Continuações assíncronas de gerações antigas não alteram o estado.
+- Toda mudança de sessão incrementa uma **geração**; continuações antigas não alteram o estado.
+- Login e logout são executados um de cada vez. Um login enviado não é abortado: o resultado é ignorado
+  e a operação seguinte encerra a sessão que ele tiver criado.
+- Estados: `verificando`, `anonimo`, `autenticando`, `autenticado`, `saindo`, `saida-pendente`, `confirmar`.
 - `entrar()` nunca lança erro e não repete a tentativa. O resultado é:
 
   | Resultado | Quando |
   | --- | --- |
-  | `credenciais-invalidas` | 401 no próprio login |
-  | `servico-indisponivel` | Rede, tempo limite ou 5xx |
-  | `resposta-invalida` | Contrato violado ou status inesperado |
+  | `credenciais-invalidas` | 401 no login |
+  | `muitas-tentativas` | 429 do gateway |
+  | `servico-indisponivel` | Rede, tempo limite, 5xx ou falha ao encerrar a sessão anterior |
+  | `resposta-invalida` | Contrato violado, identidade diferente da informada ou status inesperado |
   | `cancelado` | Tentativa substituída por outro login ou por logout |
 
-- O 401 durante o uso chega por `criarSessaoApi(credenciais, { aoNaoAutenticado })`, no máximo uma
-  vez por sessão. Ele só encerra a sessão (`anonimo/sessao-expirada`) quando vem da sessão
-  autenticada atual. A requisição continua rejeitando com o 401 original.
+- 401 durante o uso encerra o estado local: `sessao-expirada` ou, com `SESSAO_SUBSTITUIDA`,
+  `sessao-substituida`. Um 403 nunca encerra.
 - O destino após o login passa por `destinoAposLogin(de, tipoConta, podeAcessar)`, que aceita só
   caminhos internos simples, fora de `/entrar` e `/api`, e permitidos para o tipo de conta. Em
   qualquer outro caso, vai para `/`.
@@ -363,6 +387,8 @@ Formato (Spring `ProblemDetail`): `{ type?, title?, status, detail?, instance?, 
 | --- | --- | --- |
 | 400 | `DADOS_INVALIDOS` | Mensagem no formulário. A validação Zod deve evitar que isso aconteça |
 | 401 | `AUTENTICACAO_NECESSARIA` | No login: “Usuário ou senha inválidos”. Durante o uso: encerrar a sessão |
+| 401 | `SESSAO_SUBSTITUIDA` | “A sessão deste navegador mudou.” Descartar o estado |
+| 429 | — (gateway, no login) | “Muitas tentativas.” Sem repetição automática |
 | 403 | `ACESSO_NEGADO` | “Seu perfil não tem acesso a esta área.” A navegação já esconde o que não é permitido |
 | 403 | `CSRF_INVALIDO` | Sem retentativa automática (seção 3): “Não foi possível confirmar a operação. Tente novamente.” |
 | 403 | `CONSENTIMENTO_IA_NECESSARIO` | Direcionar para a tela de consentimento |
@@ -373,7 +399,7 @@ Formato (Spring `ProblemDetail`): `{ type?, title?, status, detail?, instance?, 
 | 504 | `IA_TEMPO_LIMITE` | “A IA demorou mais que o esperado.” |
 
 Mostre a mensagem traduzida pelo `codigo`, não o `detail` cru. Nunca registre corpo de
-requisição, cabeçalho `Authorization` ou token CSRF em `console` ou em telemetria.
+requisição, senha, contexto ou token CSRF em `console` ou em telemetria.
 
 ## 8. Tempos limite
 
@@ -387,7 +413,7 @@ Valores padrão do backend (`backend/src/main/resources/application.yml`):
 
 - **Classificação e recomendações:** até cerca de 7 s no backend.
 - **Orientação:** FastAPI (até cerca de 7 s), depois a geração complementar (até 60 s) e o
-  *fallback* sem `proximosPassos`. O pior caso fica em torno de 67 s, mais a verificação BCrypt e
+  *fallback* sem `proximosPassos`. O pior caso fica em torno de 67 s, mais
   as consultas de consentimento. Na validação real, levou cerca de 7,7 s com geração e 0,4 s em *fallback*.
 
 Regra: **todo intermediário precisa esperar mais que o backend**, para que o *fallback* e os erros
@@ -407,7 +433,7 @@ orientação, a UI mostra progresso e permite cancelar (abortar no cliente).
 ## 9. Proxy de desenvolvimento (Vite)
 
 - Destino: `/api` → `http://127.0.0.1:${BACKEND_PORT:-8080}`, com a porta configurável por variável de ambiente do Vite.
-- Remover `WWW-Authenticate` da resposta (seção 2) e aplicar os tempos limite da seção 8.
+- Aplicar os tempos limite da seção 8.
 - Manter mesma origem: sem `changeOrigin` desnecessário e sem reescrever cookies. O cookie
   `XSRF-TOKEN` é *host-only* e funciona em `localhost` pelo proxy.
 

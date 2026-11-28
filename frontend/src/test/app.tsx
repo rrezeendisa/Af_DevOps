@@ -50,6 +50,18 @@ export function rotear(fetchMock: ReturnType<typeof criarFetch>, rotas: RotasSim
   })
 }
 
+/** Sessão do cliente real que já recebeu um contexto, como depois do login. */
+export async function sessaoComContexto(fetchMock: ReturnType<typeof criarFetch>, contexto: string) {
+  fetchMock.mockImplementationOnce(() =>
+    Promise.resolve(
+      new Response('{}', { headers: { 'Content-Type': 'application/json', 'X-Evolia-Contexto': contexto } }),
+    ),
+  )
+  const api = criarSessaoApi()
+  await api.retomar((dados) => dados)
+  return api
+}
+
 /** Chamadas feitas como "MÉTODO /caminho", na ordem. */
 export function chamadas(fetchMock: ReturnType<typeof criarFetch>): string[] {
   return fetchMock.mock.calls.map(([url, init]) => `${init?.method ?? 'GET'} ${String(url)}`)
@@ -77,11 +89,12 @@ export function renderizarAutenticado(
 ) {
   const fetchMock = criarFetch()
   rotear(fetchMock, rotas)
-  const api = criarSessaoApi({ nomeUsuario: ME[tipoConta].nomeUsuario, senha: 'senha-de-teste-1' })
+  const api = criarSessaoApi()
   const valor: ValorAuth = {
     estado: { status: 'autenticado', identidade: lerIdentidade(ME[tipoConta]), tipoConta, api, geracao: 1 },
     entrar: vi.fn(),
     sair: vi.fn(),
+    continuar: vi.fn(),
   }
   const queryClient = criarQueryClient()
   const usuario = userEvent.setup()

@@ -19,12 +19,15 @@ export function RotaProtegida({ permitir, children }: Props) {
   const { estado } = useAuth()
   const { pathname } = useLocation()
 
-  if (estado.status === 'anonimo') {
+  if (estado.status === 'verificando' || estado.status === 'autenticando') {
+    return <EstadoCarregando texto="Verificando acesso…" />
+  }
+  if (estado.status === 'saindo') {
+    return <EstadoCarregando texto="Saindo…" />
+  }
+  if (estado.status !== 'autenticado') {
     // Só o caminho vai no histórico em memória. Query string e fragmento ficam de fora.
     return <Navigate to={ROTA_ENTRAR} replace state={{ de: pathname }} />
-  }
-  if (estado.status === 'autenticando') {
-    return <EstadoCarregando texto="Verificando acesso…" />
   }
   if (permitir !== undefined && !permitir.includes(estado.tipoConta)) {
     return (

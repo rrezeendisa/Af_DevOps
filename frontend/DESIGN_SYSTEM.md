@@ -53,7 +53,8 @@ Os tokens ficam em `frontend/src/styles` como variáveis CSS, consumidas pelo Ta
 
 **Dark mode:** a base é grafite neutro (`#17131B`, `#211D25`, `#2A2630`), com texto claro e acentos
 em lilás, rosa e lima. O roxo nunca predomina. O tema segue `prefers-color-scheme` por padrão, e a
-escolha do usuário fica salva no `localStorage` (`evolia:tema`). Essa é a única persistência permitida.
+escolha do usuário fica salva no `localStorage` (`evolia:tema`). Além dela, só existe o marcador de logout
+não confirmado (API_CONTRACTS.md, seção 6).
 
 ## 3. Contraste verificado
 
@@ -274,8 +275,8 @@ Use valores numéricos tabulares (`font-variant-numeric: tabular-nums`) em tabel
 
 ## 10. Tema e inicialização
 
-- A preferência fica em `localStorage['evolia:tema']` = `claro | escuro | sistema`. É a **única**
-  persistência do frontend. Valor inválido ou armazenamento indisponível caem para `sistema`.
+- A preferência fica em `localStorage['evolia:tema']` = `claro | escuro | sistema`. É a única
+  preferência persistida; a outra chave é o marcador de logout (API_CONTRACTS.md, seção 6). Valor inválido ou armazenamento indisponível caem para `sistema`.
 - Na primeira visita vale `sistema`, que segue `prefers-color-scheme` e acompanha mudanças do sistema
   enquanto for a preferência ativa.
 - Para evitar troca brusca de tema na inicialização, um script inline no `<head>` de `index.html`

@@ -24,13 +24,6 @@ export default defineConfig(({ mode }) => {
           target: `http://127.0.0.1:${porta}`,
           timeout: TEMPO_LIMITE_PROXY_MS,
           proxyTimeout: TEMPO_LIMITE_PROXY_MS,
-          configure: (proxy) => {
-            // Evita a janela nativa de login do navegador em respostas 401.
-            // Validação pendente no navegador real (API_CONTRACTS.md, seção 2).
-            proxy.on('proxyRes', (resposta) => {
-              delete resposta.headers['www-authenticate']
-            })
-          },
         },
       },
     },

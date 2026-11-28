@@ -1,9 +1,10 @@
 import { QueryClientProvider } from '@tanstack/react-query'
-import { act, render, screen } from '@testing-library/react'
+import { act, render, screen, waitFor } from '@testing-library/react'
 import { useEffect } from 'react'
 import { MemoryRouter, Route, Routes, useLocation, useNavigate, type NavigateFunction } from 'react-router'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { criarQueryClient } from '@/app/queryClient'
+import { servidorSimulado } from '@/test/servidor'
 import { AuthProvider } from './AuthProvider'
 import { useAuth, type ValorAuth } from './contexto'
 import { RotaProtegida } from './RotaProtegida'
@@ -17,6 +18,7 @@ const ME = {
 } as const
 
 const fetchMock = vi.fn<typeof fetch>()
+let servidor: ReturnType<typeof servidorSimulado>
 const sonda: { auth: ValorAuth | null; navegar: NavigateFunction | null } = { auth: null, navegar: null }
 
 function Sonda() {
@@ -33,6 +35,12 @@ function Entrar() {
   const { state } = useLocation()
   const de = (state as { de?: unknown } | null)?.de
   return <p>Tela de entrada (de: {typeof de === 'string' ? de : 'nenhum'})</p>
+}
+
+/** Renderiza e espera a consulta de restauração terminar. */
+async function abrir(caminhoInicial: string) {
+  renderizar(caminhoInicial)
+  await waitFor(() => expect(sonda.auth?.estado.status).toBe('anonimo'))
 }
 
 function renderizar(caminhoInicial: string) {
@@ -79,11 +87,8 @@ function renderizar(caminhoInicial: string) {
 }
 
 async function entrarComo(tipo: keyof typeof ME) {
-  fetchMock.mockImplementation(() =>
-    Promise.resolve(new Response(JSON.stringify(ME[tipo]), { headers: { 'Content-Type': 'application/json' } })),
-  )
   await act(async () => {
-    await sonda.auth?.entrar({ nomeUsuario: 'usuario', senha: 'senha-de-teste-1' })
+    await sonda.auth?.entrar({ nomeUsuario: ME[tipo].nomeUsuario, senha: 'senha-de-teste-1' })
   })
 }
 
@@ -94,8 +99,13 @@ function navegar(caminho: string) {
 }
 
 beforeEach(() => {
+  localStorage.clear()
   fetchMock.mockReset()
   vi.stubGlobal('fetch', fetchMock)
+  servidor = servidorSimulado(
+    fetchMock,
+    Object.fromEntries(Object.values(ME).map((me) => [me.nomeUsuario, { me: { ...me }, senha: 'senha-de-teste-1' }])),
+  )
   sonda.auth = null
   sonda.navegar = null
 })
@@ -105,19 +115,26 @@ afterEach(() => {
 })
 
 describe('RotaProtegida', () => {
+  it('não decide o acesso enquanto verifica a sessão', () => {
+    servidor.interceptar('GET /api/me', () => new Promise<Response>(() => {}))
+    renderizar('/admin')
+    expect(screen.getByRole('status')).toHaveTextContent('Verificando acesso…')
+    expect(screen.queryByText(/Tela de entrada/)).toBeNull()
+  })
+
   it.each(['/admin', '/consentimento', '/cursos', '/painel'])(
     'redireciona anônimo de %s para /entrar, guardando o caminho',
-    (caminho) => {
-      renderizar(caminho)
+    async (caminho) => {
+      await abrir(caminho)
       expect(screen.getByText(`Tela de entrada (de: ${caminho})`)).toBeInTheDocument()
     },
   )
 
   it('mostra o aviso de verificação durante a autenticação', async () => {
-    fetchMock.mockImplementation(() => new Promise<Response>(() => {}))
-    renderizar('/inicio')
+    await abrir('/inicio')
+    servidor.interceptar('GET /api/me', () => new Promise<Response>(() => {}))
     act(() => {
-      void sonda.auth?.entrar({ nomeUsuario: 'usuario', senha: 'senha-de-teste-1' })
+      void sonda.auth?.entrar({ nomeUsuario: 'admin', senha: 'senha-de-teste-1' })
     })
     navegar('/admin')
     expect(screen.getByRole('status')).toHaveTextContent('Verificando acesso…')
@@ -132,7 +149,7 @@ describe('RotaProtegida', () => {
     ['COLABORADOR_DEMONSTRACAO', '/cursos', 'Catálogo'],
     ['COLABORADOR_DEMONSTRACAO', '/painel', 'Painel'],
   ] as const)('%s acessa %s', async (tipo, caminho, conteudo) => {
-    renderizar('/inicio')
+    await abrir('/inicio')
     await entrarComo(tipo)
     navegar(caminho)
     expect(screen.getByText(conteudo)).toBeInTheDocument()
@@ -144,7 +161,7 @@ describe('RotaProtegida', () => {
     ['COLABORADOR_DEMONSTRACAO', '/admin'],
     ['COLABORADOR_DEMONSTRACAO', '/consentimento'],
   ] as const)('%s é negado em %s sem encerrar a sessão', async (tipo, caminho) => {
-    renderizar('/inicio')
+    await abrir('/inicio')
     await entrarComo(tipo)
     navegar(caminho)
     expect(screen.getByRole('alert')).toHaveTextContent('Seu perfil não tem acesso a esta área.')
@@ -152,7 +169,7 @@ describe('RotaProtegida', () => {
   })
 
   it('volta para /entrar depois do logout', async () => {
-    renderizar('/inicio')
+    await abrir('/inicio')
     await entrarComo('ADMIN')
     navegar('/admin')
     expect(screen.getByText('Área administrativa')).toBeInTheDocument()
@@ -160,6 +177,7 @@ describe('RotaProtegida', () => {
     act(() => sonda.auth?.sair())
 
     expect(screen.queryByText('Área administrativa')).toBeNull()
+    await waitFor(() => expect(sonda.auth?.estado.status).toBe('anonimo'))
     expect(screen.getByText('Tela de entrada (de: /admin)')).toBeInTheDocument()
   })
 })

@@ -3,6 +3,7 @@ import { ehApiError, type CodigoErro } from './erros'
 /** Texto amigável para cada `codigo` documentado (API_CONTRACTS.md, seção 7). */
 const POR_CODIGO: Record<CodigoErro, string> = {
   AUTENTICACAO_NECESSARIA: 'Sua sessão foi encerrada. Entre novamente.',
+  SESSAO_SUBSTITUIDA: 'A sessão deste navegador mudou. Entre novamente.',
   ACESSO_NEGADO: 'Seu perfil não tem permissão para esta operação.',
   CSRF_INVALIDO: 'Não foi possível confirmar a operação. Tente novamente.',
   DADOS_INVALIDOS: 'Alguns dados não foram aceitos. Revise os campos e tente novamente.',
@@ -39,6 +40,7 @@ export function mensagemDeErro(erro: unknown): string {
     case 'cancelado':
       return 'A operação foi cancelada.'
     case 'http':
+      if (erro.status === 429) return 'Muitas tentativas em pouco tempo. Aguarde um momento e tente novamente.'
       if (erro.status === 404) return 'O registro não foi encontrado.'
       if (erro.status !== undefined && erro.status >= 500) return 'Serviço temporariamente indisponível. Tente novamente em instantes.'
       return GENERICA

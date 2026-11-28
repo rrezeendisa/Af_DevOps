@@ -17,11 +17,12 @@ afterEach(() => {
 
 function renderizar(tipoConta: TipoConta) {
   const fetchMock = criarFetch()
-  const api = criarSessaoApi({ nomeUsuario: ME[tipoConta].nomeUsuario, senha: 'senha-de-teste-1' })
+  const api = criarSessaoApi()
   const valor: ValorAuth = {
     estado: { status: 'autenticado', identidade: lerIdentidade(ME[tipoConta]), tipoConta, api, geracao: 1 },
     entrar: vi.fn(),
     sair: vi.fn(),
+    continuar: vi.fn(),
   }
   const resultado = render(
     <QueryClientProvider client={criarQueryClient()}>

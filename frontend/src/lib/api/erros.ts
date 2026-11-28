@@ -3,6 +3,7 @@ import { z } from 'zod'
 /** Códigos `problem+json` documentados em API_CONTRACTS.md (seção 7). Outros valores são descartados. */
 export const CODIGOS_ERRO = [
   'AUTENTICACAO_NECESSARIA',
+  'SESSAO_SUBSTITUIDA',
   'ACESSO_NEGADO',
   'CSRF_INVALIDO',
   'DADOS_INVALIDOS',

@@ -173,6 +173,22 @@ docker compose stop ollama
 docker compose -f docker-compose.yml -f compose.ollama-nativo.yml up --build
 ```
 
+## Limite de tentativas de login
+
+O gateway limita `POST /api/login` por endereço de origem, com `limit_req`:
+
+| Variável | Padrão | Efeito |
+|---|---|---|
+| `LOGIN_RATE` | `10r/s` | Taxa sustentada |
+| `LOGIN_BURST` | `50` | Excesso atendido de imediato antes de recusar |
+
+Acima disso a resposta é 429 com `Retry-After: 1`. As outras rotas não são afetadas. O padrão
+considera redes corporativas atrás de um único IP: admite cerca de 300 logins em 30 s, que é também
+o perfil da subida do teste de carga. O teste deve usar o padrão; se precisar de outro valor, ele deve
+constar no relatório. O limite contém rajadas e o custo de CPU do BCrypt, mas não impede tentativas
+lentas de adivinhação. Atrás de outro proxy ou do Docker Desktop, vários clientes podem aparecer
+com o mesmo endereço e dividir o limite. Valores inválidos impedem o gateway de iniciar.
+
 ## Testes
 
 | Nível | Onde | Como rodar |
