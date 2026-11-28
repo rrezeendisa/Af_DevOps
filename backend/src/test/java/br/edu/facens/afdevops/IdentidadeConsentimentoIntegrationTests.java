@@ -32,6 +32,7 @@ import tools.jackson.databind.json.JsonMapper;
 import static br.edu.facens.afdevops.SegurancaHttpTeste.admin;
 import static br.edu.facens.afdevops.SegurancaHttpTeste.basic;
 import static br.edu.facens.afdevops.SegurancaHttpTeste.colaborador;
+import static br.edu.facens.afdevops.SegurancaHttpTeste.conta;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
@@ -83,7 +84,7 @@ class IdentidadeConsentimentoIntegrationTests {
                 String.class, id);
         assertThat(encoder.matches(senha, hash)).isTrue();
 
-        var me = http.get(porta, "/api/me", basic(nome.toUpperCase(Locale.ROOT), senha));
+        var me = http.get(porta, "/api/me", conta(nome.toUpperCase(Locale.ROOT), senha));
         assertThat(me.statusCode()).isEqualTo(200);
         assertThat(me.headers().firstValue("Cache-Control")).hasValue("no-store");
         var identidade = JSON.readTree(me.body());
@@ -91,9 +92,10 @@ class IdentidadeConsentimentoIntegrationTests {
         assertThat(identidade.get("nomeUsuario").asString()).isEqualTo(nome);
         assertThat(identidade.get("colaboradorId").asLong()).isEqualTo(id);
         assertThat(identidade.get("perfil").asString()).isEqualTo("COLABORADOR");
-        problema(http.get(porta, "/api/me", basic(nome, UUID.randomUUID().toString())),
-                401, "AUTENTICACAO_NECESSARIA");
-        assertThat(http.get(porta, "/api/treinamentos", basic(nome, senha)).statusCode()).isEqualTo(403);
+        problema(http.login(porta, conta(nome, UUID.randomUUID().toString()), null,
+                http.obterCsrf(porta, (String) null)), 401, "AUTENTICACAO_NECESSARIA");
+        problema(http.get(porta, "/api/me", basic(nome, senha)), 401, "AUTENTICACAO_NECESSARIA");
+        assertThat(http.get(porta, "/api/treinamentos", conta(nome, senha)).statusCode()).isEqualTo(403);
         var chamadaInterna = http.request(porta, "/internal/treinamentos/1/status", basic(nome, senha))
                 .method("PATCH", HttpRequest.BodyPublishers.noBody()).build();
         problema(http.enviar(chamadaInterna), 401, "AUTENTICACAO_INTERNA_NECESSARIA");
@@ -261,7 +263,7 @@ class IdentidadeConsentimentoIntegrationTests {
         String nome = novoNome();
         String senha = UUID.randomUUID().toString();
         assertThat(criar(id, nome, senha).statusCode()).isEqualTo(201);
-        return basic(nome, senha);
+        return conta(nome, senha);
     }
 
     private HttpResponse<String> criar(long id, String nome, String senha) throws Exception {
