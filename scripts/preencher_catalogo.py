@@ -15,6 +15,7 @@ A API não impõe nome único: a comparação por nome (sem diferenciar maiúscu
 e espaços) é feita aqui. Não execute duas cópias ao mesmo tempo.
 """
 import argparse
+import getpass
 import json
 import os
 import sys
@@ -160,7 +161,11 @@ def credencial(variavel, no_env):
         for linha in arquivo.read_text(encoding="utf-8").splitlines():
             nome, separador, valor = linha.strip().partition("=")
             if separador and nome == no_env:
-                return valor.strip().strip("'\"")
+                if valor.strip().strip("'\""):
+                    return valor.strip().strip("'\"")
+    # Sem valor guardado (senha privada): pergunta sem mostrar na tela.
+    if sys.stdin.isatty():
+        return getpass.getpass(f"{variavel}: ")
     raise Falha(f"Defina {variavel} (ou {no_env} no .env).")
 
 

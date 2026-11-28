@@ -38,9 +38,9 @@ hash_bcrypt() {
     printf '%s' "$hash"
 }
 
-admin_usuario="admin.demo"
+admin_usuario="admin"
 admin_senha="$(segredo 16)"
-colaborador_usuario="colaborador.demo"
+colaborador_usuario="demo"
 colaborador_senha="$(segredo 16)"
 db_senha="$(segredo)"
 rabbitmq_senha="$(segredo)"
